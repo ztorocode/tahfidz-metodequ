@@ -1,12 +1,12 @@
-const CACHE='metodequ-prototype-dev-bf71a6d4';
+const CACHE='metodequ-prototype-dev-e73a5c20';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=dev-2f08f073','./assets/css/base.css?v=dev-2f08f073','./assets/css/layout.css?v=dev-2f08f073',
   './assets/css/components.css?v=dev-2f08f073','./assets/css/responsive.css?v=dev-bf71a6d4',
   './assets/images/icon.svg?v=7f3a91c2',
-  './js/app.js?v=dev-bf71a6d4','./js/router.js?v=dev-4e9f2c71','./js/store.js?v=dev-2f08f073',
-  './js/data/dummy-data.js?v=dev-2f08f073','./js/components/app-shell.js?v=dev-4e9f2c71',
-  './js/components/context-switcher.js?v=dev-2f08f073','./js/layouts/app-layout.js?v=dev-4e9f2c71',
+  './js/app.js?v=dev-e73a5c20','./js/router.js?v=dev-4e9f2c71','./js/store.js?v=dev-2f08f073',
+  './js/data/dummy-data.js?v=dev-2f08f073','./js/components/app-shell.js?v=dev-e73a5c20',
+  './js/components/context-switcher.js?v=dev-2f08f073','./js/layouts/app-layout.js?v=dev-e73a5c20',
   './js/utils/helpers.js?v=dev-2f08f073',
   './js/pages/login.js?v=dev-2f08f073','./js/pages/member-dashboard.js?v=dev-2f08f073','./js/pages/program.js?v=dev-2f08f073',
   './js/pages/activity.js?v=dev-2f08f073','./js/pages/submission.js?v=dev-2f08f073','./js/pages/murajaah.js?v=dev-2f08f073',

@@ -16,6 +16,24 @@ function navItems(){
  return s.persona==="admin"?adminNav:s.persona==="musyrif"?musyrifNav:memberNav;
 }
 
+function mobileIcon(route){
+ const common='viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+ const icons={
+  dashboard:`<svg ${common}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-5h5v5"/></svg>`,
+  admin:`<svg ${common}><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M7.5 8h9M7.5 12h4M7.5 16h7"/></svg>`,
+  musyrif:`<svg ${common}><path d="M4 19v-1.5A4.5 4.5 0 0 1 8.5 13h2A4.5 4.5 0 0 1 15 17.5V19"/><circle cx="9.5" cy="7.5" r="3.5"/><path d="m16 8 2 2 3-4"/></svg>`,
+  program:`<svg ${common}><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>`,
+  activity:`<svg ${common}><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>`,
+  submission:`<svg ${common}><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/><path d="m14 16 2 2 4-5"/></svg>`,
+  review:`<svg ${common}><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h5"/><path d="m14 16 1.5 1.5L18.5 14"/></svg>`,
+  murajaah:`<svg ${common}><path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 0-2 5"/><path d="M12 8v4l2.5 1.5"/></svg>`,
+  halaqah:`<svg ${common}><circle cx="12" cy="7" r="3"/><circle cx="5.5" cy="10.5" r="2.5"/><circle cx="18.5" cy="10.5" r="2.5"/><path d="M7.5 20v-1a4.5 4.5 0 0 1 9 0v1M2.5 20v-1a3 3 0 0 1 4-2.8M21.5 20v-1a3 3 0 0 0-4-2.8"/></svg>`,
+  whatsapp:`<svg ${common}><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.4-4.1A8 8 0 1 1 20 11.5Z"/><path d="M9 8.5c.5 2.7 2.3 4.5 5 5l1.2-1.2"/></svg>`,
+  notifications:`<svg ${common}><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></svg>`
+ };
+ return icons[route]||icons.dashboard;
+}
+
 function currentAccount(){
  const s=getState();
  const base=demoAccounts[s.persona]||demoAccounts.member;
@@ -71,7 +89,7 @@ export function shell(content){
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
- <nav class="mobile-nav">${navItems().slice(0,5).map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("")}</nav></main>${profileModal()}</div>`;
+ <nav class="mobile-nav">${navItems().slice(0,5).map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}"><span class="mobile-nav-icon">${mobileIcon(r)}</span><span class="mobile-nav-label">${l}</span></a>`).join("")}</nav></main>${profileModal()}</div>`;
 }
 
 export function bindShell(){

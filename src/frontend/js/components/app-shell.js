@@ -1,5 +1,4 @@
 import {getState,setState} from "../store.js?v=dev-2f08f073";
-import {contextSwitcher,bindContext} from "./context-switcher.js?v=dev-2f08f073";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Santri / Halaqah"],["notifications","Notifikasi"]];
@@ -68,13 +67,12 @@ export function shell(content){
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${route===r?"active":""}">${l}</a>`).join("");
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
- <main class="main"><header class="topbar"><div class="search muted">Cari halaman, surat, atau menu...</div><div class="row">${contextSwitcher()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
+ <main class="main"><header class="topbar"><div class="search muted">Cari halaman, surat, atau menu...</div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
  <nav class="mobile-nav">${navItems().slice(0,5).map(([r,l])=>`<a href="#${r}" class="${route===r?"active":""}">${l}</a>`).join("")}</nav></main>${profileModal()}</div>`;
 }
 
 export function bindShell(){
- bindContext();
 
  document.querySelector("#themeBtn")?.addEventListener("click",()=>{
   const theme=getState().theme==="dark"?"light":"dark";

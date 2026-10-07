@@ -1,4 +1,4 @@
-import {member,progress,daily,murajaah} from "../data/dummy-data.js?v=dev-719a61bf";import {badge} from "../utils/helpers.js?v=dev-719a61bf";
+import {member,progress,daily,murajaah} from "../data/dummy-data.js?v=dev-d613201b";import {badge} from "../utils/helpers.js?v=dev-d613201b";
 export function memberDashboard(){const pct=Math.round(progress.mutqin/progress.total*100);return `
 <div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${member.name}</h1><p class="muted">Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
 <div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif</p><h2 style="margin-bottom:7px">${member.personalProgram}</h2><b>Target hari ini: 1 halaman</b></div><a class="btn" href="#program" style="background:white;color:#14533e;border:0">Lihat program</a></div></div>

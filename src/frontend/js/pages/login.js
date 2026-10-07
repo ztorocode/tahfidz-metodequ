@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=dev-719a61bf";
+import {setState} from "../store.js?v=dev-d613201b";
 
 const demoAccounts=[
  {role:"Member",persona:"member",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -11,7 +11,7 @@ function normalizePhone(value=""){return value.replace(/\D/g,"")}
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
   <div><b style="font-size:13px">Akun login demo</b><small class="muted" style="display:block">Gunakan salah satu akun berikut untuk mencoba role berbeda.</small></div>
-  ${demoAccounts.map(account=>`<div class="list-item">
+  ${demoAccounts.map(account=>`<button type="button" class="list-item" data-demo-account="${account.persona}" style="width:100%;text-align:left;color:inherit">
    <span class="avatar">${account.role.slice(0,1)}</span>
    <div class="grow">
     <b>${account.role}</b>
@@ -19,7 +19,7 @@ function demoAccountsInfo(){
     <small class="muted" style="display:block">Email: ${account.email}</small>
     <small class="muted" style="display:block">Password: ${account.password}</small>
    </div>
-  </div>`).join("")}
+  </button>`).join("")}
   <small class="muted">OTP demo WhatsApp: <b>123456</b></small>
  </div>`;
 }
@@ -111,6 +111,19 @@ export function bindLogin(){
   });
  };
 
+ const bindDemoAccounts=()=>{
+  document.querySelectorAll("[data-demo-account]").forEach(item=>item.addEventListener("click",()=>{
+   const account=demoAccounts.find(entry=>entry.persona===item.dataset.demoAccount);
+   if(!account)return;
+   renderMethod("email");
+   const email=document.querySelector("#loginEmail");
+   const password=document.querySelector("#loginPassword");
+   if(email)email.value=account.email;
+   if(password)password.value=account.password;
+   email?.focus();
+  }));
+ };
+
  const bindLoginActions=(method="whatsapp")=>{
   document.querySelector("#authWhatsapp")?.addEventListener("click",()=>renderMethod("whatsapp"));
   document.querySelector("#authEmail")?.addEventListener("click",()=>renderMethod("email"));
@@ -173,9 +186,11 @@ export function bindLogin(){
   if(!card)return;
   card.innerHTML=loginCard();
   bindLoginActions("whatsapp");
+  bindDemoAccounts();
   document.querySelector("#registerLink")?.addEventListener("click",showRegister);
  };
 
  bindLoginActions("whatsapp");
+ bindDemoAccounts();
  document.querySelector("#registerLink")?.addEventListener("click",showRegister);
 }

@@ -3,7 +3,7 @@ const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css','./assets/css/base.css','./assets/css/layout.css',
   './assets/css/components.css','./assets/css/responsive.css',
-  './assets/images/icon.svg',
+  './assets/images/icon.svg?v=7f3a91c2',
   './js/app.js','./js/router.js','./js/store.js',
   './js/data/dummy-data.js','./js/components/app-shell.js',
   './js/components/context-switcher.js','./js/layouts/app-layout.js',

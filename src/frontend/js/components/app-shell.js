@@ -9,7 +9,7 @@ function navItems(){
 export function shell(content){
  const s=getState(),route=location.hash.replace("#","")||"dashboard";
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${route===r?"active":""}">${l}</a>`).join("");
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn full" id="personaBtn">Demo: ${s.persona}</button></div></aside>
  <main class="main"><header class="topbar"><div class="search muted">Cari halaman, surat, atau menu...</div><div class="row">${contextSwitcher()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button></div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>

@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=dev-f4d9f48e";
+import {getState,setState} from "../store.js?v=dev-719a61bf";
 export function contextSwitcher(){
  const s=getState();const label=s.context==="personal"?"Personal":"Pondok Al-Furqan";
  return `<div style="position:relative"><button class="context-pill" id="contextBtn"><span class="dot"></span><b>${label}</b><span>⌄</span></button>

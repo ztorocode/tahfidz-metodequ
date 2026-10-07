@@ -1,4 +1,4 @@
-import {daily} from "../data/dummy-data.js?v=dev-f4d9f48e";import {badge} from "../utils/helpers.js?v=dev-f4d9f48e";
+import {daily} from "../data/dummy-data.js?v=dev-719a61bf";import {badge} from "../utils/helpers.js?v=dev-719a61bf";
 const steps=[["Istima' Qari Mujawwad",3,3],["Hafalan Kemarin",5,5],["Tikrar",25,18]];
 export function activityPage(){return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Senin, 15 Januari 2024</p><h1>Aktivitas Hari Ini</h1><p class="muted">Target hari ini: 1 halaman · Juz 30</p></div><span class="badge success">2 dari 5 proses selesai</span></div>
 <div class="grid-2"><div class="stack">${steps.map(([n,total,done])=>`<div class="card"><div class="row between"><div><h3>${n}</h3><p class="muted">${done} dari ${total} pengulangan selesai</p></div>${badge(done===total?"Selesai":"Dalam proses",done===total?"success":"warning")}</div><div class="progress" style="--value:${Math.round(done/total*100)}%"><span></span></div><div class="tabs" style="margin-top:14px">${Array.from({length:total},(_,i)=>`<button class="tab ${i<done?"active":""}" data-check>${i+1}x</button>`).join("")}</div></div>`).join("")}</div>

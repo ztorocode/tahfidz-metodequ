@@ -11,12 +11,13 @@ import {reviewPage} from "./pages/review.js?v=dev-2f08f073";
 import {adminDashboard} from "./pages/admin-dashboard.js?v=dev-2f08f073";
 import {halaqahPage} from "./pages/halaqah.js?v=dev-4e9f2c71";
 import {studentProgressPage} from "./pages/santri-progress.js?v=dev-6d31f2a4";
+import {memberProgressPage} from "./pages/member-progress.js?v=dev-91c5a7e2";
 import {progressTablePage} from "./pages/tabel-progress.js?v=dev-6d31f2a4";
 import {whatsappPage} from "./pages/whatsapp.js?v=dev-2f08f073";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,
- progress:studentProgressPage,report:progressTablePage,
+ progress:memberProgressPage,report:progressTablePage,
  musyrif:musyrifDashboard,review:reviewPage,admin:adminDashboard,halaqah:halaqahPage,"santri-progress":studentProgressPage,"tabel-progress":progressTablePage,whatsapp:whatsappPage
 };
 export function routeName(){return location.hash.replace(/^#/,"")||"dashboard"}

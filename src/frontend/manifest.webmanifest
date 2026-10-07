@@ -1,0 +1,14 @@
+{
+  "name": "MetodeQu",
+  "short_name": "MetodeQu",
+  "description": "Pendamping tahfidz untuk membangun hafalan yang mutqin.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#07120e",
+  "theme_color": "#0f6b4d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {"src":"./assets/images/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

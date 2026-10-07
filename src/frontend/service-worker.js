@@ -1,18 +1,18 @@
-const CACHE='metodequ-prototype-dev-b74e2c91';
+const CACHE='metodequ-prototype-dev-f4d9f48e';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css','./assets/css/base.css','./assets/css/layout.css',
   './assets/css/components.css','./assets/css/responsive.css',
   './assets/images/icon.svg?v=7f3a91c2',
-  './js/app.js?v=dev-b74e2c91','./js/router.js?v=dev-b74e2c91','./js/store.js?v=dev-b74e2c91',
-  './js/data/dummy-data.js?v=dev-b74e2c91','./js/components/app-shell.js?v=dev-b74e2c91',
-  './js/components/context-switcher.js?v=dev-b74e2c91','./js/layouts/app-layout.js?v=dev-b74e2c91',
-  './js/utils/helpers.js?v=dev-b74e2c91',
-  './js/pages/login.js?v=dev-b74e2c91','./js/pages/member-dashboard.js?v=dev-b74e2c91','./js/pages/program.js?v=dev-b74e2c91',
-  './js/pages/activity.js?v=dev-b74e2c91','./js/pages/submission.js?v=dev-b74e2c91','./js/pages/murajaah.js?v=dev-b74e2c91',
-  './js/pages/notifications.js?v=dev-b74e2c91','./js/pages/musyrif-dashboard.js?v=dev-b74e2c91',
-  './js/pages/review.js?v=dev-b74e2c91','./js/pages/admin-dashboard.js?v=dev-b74e2c91','./js/pages/halaqah.js?v=dev-b74e2c91',
-  './js/pages/whatsapp.js?v=dev-b74e2c91'
+  './js/app.js?v=dev-f4d9f48e','./js/router.js?v=dev-f4d9f48e','./js/store.js?v=dev-f4d9f48e',
+  './js/data/dummy-data.js?v=dev-f4d9f48e','./js/components/app-shell.js?v=dev-f4d9f48e',
+  './js/components/context-switcher.js?v=dev-f4d9f48e','./js/layouts/app-layout.js?v=dev-f4d9f48e',
+  './js/utils/helpers.js?v=dev-f4d9f48e',
+  './js/pages/login.js?v=dev-f4d9f48e','./js/pages/member-dashboard.js?v=dev-f4d9f48e','./js/pages/program.js?v=dev-f4d9f48e',
+  './js/pages/activity.js?v=dev-f4d9f48e','./js/pages/submission.js?v=dev-f4d9f48e','./js/pages/murajaah.js?v=dev-f4d9f48e',
+  './js/pages/notifications.js?v=dev-f4d9f48e','./js/pages/musyrif-dashboard.js?v=dev-f4d9f48e',
+  './js/pages/review.js?v=dev-f4d9f48e','./js/pages/admin-dashboard.js?v=dev-f4d9f48e','./js/pages/halaqah.js?v=dev-f4d9f48e',
+  './js/pages/whatsapp.js?v=dev-f4d9f48e'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

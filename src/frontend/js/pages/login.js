@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=dev-b74e2c91";
+import {setState} from "../store.js?v=dev-f4d9f48e";
 
 function loginForm(method="whatsapp"){
  const whatsapp=method==="whatsapp";
@@ -41,10 +41,45 @@ export function loginPage(){return `<section class="auth">
 
 export function bindLogin(){
  const go=()=>{setState({loggedIn:true,persona:"member"});location.hash="dashboard"};
+ const showOtp=(phone)=>{
+  const form=document.querySelector("#loginForm");
+  if(!form)return;
+  form.innerHTML=`<div class="stack">
+   <div><h3 style="margin-bottom:6px">Masukkan kode OTP</h3><p class="muted" style="margin-bottom:0">Kode OTP demo telah dikirim ke <b>${phone}</b>.</p></div>
+   <div><label class="label">Kode OTP</label><input class="input" id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digit kode OTP"></div>
+   <small class="muted" id="otpMessage">Masukkan 6 digit kode untuk melanjutkan.</small>
+   <button class="btn primary full" id="submitOtpBtn">Verifikasi OTP</button>
+   <div class="row between"><button class="btn" id="changePhoneBtn" type="button">Ganti nomor</button><button class="btn soft" id="resendOtpBtn" type="button">Kirim ulang kode</button></div>
+  </div>`;
+  const otp=document.querySelector("#otpCode");
+  otp?.focus();
+  document.querySelector("#submitOtpBtn")?.addEventListener("click",()=>{
+   const code=otp?.value.trim()||"";
+   const message=document.querySelector("#otpMessage");
+   if(!/^\d{6}$/.test(code)){
+    if(message){message.textContent="Kode OTP harus terdiri dari 6 digit.";message.style.color="var(--danger)";}
+    return;
+   }
+   go();
+  });
+  document.querySelector("#changePhoneBtn")?.addEventListener("click",()=>renderMethod("whatsapp"));
+  document.querySelector("#resendOtpBtn")?.addEventListener("click",()=>{
+   const message=document.querySelector("#otpMessage");
+   if(message){message.textContent="Kode OTP demo berhasil dikirim ulang.";message.style.color="var(--brand)";}
+   otp?.focus();
+  });
+ };
  const bindLoginActions=(method="whatsapp")=>{
   document.querySelector("#authWhatsapp")?.addEventListener("click",()=>renderMethod("whatsapp"));
   document.querySelector("#authUsername")?.addEventListener("click",()=>renderMethod("username"));
-  document.querySelector("#loginBtn")?.addEventListener("click",go);
+  document.querySelector("#loginBtn")?.addEventListener("click",()=>{
+   if(method==="whatsapp"){
+    const phone=document.querySelector("#loginWhatsapp")?.value.trim()||"+62 812 3456 7890";
+    showOtp(phone);
+    return;
+   }
+   go();
+  });
  };
  const renderMethod=(method)=>{
   const form=document.querySelector("#loginForm");

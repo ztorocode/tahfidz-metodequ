@@ -1,8 +1,8 @@
-const CACHE='metodequ-prototype-dev-91c5a7e2';
+const CACHE='metodequ-prototype-dev-43a8d2c1';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=dev-2f08f073','./assets/css/base.css?v=dev-2f08f073','./assets/css/layout.css?v=dev-2f08f073',
-  './assets/css/components.css?v=dev-91c5a7e2','./assets/css/responsive.css?v=dev-14f0c9a2',
+  './assets/css/components.css?v=dev-43a8d2c1','./assets/css/responsive.css?v=dev-14f0c9a2',
   './assets/images/icon.svg?v=7f3a91c2',
   './js/app.js?v=dev-91c5a7e2','./js/router.js?v=dev-91c5a7e2','./js/store.js?v=dev-2f08f073',
   './js/data/dummy-data.js?v=dev-2f08f073','./js/components/app-shell.js?v=dev-6d31f2a4',

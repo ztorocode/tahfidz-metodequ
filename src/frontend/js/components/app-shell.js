@@ -64,12 +64,13 @@ function profileModal(){
 
 export function shell(content){
  const s=getState(),route=location.hash.replace("#","")||"dashboard";
- const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${route===r?"active":""}">${l}</a>`).join("");
+ const navRoute=route==="santri-progress"?"halaqah":route;
+ const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="search muted">Cari halaman, surat, atau menu...</div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
- <nav class="mobile-nav">${navItems().slice(0,5).map(([r,l])=>`<a href="#${r}" class="${route===r?"active":""}">${l}</a>`).join("")}</nav></main>${profileModal()}</div>`;
+ <nav class="mobile-nav">${navItems().slice(0,5).map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("")}</nav></main>${profileModal()}</div>`;
 }
 
 export function bindShell(){

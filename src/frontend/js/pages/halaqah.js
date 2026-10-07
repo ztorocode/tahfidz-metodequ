@@ -116,7 +116,7 @@ function detail(item,isAdmin){
  <div class="card">
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>
   ${item.students.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Setoran pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
-   ${item.students.map(student=>`<tr><td><b>${escapeHtml(student.name)}</b></td><td>${student.mutqin}</td><td>${student.pending}</td><td>${badge(student.status,statusTone(student.status))}</td><td><button class="btn" type="button" data-student-progress="${escapeHtml(student.name)}">Lihat Progress</button></td></tr>`).join("")}
+   ${item.students.map(student=>`<tr><td><b>${escapeHtml(student.name)}</b></td><td>${student.mutqin}</td><td>${student.pending}</td><td>${badge(student.status,statusTone(student.status))}</td><td><button class="btn" type="button" data-student-progress="${escapeHtml(student.name)}" data-halaqah-id="${item.id}">Lihat Progress</button></td></tr>`).join("")}
   </tbody></table></div>`:`<div class="quote">Belum ada santri di halaqah ini. ${isAdmin?"Gunakan invite link untuk mulai menambahkan santri.":""}</div>`}
  </div>`;
 }
@@ -171,7 +171,18 @@ document.addEventListener("click",event=>{
  }
 
  const progress=event.target.closest("[data-student-progress]");
- if(progress)toast(`Membuka progress ${progress.dataset.studentProgress} (demo)`);
+ if(progress){
+  const item=halaqahs().find(row=>row.id===progress.dataset.halaqahId);
+  const student=item?.students.find(row=>row.name===progress.dataset.studentProgress);
+  if(!item||!student)return;
+  setState({selectedStudentProgress:{
+   student:{...student},
+   halaqahId:item.id,
+   halaqahName:item.name,
+   musyrifName:musyrifName(item.musyrifId)
+  }});
+  location.hash="santri-progress";
+ }
 });
 
 document.addEventListener("submit",event=>{

@@ -40,7 +40,7 @@ export function studentProgressPage(){
    <h1>${escapeHtml(student.name)}</h1>
    <p class="muted">${escapeHtml(selected.halaqahName)} · Musyrif: ${escapeHtml(selected.musyrifName)} · ${escapeHtml(student.status||"Aktif")}</p>
   </div>
-  <span class="badge success">${roleLabel} · Monitoring</span>
+  <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><a class="btn primary" href="#tabel-progress">Tabel Progress</a><span class="badge success">${roleLabel} · Monitoring</span></div>
  </div>
 
  <div class="card" style="margin-bottom:16px">

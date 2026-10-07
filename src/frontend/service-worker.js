@@ -1,18 +1,18 @@
-const CACHE='metodequ-prototype-v1';
+const CACHE='metodequ-prototype-dev-f66389a1';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css','./assets/css/base.css','./assets/css/layout.css',
   './assets/css/components.css','./assets/css/responsive.css',
   './assets/images/icon.svg?v=7f3a91c2',
-  './js/app.js','./js/router.js','./js/store.js',
-  './js/data/dummy-data.js','./js/components/app-shell.js',
-  './js/components/context-switcher.js','./js/layouts/app-layout.js',
-  './js/utils/helpers.js',
-  './js/pages/login.js','./js/pages/member-dashboard.js','./js/pages/program.js',
-  './js/pages/activity.js','./js/pages/submission.js','./js/pages/murajaah.js',
-  './js/pages/notifications.js','./js/pages/musyrif-dashboard.js',
-  './js/pages/review.js','./js/pages/admin-dashboard.js','./js/pages/halaqah.js',
-  './js/pages/whatsapp.js'
+  './js/app.js?v=dev-f66389a1','./js/router.js?v=dev-f66389a1','./js/store.js?v=dev-f66389a1',
+  './js/data/dummy-data.js?v=dev-f66389a1','./js/components/app-shell.js?v=dev-f66389a1',
+  './js/components/context-switcher.js?v=dev-f66389a1','./js/layouts/app-layout.js?v=dev-f66389a1',
+  './js/utils/helpers.js?v=dev-f66389a1',
+  './js/pages/login.js?v=dev-f66389a1','./js/pages/member-dashboard.js?v=dev-f66389a1','./js/pages/program.js?v=dev-f66389a1',
+  './js/pages/activity.js?v=dev-f66389a1','./js/pages/submission.js?v=dev-f66389a1','./js/pages/murajaah.js?v=dev-f66389a1',
+  './js/pages/notifications.js?v=dev-f66389a1','./js/pages/musyrif-dashboard.js?v=dev-f66389a1',
+  './js/pages/review.js?v=dev-f66389a1','./js/pages/admin-dashboard.js?v=dev-f66389a1','./js/pages/halaqah.js?v=dev-f66389a1',
+  './js/pages/whatsapp.js?v=dev-f66389a1'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

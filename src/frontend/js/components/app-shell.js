@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js";
-import {contextSwitcher,bindContext} from "./context-switcher.js";
+import {getState,setState} from "../store.js?v=dev-f66389a1";
+import {contextSwitcher,bindContext} from "./context-switcher.js?v=dev-f66389a1";
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Santri / Halaqah"],["notifications","Notifikasi"]];
 const adminNav=[["admin","Dashboard"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];

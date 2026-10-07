@@ -1,4 +1,4 @@
-import {setState} from "../store.js";
+import {setState} from "../store.js?v=dev-f66389a1";
 export function loginPage(){return `<section class="auth">
 <div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>

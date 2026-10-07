@@ -1,16 +1,16 @@
-import {getState} from "./store.js?v=dev-f66389a1";
-import {loginPage} from "./pages/login.js?v=dev-f66389a1";
-import {memberDashboard} from "./pages/member-dashboard.js?v=dev-f66389a1";
-import {programPage} from "./pages/program.js?v=dev-f66389a1";
-import {activityPage} from "./pages/activity.js?v=dev-f66389a1";
-import {submissionPage} from "./pages/submission.js?v=dev-f66389a1";
-import {murajaahPage} from "./pages/murajaah.js?v=dev-f66389a1";
-import {notificationsPage} from "./pages/notifications.js?v=dev-f66389a1";
-import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=dev-f66389a1";
-import {reviewPage} from "./pages/review.js?v=dev-f66389a1";
-import {adminDashboard} from "./pages/admin-dashboard.js?v=dev-f66389a1";
-import {halaqahPage} from "./pages/halaqah.js?v=dev-f66389a1";
-import {whatsappPage} from "./pages/whatsapp.js?v=dev-f66389a1";
+import {getState} from "./store.js?v=dev-b74e2c91";
+import {loginPage} from "./pages/login.js?v=dev-b74e2c91";
+import {memberDashboard} from "./pages/member-dashboard.js?v=dev-b74e2c91";
+import {programPage} from "./pages/program.js?v=dev-b74e2c91";
+import {activityPage} from "./pages/activity.js?v=dev-b74e2c91";
+import {submissionPage} from "./pages/submission.js?v=dev-b74e2c91";
+import {murajaahPage} from "./pages/murajaah.js?v=dev-b74e2c91";
+import {notificationsPage} from "./pages/notifications.js?v=dev-b74e2c91";
+import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=dev-b74e2c91";
+import {reviewPage} from "./pages/review.js?v=dev-b74e2c91";
+import {adminDashboard} from "./pages/admin-dashboard.js?v=dev-b74e2c91";
+import {halaqahPage} from "./pages/halaqah.js?v=dev-b74e2c91";
+import {whatsappPage} from "./pages/whatsapp.js?v=dev-b74e2c91";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,

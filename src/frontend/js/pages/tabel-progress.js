@@ -59,7 +59,7 @@ export function progressTablePage(){
       <th colspan="25" class="progress-group-new">Hafalan baru</th>
      </tr>
      <tr>
-      <th rowspan="2">Muraja'ah<br>(1x)</th>
+      <th>Muraja'ah<br>(1x)</th>
       <th colspan="2">Rabth (1x)</th>
       <th colspan="5">Hafalan kemarin</th>
       <th colspan="3">Istima' Qari<br>mujawwad</th>

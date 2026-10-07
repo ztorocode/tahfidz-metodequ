@@ -1,1 +1,12 @@
-²ø1šYì
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MetodeQu">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#22c986"/>
+      <stop offset="1" stop-color="#e6b93c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#071b14"/>
+  <circle cx="256" cy="256" r="156" fill="url(#g)"/>
+  <circle cx="256" cy="256" r="94" fill="#071b14"/>
+  <path d="M256 176l25 47 52 8-38 36 9 51-48-25-48 25 9-51-38-36 52-8 25-47Z" fill="url(#g)"/>
+</svg>

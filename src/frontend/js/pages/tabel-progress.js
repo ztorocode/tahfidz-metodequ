@@ -1,4 +1,5 @@
-import {getState} from "../store.js?v=dev-2f08f073";
+import {getState} from "../store.js?v=dev-6d31f2a4";
+import {member,progress} from "../data/dummy-data.js?v=dev-6d31f2a4";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -13,9 +14,15 @@ function weekRows(){
 
 export function progressTablePage(){
  const state=getState();
- const selected=state.selectedStudentProgress;
+ const isMember=state.persona==="member";
+ const isReport=location.hash.replace(/^#/,"")==="report";
+ const selected=isMember?{
+  student:{name:member.name,mutqin:progress.mutqin,pending:1,status:"Aktif"},
+  halaqahName:member.halaqah,
+  musyrifName:member.musyrif
+ }:state.selectedStudentProgress;
 
- if(state.context!=="pondok"){
+ if(!isMember&&state.context!=="pondok"){
   return `<div class="card"><p class="eyebrow">Tabel Progress</p><h2>Aktifkan konteks Pondok</h2><p class="muted">Tabel progress santri hanya tersedia pada konteks Pondok.</p><a class="btn" href="#halaqah">Kembali ke Halaqah</a></div>`;
  }
 
@@ -24,13 +31,14 @@ export function progressTablePage(){
  }
 
  const student=selected.student;
- const pondok=state.pondokProfile?.name||"Pondok Al-Furqan";
+ const pondok=isMember?member.pondok:(state.pondokProfile?.name||"Pondok Al-Furqan");
+ const pageTitle=isReport?"Report":"Tabel Progress";
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
-   <a class="btn" href="#santri-progress" style="display:inline-flex;margin-bottom:12px">← Kembali ke Progress Santri</a>
-   <p class="eyebrow">Pondok / Halaqah / Tabel Progress</p>
-   <h1>Tabel Progress</h1>
+   <a class="btn" href="${isMember?"#progress":"#santri-progress"}" style="display:inline-flex;margin-bottom:12px">← Kembali ke ${isMember?"Progress":"Progress Santri"}</a>
+   <p class="eyebrow">${isMember?"Santri / Report":"Pondok / Halaqah / Tabel Progress"}</p>
+   <h1>${pageTitle}</h1>
    <p class="muted">${escapeHtml(student.name)} · ${escapeHtml(selected.halaqahName)} · ${escapeHtml(pondok)}</p>
   </div>
   <span class="badge success">Program Juz 30</span>

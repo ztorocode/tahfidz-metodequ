@@ -1,7 +1,7 @@
 import {getState,setState} from "../store.js?v=dev-2f08f073";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
-const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Santri / Halaqah"],["notifications","Notifikasi"]];
+const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
 const adminNav=[["admin","Dashboard"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
 
 const demoAccounts={

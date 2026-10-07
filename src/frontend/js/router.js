@@ -9,7 +9,7 @@ import {notificationsPage} from "./pages/notifications.js?v=dev-2f08f073";
 import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=dev-2f08f073";
 import {reviewPage} from "./pages/review.js?v=dev-2f08f073";
 import {adminDashboard} from "./pages/admin-dashboard.js?v=dev-2f08f073";
-import {halaqahPage} from "./pages/halaqah.js?v=dev-2f08f073";
+import {halaqahPage} from "./pages/halaqah.js?v=dev-cf4d83a1";
 import {whatsappPage} from "./pages/whatsapp.js?v=dev-2f08f073";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,

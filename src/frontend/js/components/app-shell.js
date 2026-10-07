@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=dev-02eb6290";
-import {contextSwitcher,bindContext} from "./context-switcher.js?v=dev-02eb6290";
+import {getState,setState} from "../store.js?v=dev-2f08f073";
+import {contextSwitcher,bindContext} from "./context-switcher.js?v=dev-2f08f073";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Santri / Halaqah"],["notifications","Notifikasi"]];
@@ -12,8 +12,9 @@ const demoAccounts={
 };
 
 function navItems(){
- const p=getState().persona;
- return p==="admin"?adminNav:p==="musyrif"?musyrifNav:memberNav;
+ const s=getState();
+ if(s.context==="personal")return memberNav;
+ return s.persona==="admin"?adminNav:s.persona==="musyrif"?musyrifNav:memberNav;
 }
 
 function currentAccount(){
@@ -37,7 +38,9 @@ function accountMenu(){
    <button class="account-action" id="editProfileBtn" type="button">Edit Profil</button>
    <button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
    <div class="account-switcher hidden" id="accountSwitcher">
-    ${Object.entries(demoAccounts).map(([persona,item])=>`<button class="account-choice ${getState().persona===persona?"active":""}" data-switch-persona="${persona}" type="button"><span class="avatar">${item.initials}</span><span><b>${item.role}</b><small class="muted" style="display:block">${item.email}</small></span></button>`).join("")}
+    <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
+    <button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>
+    <button class="account-choice ${getState().context==="pondok"?"active":""}" data-switch-context="pondok" type="button"><span class="avatar">P</span><span><b>${getState().pondokProfile?.name||"Pondok Al-Furqan"}</b><small class="muted" style="display:block">Konteks pondok</small></span></button>
    </div>
    <button class="account-action danger-text" id="logoutTopBtn" type="button">Logout</button>
   </div>
@@ -94,10 +97,14 @@ export function bindShell(){
   document.querySelector("#accountSwitcher")?.classList.toggle("hidden");
  });
 
- document.querySelectorAll("[data-switch-persona]").forEach(button=>button.addEventListener("click",()=>{
-  const persona=button.dataset.switchPersona;
-  setState({persona,context:"personal"});
-  location.hash=persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
+ document.querySelectorAll("[data-switch-context]").forEach(button=>button.addEventListener("click",()=>{
+  const context=button.dataset.switchContext;
+  const persona=getState().persona;
+  setState({context});
+  menu?.classList.add("hidden");
+  if(context==="personal")location.hash="dashboard";
+  else location.hash=persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
+  window.dispatchEvent(new Event("app:render"));
  }));
 
  const modal=document.querySelector("#profileModal");

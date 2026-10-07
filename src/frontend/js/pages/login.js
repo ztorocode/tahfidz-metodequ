@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=dev-7b1cd085";
+import {setState} from "../store.js?v=dev-02eb6290";
 
 const demoAccounts=[
  {role:"Member",persona:"member",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -40,10 +40,15 @@ function loginForm(method="whatsapp"){
  <button class="btn primary full" id="loginBtn">${whatsapp?"Kirim kode OTP":"Masuk"}</button>`;
 }
 
-function registerForm(){
- return `<div><h1>Buat Akun MetodeQu</h1><p class="muted">Daftar sebagai member personal. Username dibuat otomatis dari bagian email sebelum tanda @.</p></div>
- <div class="stack">
-  <div><label class="label">Nama lengkap</label><input class="input" id="registerName" value="Ahmad Fauzi"></div>
+function registerForm(mode="personal"){
+ const pondok=mode==="pondok";
+ return `<div><h1>Buat Akun MetodeQu</h1><p class="muted">${pondok?"Daftarkan akun pengelola sekaligus pondok atau lembaga tahfidz.":"Daftar untuk menggunakan MetodeQu secara personal."} Username dibuat otomatis dari bagian email sebelum tanda @.</p></div>
+ <div class="segmented">
+  <button id="registerPersonal" class="${pondok?"":"active"}" type="button">Personal</button>
+  <button id="registerPondok" class="${pondok?"active":""}" type="button">Pondok</button>
+ </div>
+ <div class="stack" id="registerFields">
+  <div><label class="label">${pondok?"Nama pengelola":"Nama lengkap"}</label><input class="input" id="registerName" value="Ahmad Fauzi"></div>
   <div>
    <label class="label">Email</label>
    <input class="input" id="registerEmail" type="email" autocomplete="email" value="ahmad.fauzi@example.com">
@@ -51,9 +56,12 @@ function registerForm(){
   </div>
   <div><label class="label">Nomor WhatsApp</label><input class="input" id="registerWhatsapp" inputmode="tel" value="+62 812 3456 7890"></div>
   <div><label class="label">Password</label><input class="input" id="registerPassword" type="password" autocomplete="new-password" value="metodequ123"></div>
+  ${pondok?`<div><label class="label">Nama Pondok / Lembaga</label><input class="input" id="registerPondokName" value="Pondok Tahfidz Al-Ikhlas"></div>
+  <div><label class="label">Alamat Pondok</label><input class="input" id="registerPondokAddress" value="Bantul, Yogyakarta"></div>
+  <div><label class="label">Nomor WhatsApp Pondok <span class="muted">(opsional)</span></label><input class="input" id="registerPondokWhatsapp" inputmode="tel" placeholder="+62 ..."></div>`:""}
  </div>
  <small class="muted" id="registerMessage"></small>
- <button class="btn primary full" id="registerBtn">Daftar</button>
+ <button class="btn primary full" id="registerBtn">${pondok?"Daftar Pondok":"Daftar Personal"}</button>
  <small class="muted" style="text-align:center">Sudah punya akun? <a href="#" id="backToLogin" style="color:var(--brand);font-weight:800">Masuk</a></small>`;
 }
 
@@ -71,8 +79,8 @@ export function loginPage(){return `<section class="auth">
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
 
 export function bindLogin(){
- const go=(persona="member")=>{
-  setState({loggedIn:true,persona,context:"personal"});
+ const go=(persona="member",context="personal",extra={})=>{
+  setState({loggedIn:true,persona,context,...extra});
   location.hash=persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
  };
 
@@ -150,11 +158,7 @@ export function bindLogin(){
   });
  };
 
- const showRegister=(event)=>{
-  event?.preventDefault();
-  const card=document.querySelector("#authCard");
-  if(!card)return;
-  card.innerHTML=registerForm();
+ const bindRegister=(mode="personal")=>{
   const email=document.querySelector("#registerEmail");
   const preview=document.querySelector("#usernamePreview");
   const updatePreview=()=>{
@@ -163,10 +167,20 @@ export function bindLogin(){
    if(preview)preview.innerHTML=username?`Username otomatis: <b>${username}</b>`:"Username otomatis akan dibuat dari email.";
   };
   email?.addEventListener("input",updatePreview);
+  document.querySelector("#registerPersonal")?.addEventListener("click",()=>renderRegister("personal"));
+  document.querySelector("#registerPondok")?.addEventListener("click",()=>renderRegister("pondok"));
+  document.querySelector("#backToLogin")?.addEventListener("click",showLogin);
   document.querySelector("#registerBtn")?.addEventListener("click",()=>{
+   const name=document.querySelector("#registerName")?.value.trim()||"";
    const value=(email?.value||"").trim();
+   const phone=document.querySelector("#registerWhatsapp")?.value.trim()||"";
    const password=document.querySelector("#registerPassword")?.value||"";
    const message=document.querySelector("#registerMessage");
+   const username=value.includes("@")?value.split("@")[0]:"";
+   if(!name||!phone){
+    if(message){message.textContent="Nama dan nomor WhatsApp wajib diisi.";message.style.color="var(--danger)";}
+    return;
+   }
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)){
     if(message){message.textContent="Masukkan email yang valid.";message.style.color="var(--danger)";}
     return;
@@ -175,9 +189,34 @@ export function bindLogin(){
     if(message){message.textContent="Password minimal 6 karakter.";message.style.color="var(--danger)";}
     return;
    }
-   go("member");
+   const profileOverrides={};
+   if(mode==="pondok"){
+    const pondokName=document.querySelector("#registerPondokName")?.value.trim()||"";
+    const address=document.querySelector("#registerPondokAddress")?.value.trim()||"";
+    const pondokPhone=document.querySelector("#registerPondokWhatsapp")?.value.trim()||"";
+    if(!pondokName||!address){
+     if(message){message.textContent="Nama dan alamat pondok wajib diisi.";message.style.color="var(--danger)";}
+     return;
+    }
+    profileOverrides.admin={name,email:value,phone};
+    go("admin","pondok",{registeredUsername:username,profileOverrides,pondokProfile:{name:pondokName,address,phone:pondokPhone}});
+    return;
+   }
+   profileOverrides.member={name,email:value,phone};
+   go("member","personal",{registeredUsername:username,profileOverrides});
   });
-  document.querySelector("#backToLogin")?.addEventListener("click",showLogin);
+ };
+
+ const renderRegister=(mode)=>{
+  const card=document.querySelector("#authCard");
+  if(!card)return;
+  card.innerHTML=registerForm(mode);
+  bindRegister(mode);
+ };
+
+ const showRegister=(event)=>{
+  event?.preventDefault();
+  renderRegister("personal");
  };
 
  const showLogin=(event)=>{

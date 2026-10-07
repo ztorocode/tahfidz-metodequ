@@ -1,18 +1,18 @@
-const CACHE='metodequ-prototype-dev-7b1cd085';
+const CACHE='metodequ-prototype-dev-02eb6290';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './assets/css/variables.css?v=dev-7b1cd085','./assets/css/base.css?v=dev-7b1cd085','./assets/css/layout.css?v=dev-7b1cd085',
-  './assets/css/components.css?v=dev-7b1cd085','./assets/css/responsive.css?v=dev-7b1cd085',
+  './assets/css/variables.css?v=dev-02eb6290','./assets/css/base.css?v=dev-02eb6290','./assets/css/layout.css?v=dev-02eb6290',
+  './assets/css/components.css?v=dev-02eb6290','./assets/css/responsive.css?v=dev-02eb6290',
   './assets/images/icon.svg?v=7f3a91c2',
-  './js/app.js?v=dev-7b1cd085','./js/router.js?v=dev-7b1cd085','./js/store.js?v=dev-7b1cd085',
-  './js/data/dummy-data.js?v=dev-7b1cd085','./js/components/app-shell.js?v=dev-7b1cd085',
-  './js/components/context-switcher.js?v=dev-7b1cd085','./js/layouts/app-layout.js?v=dev-7b1cd085',
-  './js/utils/helpers.js?v=dev-7b1cd085',
-  './js/pages/login.js?v=dev-7b1cd085','./js/pages/member-dashboard.js?v=dev-7b1cd085','./js/pages/program.js?v=dev-7b1cd085',
-  './js/pages/activity.js?v=dev-7b1cd085','./js/pages/submission.js?v=dev-7b1cd085','./js/pages/murajaah.js?v=dev-7b1cd085',
-  './js/pages/notifications.js?v=dev-7b1cd085','./js/pages/musyrif-dashboard.js?v=dev-7b1cd085',
-  './js/pages/review.js?v=dev-7b1cd085','./js/pages/admin-dashboard.js?v=dev-7b1cd085','./js/pages/halaqah.js?v=dev-7b1cd085',
-  './js/pages/whatsapp.js?v=dev-7b1cd085'
+  './js/app.js?v=dev-02eb6290','./js/router.js?v=dev-02eb6290','./js/store.js?v=dev-02eb6290',
+  './js/data/dummy-data.js?v=dev-02eb6290','./js/components/app-shell.js?v=dev-02eb6290',
+  './js/components/context-switcher.js?v=dev-02eb6290','./js/layouts/app-layout.js?v=dev-02eb6290',
+  './js/utils/helpers.js?v=dev-02eb6290',
+  './js/pages/login.js?v=dev-02eb6290','./js/pages/member-dashboard.js?v=dev-02eb6290','./js/pages/program.js?v=dev-02eb6290',
+  './js/pages/activity.js?v=dev-02eb6290','./js/pages/submission.js?v=dev-02eb6290','./js/pages/murajaah.js?v=dev-02eb6290',
+  './js/pages/notifications.js?v=dev-02eb6290','./js/pages/musyrif-dashboard.js?v=dev-02eb6290',
+  './js/pages/review.js?v=dev-02eb6290','./js/pages/admin-dashboard.js?v=dev-02eb6290','./js/pages/halaqah.js?v=dev-02eb6290',
+  './js/pages/whatsapp.js?v=dev-02eb6290'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

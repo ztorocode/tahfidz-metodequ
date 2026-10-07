@@ -1,4 +1,4 @@
-import {whatsappHistory} from "../data/dummy-data.js?v=dev-7b1cd085";import {badge} from "../utils/helpers.js?v=dev-7b1cd085";
+import {whatsappHistory} from "../data/dummy-data.js?v=dev-02eb6290";import {badge} from "../utils/helpers.js?v=dev-02eb6290";
 export function whatsappPage(){return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">WhatsApp</p><h1>Riwayat Pengiriman</h1><p class="muted">Sender Pondok Al-Furqan · +62 812-xxxx-7890</p></div><span class="badge success">Connected</span></div>
 <div class="tabs" style="margin-bottom:14px"><button class="tab">Pengaturan</button><button class="tab">Template Pesan</button><button class="tab active">Riwayat Pengiriman</button></div>
 <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Waktu</th><th>Tipe pesan</th><th>Penerima</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${whatsappHistory.map(x=>`<tr><td>${x.time}</td><td><b>${x.type}</b></td><td>${x.to}</td><td>${badge(x.status,x.status==="SENT"?"success":"danger")}</td><td>${x.status==="FAILED"?'<button class="btn soft" data-resend>Resend</button>':""}</td></tr>`).join("")}</tbody></table></div></div>`}

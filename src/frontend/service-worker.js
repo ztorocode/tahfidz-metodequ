@@ -1,18 +1,18 @@
-const CACHE='metodequ-prototype-dev-d613201b';
+const CACHE='metodequ-prototype-dev-7b1cd085';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './assets/css/variables.css','./assets/css/base.css','./assets/css/layout.css',
-  './assets/css/components.css','./assets/css/responsive.css',
+  './assets/css/variables.css?v=dev-7b1cd085','./assets/css/base.css?v=dev-7b1cd085','./assets/css/layout.css?v=dev-7b1cd085',
+  './assets/css/components.css?v=dev-7b1cd085','./assets/css/responsive.css?v=dev-7b1cd085',
   './assets/images/icon.svg?v=7f3a91c2',
-  './js/app.js?v=dev-d613201b','./js/router.js?v=dev-d613201b','./js/store.js?v=dev-d613201b',
-  './js/data/dummy-data.js?v=dev-d613201b','./js/components/app-shell.js?v=dev-d613201b',
-  './js/components/context-switcher.js?v=dev-d613201b','./js/layouts/app-layout.js?v=dev-d613201b',
-  './js/utils/helpers.js?v=dev-d613201b',
-  './js/pages/login.js?v=dev-d613201b','./js/pages/member-dashboard.js?v=dev-d613201b','./js/pages/program.js?v=dev-d613201b',
-  './js/pages/activity.js?v=dev-d613201b','./js/pages/submission.js?v=dev-d613201b','./js/pages/murajaah.js?v=dev-d613201b',
-  './js/pages/notifications.js?v=dev-d613201b','./js/pages/musyrif-dashboard.js?v=dev-d613201b',
-  './js/pages/review.js?v=dev-d613201b','./js/pages/admin-dashboard.js?v=dev-d613201b','./js/pages/halaqah.js?v=dev-d613201b',
-  './js/pages/whatsapp.js?v=dev-d613201b'
+  './js/app.js?v=dev-7b1cd085','./js/router.js?v=dev-7b1cd085','./js/store.js?v=dev-7b1cd085',
+  './js/data/dummy-data.js?v=dev-7b1cd085','./js/components/app-shell.js?v=dev-7b1cd085',
+  './js/components/context-switcher.js?v=dev-7b1cd085','./js/layouts/app-layout.js?v=dev-7b1cd085',
+  './js/utils/helpers.js?v=dev-7b1cd085',
+  './js/pages/login.js?v=dev-7b1cd085','./js/pages/member-dashboard.js?v=dev-7b1cd085','./js/pages/program.js?v=dev-7b1cd085',
+  './js/pages/activity.js?v=dev-7b1cd085','./js/pages/submission.js?v=dev-7b1cd085','./js/pages/murajaah.js?v=dev-7b1cd085',
+  './js/pages/notifications.js?v=dev-7b1cd085','./js/pages/musyrif-dashboard.js?v=dev-7b1cd085',
+  './js/pages/review.js?v=dev-7b1cd085','./js/pages/admin-dashboard.js?v=dev-7b1cd085','./js/pages/halaqah.js?v=dev-7b1cd085',
+  './js/pages/whatsapp.js?v=dev-7b1cd085'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

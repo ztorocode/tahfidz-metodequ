@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=dev-d613201b";
+import {setState} from "../store.js?v=dev-7b1cd085";
 
 const demoAccounts=[
  {role:"Member",persona:"member",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},

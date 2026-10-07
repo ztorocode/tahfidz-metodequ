@@ -1,6 +1,6 @@
-import {getState} from "../store.js?v=dev-2f08f073";
-import {programPages,murajaah,daily} from "../data/dummy-data.js?v=dev-2f08f073";
-import {badge,statusTone} from "../utils/helpers.js?v=dev-2f08f073";
+import {getState} from "../store.js?v=dev-6d31f2a4";
+import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=dev-6d31f2a4";
+import {badge,statusTone} from "../utils/helpers.js?v=dev-6d31f2a4";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -14,9 +14,14 @@ const setoranHistory=[
 
 export function studentProgressPage(){
  const state=getState();
- const selected=state.selectedStudentProgress;
+ const isMember=state.persona==="member";
+ const selected=isMember?{
+  student:{name:member.name,mutqin:progress.mutqin,pending:1,status:"Aktif"},
+  halaqahName:member.halaqah,
+  musyrifName:member.musyrif
+ }:state.selectedStudentProgress;
 
- if(state.context!=="pondok"){
+ if(!isMember&&state.context!=="pondok"){
   return `<div class="card"><p class="eyebrow">Progress Santri</p><h2>Aktifkan konteks Pondok</h2><p class="muted">Detail progress santri hanya tersedia pada konteks Pondok.</p><a class="btn" href="#halaqah">Kembali ke Halaqah</a></div>`;
  }
 
@@ -31,16 +36,16 @@ export function studentProgressPage(){
  const memorized=submitted+6;
  const strengthen=3;
  const repeat=2;
- const roleLabel=state.persona==="musyrif"?"Musyrif":"Admin Pondok";
+ const roleLabel=isMember?"Santri":state.persona==="musyrif"?"Musyrif":"Admin Pondok";
 
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
   <div>
-   <a class="btn" href="#halaqah" style="display:inline-flex;margin-bottom:12px">← Kembali ke Halaqah</a>
-   <p class="eyebrow">Pondok / Halaqah / Progress Santri</p>
+   ${isMember?"":`<a class="btn" href="#halaqah" style="display:inline-flex;margin-bottom:12px">← Kembali ke Halaqah</a>`}
+   <p class="eyebrow">${isMember?"Progress Saya":"Pondok / Halaqah / Progress Santri"}</p>
    <h1>${escapeHtml(student.name)}</h1>
    <p class="muted">${escapeHtml(selected.halaqahName)} · Musyrif: ${escapeHtml(selected.musyrifName)} · ${escapeHtml(student.status||"Aktif")}</p>
   </div>
-  <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><a class="btn primary" href="#tabel-progress">Tabel Progress</a><span class="badge success">${roleLabel} · Monitoring</span></div>
+  <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><a class="btn primary" href="${isMember?"#report":"#tabel-progress"}">${isMember?"Report":"Tabel Progress"}</a><span class="badge success">${roleLabel} · Monitoring</span></div>
  </div>
 
  <div class="card" style="margin-bottom:16px">

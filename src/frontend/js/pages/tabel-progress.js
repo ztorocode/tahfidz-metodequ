@@ -1,5 +1,6 @@
 import {getState} from "../store.js?v=dev-6d31f2a4";
 import {member,progress} from "../data/dummy-data.js?v=dev-6d31f2a4";
+import {getProgressContext} from "../utils/progress-context.js?v=dev-58f27b9c";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -8,12 +9,12 @@ function escapeHtml(value=""){
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const blankCells=count=>Array.from({length:count},()=>"<td></td>").join("");
 
-function memberField(state,week,day,id){
- return state.memberProgressFields?.[week+":"+day+":"+id]||"";
+function memberField(data,week,day,id){
+ return data.fields?.[week+":"+day+":"+id]||"";
 }
 
-function memberStep(state,week,day,id){
- return Boolean(state.memberProgressChecks?.[week+":"+day+":"+id]);
+function memberStep(data,week,day,id){
+ return Boolean(data.checks?.[week+":"+day+":"+id]);
 }
 
 function valueCell(value){
@@ -25,13 +26,13 @@ function checkCell(done){
  return `<td>${done?"✓":""}</td>`;
 }
 
-function memberReportCells(state,week,day){
+function memberReportCells(data,week,day){
  const cells=[
   "",
-  memberField(state,week,day,"target"),
-  memberField(state,week,day,"murajaah"),
-  memberField(state,week,day,"rabth-awal"),
-  memberField(state,week,day,"rabth-akhir")
+  memberField(data,week,day,"target"),
+  memberField(data,week,day,"murajaah"),
+  memberField(data,week,day,"rabth-awal"),
+  memberField(data,week,day,"rabth-akhir")
  ];
  const html=[
   valueCell(cells[0]),
@@ -40,18 +41,18 @@ function memberReportCells(state,week,day){
   valueCell(cells[3]),
   valueCell(cells[4])
  ];
- for(let i=1;i<=5;i++)html.push(checkCell(memberStep(state,week,day,"kemarin-"+i)));
- for(let i=1;i<=3;i++)html.push(checkCell(memberStep(state,week,day,"istima-"+i)));
- html.push(checkCell(memberStep(state,week,day,"menghafal")));
- html.push(checkCell(memberStep(state,week,day,"merekam")));
- for(let i=1;i<=25;i++)html.push(checkCell(memberStep(state,week,day,"tikrar-"+i)));
+ for(let i=1;i<=5;i++)html.push(checkCell(memberStep(data,week,day,"kemarin-"+i)));
+ for(let i=1;i<=3;i++)html.push(checkCell(memberStep(data,week,day,"istima-"+i)));
+ html.push(checkCell(memberStep(data,week,day,"menghafal")));
+ html.push(checkCell(memberStep(data,week,day,"merekam")));
+ for(let i=1;i<=25;i++)html.push(checkCell(memberStep(data,week,day,"tikrar-"+i)));
  return html.join("");
 }
 
-function weekRows(state,isMember){
+function weekRows(data,isMember){
  return Array.from({length:5},(_,index)=>{
   const week=index+1;
-  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${isMember?memberReportCells(state,week,day):blankCells(40)}</tr>`).join("");
+  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${isMember?memberReportCells(data,week,day):blankCells(40)}</tr>`).join("");
   return rows+'<tr class="progress-friday"><td colspan="41">jum\'at</td></tr>';
  }).join("");
 }
@@ -59,11 +60,12 @@ function weekRows(state,isMember){
 export function progressTablePage(){
  const state=getState();
  const isMember=state.persona==="member";
+ const progressData=isMember?getProgressContext(state):null;
  const isReport=location.hash.replace(/^#/,"")==="report";
  const selected=isMember?{
   student:{name:member.name,mutqin:progress.mutqin,pending:1,status:"Aktif"},
-  halaqahName:member.halaqah,
-  musyrifName:member.musyrif
+  halaqahName:state.context==="pondok"?member.halaqah:"Personal",
+  musyrifName:state.context==="pondok"?member.musyrif:"-"
  }:state.selectedStudentProgress;
 
  if(!isMember&&state.context!=="pondok"){
@@ -75,7 +77,7 @@ export function progressTablePage(){
  }
 
  const student=selected.student;
- const pondok=isMember?member.pondok:(state.pondokProfile?.name||"Pondok Al-Furqan");
+ const pondok=isMember?(state.context==="pondok"?member.pondok:"Hafalan pribadi"):(state.pondokProfile?.name||"Pondok Al-Furqan");
  const pageTitle=isReport?"Report":"Tabel Progress";
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
@@ -131,7 +133,7 @@ export function progressTablePage(){
       ${Array.from({length:25},(_,i)=>`<th>${i+1}x</th>`).join("")}
      </tr>
     </thead>
-    <tbody>${weekRows(state,isMember)}</tbody>
+    <tbody>${weekRows(progressData,isMember)}</tbody>
    </table>
   </div>
  </div>`;

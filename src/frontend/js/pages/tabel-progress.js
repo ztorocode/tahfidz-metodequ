@@ -8,8 +8,52 @@ function escapeHtml(value=""){
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const blankCells=count=>Array.from({length:count},()=>"<td></td>").join("");
 
-function weekRows(){
- return Array.from({length:5},(_,week)=>`${days.map(day=>`<tr><td class="progress-day">${day}</td>${blankCells(40)}</tr>`).join("")}<tr class="progress-friday"><td colspan="41">jum'at</td></tr>`).join("");
+function memberField(state,week,day,id){
+ return state.memberProgressFields?.[week+":"+day+":"+id]||"";
+}
+
+function memberStep(state,week,day,id){
+ return Boolean(state.memberProgressChecks?.[week+":"+day+":"+id]);
+}
+
+function valueCell(value){
+ const text=String(value??"").trim();
+ return `<td>${text?escapeHtml(text):""}</td>`;
+}
+
+function checkCell(done){
+ return `<td>${done?"✓":""}</td>`;
+}
+
+function memberReportCells(state,week,day){
+ const cells=[
+  "",
+  memberField(state,week,day,"target"),
+  memberField(state,week,day,"murajaah"),
+  memberField(state,week,day,"rabth-awal"),
+  memberField(state,week,day,"rabth-akhir")
+ ];
+ const html=[
+  valueCell(cells[0]),
+  valueCell(cells[1]),
+  valueCell(cells[2]),
+  valueCell(cells[3]),
+  valueCell(cells[4])
+ ];
+ for(let i=1;i<=5;i++)html.push(checkCell(memberStep(state,week,day,"kemarin-"+i)));
+ for(let i=1;i<=3;i++)html.push(checkCell(memberStep(state,week,day,"istima-"+i)));
+ html.push(checkCell(memberStep(state,week,day,"menghafal")));
+ html.push(checkCell(memberStep(state,week,day,"merekam")));
+ for(let i=1;i<=25;i++)html.push(checkCell(memberStep(state,week,day,"tikrar-"+i)));
+ return html.join("");
+}
+
+function weekRows(state,isMember){
+ return Array.from({length:5},(_,index)=>{
+  const week=index+1;
+  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${isMember?memberReportCells(state,week,day):blankCells(40)}</tr>`).join("");
+  return rows+'<tr class="progress-friday"><td colspan="41">jum\'at</td></tr>';
+ }).join("");
 }
 
 export function progressTablePage(){
@@ -87,7 +131,7 @@ export function progressTablePage(){
       ${Array.from({length:25},(_,i)=>`<th>${i+1}x</th>`).join("")}
      </tr>
     </thead>
-    <tbody>${weekRows()}</tbody>
+    <tbody>${weekRows(state,isMember)}</tbody>
    </table>
   </div>
  </div>`;

@@ -3,16 +3,19 @@ import {getState,setState} from "../store.js?v=dev-b3f742d1";
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
 const adminNav=[["admin","Dashboard"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
+const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Musyrif Platform"],["platform-settings","Pengaturan"]];
 const memberMobileNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 
 const demoAccounts={
  member:{name:"Ahmad Fauzi",role:"Member",email:"member@metodequ.id",phone:"+62 812 3456 7890",initials:"AF"},
  musyrif:{name:"Ust. Rahmat Hidayat",role:"Musyrif",email:"musyrif@metodequ.id",phone:"+62 813 4567 8901",initials:"RH"},
- admin:{name:"Admin Pondok",role:"Admin",email:"admin@metodequ.id",phone:"+62 811 2345 6789",initials:"AP"}
+ admin:{name:"Admin Pondok",role:"Admin Pondok",email:"admin@metodequ.id",phone:"+62 811 2345 6789",initials:"AP"},
+ super_admin:{name:"Super Admin",role:"Super Admin",email:"superadmin@metodequ.id",phone:"+62 815 0000 0001",initials:"SA"}
 };
 
 function navItems(){
  const s=getState();
+ if(s.persona==="super_admin")return superAdminNav;
  if(s.context==="personal")return memberNav;
  return s.persona==="admin"?adminNav:s.persona==="musyrif"?musyrifNav:memberNav;
 }
@@ -32,7 +35,11 @@ function mobileIcon(route){
   whatsapp:`<svg ${common}><path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.4-4.1A8 8 0 1 1 20 11.5Z"/><path d="M9 8.5c.5 2.7 2.3 4.5 5 5l1.2-1.2"/></svg>`,
   progress:`<svg ${common}><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/></svg>`,
   report:`<svg ${common}><path d="M5 3h10l4 4v14H5z"/><path d="M14 3v5h5"/><path d="M8 12h8M8 16h8"/></svg>`,
-  notifications:`<svg ${common}><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></svg>`
+  notifications:`<svg ${common}><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></svg>`,
+  users:`<svg ${common}><circle cx="9" cy="8" r="3"/><path d="M3.5 20v-1.5A5.5 5.5 0 0 1 9 13h1a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="M16 7h5M18.5 4.5v5"/></svg>`,
+  pondoks:`<svg ${common}><path d="M3 20h18"/><path d="M5 20V9l7-5 7 5v11"/><path d="M9 20v-6h6v6"/></svg>`,
+  "platform-musyrif":`<svg ${common}><circle cx="9" cy="7" r="3"/><path d="M3.5 20v-1.5A5.5 5.5 0 0 1 9 13h1a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="m16 10 2 2 3-4"/></svg>`,
+  "platform-settings":`<svg ${common}><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a6 6 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a6 6 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a6 6 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a6 6 0 0 0-.7 1.7L0 10.5v3l2.3.7a6 6 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a6 6 0 0 0 1.7.7l.7 2.3h3l.7-2.3a6 6 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a6 6 0 0 0 .7-1.7z"/></svg>`
  };
  return icons[route]||icons.dashboard;
 }
@@ -60,12 +67,12 @@ function accountMenu(){
     <div class="grow"><b>${account.name}</b><small class="muted" style="display:block">${account.role} · ${account.email}</small></div>
    </div>
    <button class="account-action" id="editProfileBtn" type="button">Edit Profil</button>
-   <button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
+   ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
     <button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>
     <button class="account-choice ${getState().context==="pondok"?"active":""}" data-switch-context="pondok" type="button"><span class="avatar">P</span><span><b>${getState().pondokProfile?.name||"Pondok Al-Furqan"}</b><small class="muted" style="display:block">Konteks pondok</small></span></button>
-   </div>
+   </div>`}
    <button class="account-action danger-text" id="logoutTopBtn" type="button">Logout</button>
   </div>
  </div>`;
@@ -91,7 +98,7 @@ export function shell(content){
  const s=getState(),route=location.hash.replace("#","")||"dashboard";
  const navRoute=["santri-progress","tabel-progress"].includes(route)?"halaqah":route;
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
- const activeContext=s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
+ const activeContext=s.persona==="super_admin"?"Platform MetodeQu":s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>

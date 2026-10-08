@@ -1,7 +1,7 @@
-import {view,routeName} from "./router.js?v=dev-3a7c9f21";
+import {view,routeName} from "./router.js?v=dev-91ab7c42";
 import {getState,setState} from "./store.js?v=dev-b3f742d1";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=dev-3a7c9f21";
-import {bindLogin} from "./pages/login.js?v=dev-3a7c9f21";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=dev-91ab7c42";
+import {bindLogin} from "./pages/login.js?v=dev-91ab7c42";
 import {toast} from "./utils/helpers.js?v=dev-2f08f073";
 let deferredPrompt=null;
 function render(){
@@ -25,5 +25,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=dev-3a7c9f21"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=dev-91ab7c42"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

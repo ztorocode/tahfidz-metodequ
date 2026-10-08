@@ -8,7 +8,8 @@ const memberMobileNav=[["dashboard","Dashboard"],["progress","Progress"],["repor
 
 const demoAccounts={
  member:{name:"Ahmad Fauzi",role:"Member",email:"member@metodequ.id",phone:"+62 812 3456 7890",initials:"AF"},
- musyrif:{name:"Ust. Rahmat Hidayat",role:"Musyrif",email:"musyrif@metodequ.id",phone:"+62 813 4567 8901",initials:"RH"},
+ musyrif:{name:"Ust. Rahmat Hidayat",role:"Musyrif Pondok",email:"musyrif@metodequ.id",phone:"+62 813 4567 8901",initials:"RH"},
+ musyrif_platform:{name:"Ust. Abdullah",role:"Musyrif Platform",email:"musyrif.platform@metodequ.id",phone:"+62 814 0000 0002",initials:"UA"},
  admin:{name:"Admin Pondok",role:"Admin Pondok",email:"admin@metodequ.id",phone:"+62 811 2345 6789",initials:"AP"},
  super_admin:{name:"Super Admin",role:"Super Admin",email:"superadmin@metodequ.id",phone:"+62 815 0000 0001",initials:"SA"}
 };
@@ -50,7 +51,8 @@ function mobileNavItems(){
 
 function currentAccount(){
  const s=getState();
- const base=demoAccounts[s.persona]||demoAccounts.member;
+ const accountKey=s.persona==="musyrif"&&s.musyrifType==="platform"?"musyrif_platform":s.persona;
+ const base=demoAccounts[accountKey]||demoAccounts.member;
  const overrides=s.profileOverrides?.[s.persona]||{};
  return {...base,...overrides};
 }
@@ -98,7 +100,7 @@ export function shell(content){
  const s=getState(),route=location.hash.replace("#","")||"dashboard";
  const navRoute=["santri-progress","tabel-progress"].includes(route)?"halaqah":route;
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
- const activeContext=s.persona==="super_admin"?"Platform MetodeQu":s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
+ const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
@@ -124,7 +126,7 @@ export function bindShell(){
  });
 
  const logout=()=>{
-  setState({loggedIn:false,persona:"member",context:"personal"});
+  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null});
   location.hash="login";
  };
  document.querySelector("#logoutBtn")?.addEventListener("click",logout);

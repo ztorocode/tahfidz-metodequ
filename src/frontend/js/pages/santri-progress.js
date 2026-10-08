@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=dev-6d31f2a4";
+import {getState} from "../store.js?v=dev-b3f742d1";
 import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=dev-6d31f2a4";
 import {badge,statusTone} from "../utils/helpers.js?v=dev-6d31f2a4";
 

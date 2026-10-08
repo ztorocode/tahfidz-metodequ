@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=dev-6d31f2a4";
+import {getState,setState} from "../store.js?v=dev-7fd29b64";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -96,10 +96,18 @@ export function shell(content){
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
- <nav class="mobile-nav">${mobileNavItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}"><span class="mobile-nav-icon">${mobileIcon(r)}</span><span class="mobile-nav-label">${l}</span></a>`).join("")}</nav></main>${profileModal()}</div>`;
+ <nav class="mobile-nav">${mobileNavItems().map(([r,l])=>`<a href="#${r}" data-mobile-route="${r}" class="${navRoute===r?"active":""}"><span class="mobile-nav-icon">${mobileIcon(r)}</span><span class="mobile-nav-label">${l}</span></a>`).join("")}</nav></main>${profileModal()}</div>`;
 }
 
 export function bindShell(){
+ document.querySelectorAll("[data-mobile-route]").forEach(link=>link.addEventListener("click",event=>{
+  const route=link.dataset.mobileRoute;
+  if(route!=="progress"&&route!=="report")return;
+  event.preventDefault();
+  const target="#"+route;
+  if(location.hash!==target)location.hash=target;
+  window.dispatchEvent(new Event("app:render"));
+ }));
 
  document.querySelector("#themeBtn")?.addEventListener("click",()=>{
   const theme=getState().theme==="dark"?"light":"dark";

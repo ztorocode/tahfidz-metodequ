@@ -17,8 +17,9 @@ const demoAccounts={
 function navItems(){
  const s=getState();
  if(s.persona==="super_admin")return superAdminNav;
+ if(s.persona==="musyrif")return musyrifNav;
  if(s.context==="personal")return memberNav;
- return s.persona==="admin"?adminNav:s.persona==="musyrif"?musyrifNav:memberNav;
+ return s.persona==="admin"?adminNav:memberNav;
 }
 
 function mobileIcon(route){
@@ -69,7 +70,7 @@ function accountMenu(){
     <div class="grow"><b>${account.name}</b><small class="muted" style="display:block">${account.role} · ${account.email}</small></div>
    </div>
    <button class="account-action" id="editProfileBtn" type="button">Edit Profil</button>
-   ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
+   ${["super_admin","musyrif"].includes(getState().persona)?"":`<button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
     <button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>
@@ -100,7 +101,7 @@ export function shell(content){
  const s=getState(),route=location.hash.replace("#","")||"dashboard";
  const navRoute=["santri-progress","tabel-progress"].includes(route)?"halaqah":route;
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
- const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
+ const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?(s.pondokProfile?.name||"Pondok Al-Furqan"):s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=7f3a91c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>

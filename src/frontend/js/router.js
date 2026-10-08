@@ -1,6 +1,6 @@
 import {getState} from "./store.js?v=dev-b3f742d1";
 import {loginPage} from "./pages/login.js?v=dev-b3f742d1";
-import {memberDashboard} from "./pages/member-dashboard.js?v=dev-2f08f073";
+import {memberDashboard} from "./pages/member-dashboard.js?v=dev-4c8e1a72";
 import {programPage} from "./pages/program.js?v=dev-2f08f073";
 import {activityPage} from "./pages/activity.js?v=dev-2f08f073";
 import {submissionPage} from "./pages/submission.js?v=dev-2f08f073";

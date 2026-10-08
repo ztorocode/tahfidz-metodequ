@@ -1,9 +1,10 @@
 import {setState} from "../store.js?v=dev-b3f742d1";
 
 const demoAccounts=[
- {role:"Member",persona:"member",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
- {role:"Musyrif",persona:"musyrif",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
- {role:"Admin",persona:"admin",phone:"+62 811 2345 6789",email:"admin@metodequ.id",password:"admin123"}
+ {role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
+ {role:"Musyrif Pondok",persona:"musyrif",context:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
+ {role:"Admin Pondok",persona:"admin",context:"pondok",phone:"+62 811 2345 6789",email:"admin@metodequ.id",password:"admin123"},
+ {role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
 
 function normalizePhone(value=""){return value.replace(/\D/g,"")}
@@ -79,9 +80,10 @@ export function loginPage(){return `<section class="auth">
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
 
 export function bindLogin(){
+ const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
  const go=(persona="member",context="personal",extra={})=>{
   setState({loggedIn:true,persona,context,...extra});
-  location.hash=persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
+  location.hash=homeRoute(persona);
  };
 
  const renderMethod=(method)=>{
@@ -91,7 +93,7 @@ export function bindLogin(){
   bindLoginActions(method);
  };
 
- const showOtp=(phone,persona)=>{
+ const showOtp=(phone,account)=>{
   const form=document.querySelector("#loginForm");
   if(!form)return;
   form.innerHTML=`<div class="stack">
@@ -109,7 +111,7 @@ export function bindLogin(){
     if(message){message.textContent="Kode OTP demo salah. Gunakan 123456.";message.style.color="var(--danger)";}
     return;
    }
-   go(persona);
+   go(account.persona,account.context);
   });
   document.querySelector("#changePhoneBtn")?.addEventListener("click",()=>renderMethod("whatsapp"));
   document.querySelector("#resendOtpBtn")?.addEventListener("click",()=>{
@@ -144,7 +146,7 @@ export function bindLogin(){
      if(message){message.textContent="Nomor WhatsApp tidak ditemukan pada akun demo.";message.style.color="var(--danger)";}
      return;
     }
-    showOtp(account.phone,account.persona);
+    showOtp(account.phone,account);
     return;
    }
    const email=(document.querySelector("#loginEmail")?.value||"").trim().toLowerCase();
@@ -154,7 +156,7 @@ export function bindLogin(){
     if(message){message.textContent="Email atau password demo tidak sesuai.";message.style.color="var(--danger)";}
     return;
    }
-   go(account.persona);
+   go(account.persona,account.context);
   });
  };
 

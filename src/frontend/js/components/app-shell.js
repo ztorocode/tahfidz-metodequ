@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=dev-7fd29b64";
+import {getState,setState} from "../store.js?v=dev-b3f742d1";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];

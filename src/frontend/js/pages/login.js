@@ -1,10 +1,11 @@
 import {setState} from "../store.js?v=dev-b3f742d1";
 
 const demoAccounts=[
- {role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
- {role:"Musyrif Pondok",persona:"musyrif",context:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
- {role:"Admin Pondok",persona:"admin",context:"pondok",phone:"+62 811 2345 6789",email:"admin@metodequ.id",password:"admin123"},
- {role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
+ {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
+ {id:"musyrif-pondok",role:"Musyrif Pondok",persona:"musyrif",context:"pondok",musyrifType:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
+ {id:"musyrif-platform",role:"Musyrif Platform",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"+62 814 0000 0002",email:"musyrif.platform@metodequ.id",password:"musyrif123"},
+ {id:"admin-pondok",role:"Admin Pondok",persona:"admin",context:"pondok",phone:"+62 811 2345 6789",email:"admin@metodequ.id",password:"admin123"},
+ {id:"super-admin",role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
 
 function normalizePhone(value=""){return value.replace(/\D/g,"")}
@@ -12,7 +13,7 @@ function normalizePhone(value=""){return value.replace(/\D/g,"")}
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
   <div><b style="font-size:13px">Akun login demo</b><small class="muted" style="display:block">Gunakan salah satu akun berikut untuk mencoba role berbeda.</small></div>
-  ${demoAccounts.map(account=>`<button type="button" class="list-item" data-demo-account="${account.persona}" style="width:100%;text-align:left;color:inherit">
+  ${demoAccounts.map(account=>`<button type="button" class="list-item" data-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
    <span class="avatar">${account.role.slice(0,1)}</span>
    <div class="grow">
     <b>${account.role}</b>
@@ -82,7 +83,7 @@ export function loginPage(){return `<section class="auth">
 export function bindLogin(){
  const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
  const go=(persona="member",context="personal",extra={})=>{
-  setState({loggedIn:true,persona,context,...extra});
+  setState({loggedIn:true,persona,context,musyrifType:null,...extra});
   location.hash=homeRoute(persona);
  };
 
@@ -111,7 +112,7 @@ export function bindLogin(){
     if(message){message.textContent="Kode OTP demo salah. Gunakan 123456.";message.style.color="var(--danger)";}
     return;
    }
-   go(account.persona,account.context);
+   go(account.persona,account.context,{musyrifType:account.musyrifType||null});
   });
   document.querySelector("#changePhoneBtn")?.addEventListener("click",()=>renderMethod("whatsapp"));
   document.querySelector("#resendOtpBtn")?.addEventListener("click",()=>{
@@ -123,7 +124,7 @@ export function bindLogin(){
 
  const bindDemoAccounts=()=>{
   document.querySelectorAll("[data-demo-account]").forEach(item=>item.addEventListener("click",()=>{
-   const account=demoAccounts.find(entry=>entry.persona===item.dataset.demoAccount);
+   const account=demoAccounts.find(entry=>entry.id===item.dataset.demoAccount);
    if(!account)return;
    renderMethod("email");
    const email=document.querySelector("#loginEmail");
@@ -156,7 +157,7 @@ export function bindLogin(){
     if(message){message.textContent="Email atau password demo tidak sesuai.";message.style.color="var(--danger)";}
     return;
    }
-   go(account.persona,account.context);
+   go(account.persona,account.context,{musyrifType:account.musyrifType||null});
   });
  };
 

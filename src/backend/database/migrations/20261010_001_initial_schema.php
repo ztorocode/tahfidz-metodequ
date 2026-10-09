@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS program_enrollments (
     KEY idx_program_enrollments_program (program_id, status),
     KEY idx_program_enrollments_halaqah (halaqah_id, status),
     CONSTRAINT chk_program_enrollment_context CHECK (
-        (context_type = 'personal' AND pondok_id IS NULL AND halaqah_id IS NULL)
+        (context_type = 'personal' AND pondok_id IS NULL)
         OR (context_type = 'pondok' AND pondok_id IS NOT NULL)
     ),
     CONSTRAINT fk_program_enrollments_program FOREIGN KEY (program_id) REFERENCES tahfidz_programs(id) ON DELETE CASCADE,

@@ -47,6 +47,14 @@ Health endpoint:
 
     GET http://127.0.0.1:8080/api/health
 
+Database migrations live in `src/backend/database/migrations` and are applied by the root tool:
+
+    php tools/migrate.php --status
+    php tools/migrate.php --dry-run
+    php tools/migrate.php
+
+The migration runner loads `src/backend/.env`, verifies checksums for already-applied migrations, uses a MySQL advisory lock, and records successful migrations in `schema_migrations`.
+
 Implementation order: Auth + user identity first, then Pondok membership/authorization, then Progress sync. For offline-first PWA sync, IndexedDB remains the client queue while PHP/MySQL becomes the server source of truth.
 
 Do not trust context, pondok_id, musyrif type, or role values from the browser without server-side authorization checks.

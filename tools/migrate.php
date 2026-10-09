@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use App\Core\Database;
 use App\Core\Env;
-use PDO;
-use Throwable;
 
 $root = dirname(__DIR__);
 $backendDir = $root . '/src/backend';

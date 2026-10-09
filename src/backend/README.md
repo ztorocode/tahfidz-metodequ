@@ -36,7 +36,7 @@ Module convention:
     ├── ProgressValidator.php
     └── routes.php
 
-Environment values are read from the process environment. .env.example is a reference only; this scaffold deliberately does not add a dotenv dependency.
+Environment configuration is loaded by `App\\Core\\Env` from `src/backend/.env` before application config is evaluated. For this project, values from `.env` intentionally override environment variables inherited from the container/Kubernetes Pod. If `.env` is absent, the backend can still fall back to process environment variables. No dotenv dependency is required.
 
 Local run:
 

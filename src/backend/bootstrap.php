@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Core\Env;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
@@ -19,6 +20,11 @@ spl_autoload_register(static function (string $class): void {
         require $path;
     }
 });
+
+// MetodeQu intentionally treats src/backend/.env as the application-level
+// source of truth. Values in this file override environment variables
+// inherited from the container or Kubernetes Pod.
+Env::load(__DIR__ . '/.env', override: true);
 
 set_exception_handler(static function (Throwable $exception): void {
     $debug = filter_var(getenv('APP_DEBUG') ?: 'false', FILTER_VALIDATE_BOOL);

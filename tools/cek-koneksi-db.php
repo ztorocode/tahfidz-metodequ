@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Database;
+use App\Core\Env;
 
 $root = dirname(__DIR__);
 $backendDir = $root . '/src/backend';
@@ -14,66 +15,14 @@ function fail(string $message, int $code = 1): never
     exit($code);
 }
 
-function loadEnvFile(string $path): void
-{
-    if (!is_file($path)) {
-        fail('File .env tidak ditemukan: ' . $path);
-    }
-
-    $lines = file($path, FILE_IGNORE_NEW_LINES);
-    if ($lines === false) {
-        fail('Gagal membaca file .env: ' . $path);
-    }
-
-    foreach ($lines as $line) {
-        $line = trim($line);
-
-        if ($line === '' || str_starts_with($line, '#')) {
-            continue;
-        }
-
-        if (str_starts_with($line, 'export ')) {
-            $line = trim(substr($line, 7));
-        }
-
-        if (!str_contains($line, '=')) {
-            continue;
-        }
-
-        [$key, $value] = explode('=', $line, 2);
-        $key = trim($key);
-        $value = trim($value);
-
-        if (!preg_match('/^[A-Z_][A-Z0-9_]*$/i', $key)) {
-            continue;
-        }
-
-        if (strlen($value) >= 2) {
-            $first = $value[0];
-            $last = $value[strlen($value) - 1];
-
-            if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
-                $value = substr($value, 1, -1);
-
-                if ($first === '"') {
-                    $value = stripcslashes($value);
-                }
-            }
-        }
-
-        if (getenv($key) !== false) {
-            continue;
-        }
-
-        putenv($key . '=' . $value);
-        $_ENV[$key] = $value;
-        $_SERVER[$key] = $value;
-    }
-}
-
-loadEnvFile($envFile);
-
+require_once $backendDir . '/app/Core/Env.php';
 require_once $backendDir . '/app/Core/Database.php';
+
+try {
+    Env::load($envFile, override: true, required: true);
+} catch (Throwable $exception) {
+    fail($exception->getMessage());
+}
 
 $driver = getenv('DB_DRIVER') ?: 'mysql';
 $host = getenv('DB_HOST') ?: '127.0.0.1';
@@ -84,6 +33,7 @@ $passwordConfigured = (getenv('DB_PASSWORD') ?: '') !== '';
 
 echo "MetodeQu - Cek Koneksi Database" . PHP_EOL;
 echo "--------------------------------" . PHP_EOL;
+echo "Config    : src/backend/.env (override Pod env)" . PHP_EOL;
 echo "Driver   : {$driver}" . PHP_EOL;
 echo "Host     : {$host}:{$port}" . PHP_EOL;
 echo "Database : {$database}" . PHP_EOL;

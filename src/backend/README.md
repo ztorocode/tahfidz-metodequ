@@ -70,3 +70,9 @@ Personal registration creates `users` and `auth_credentials`. Pondok registratio
 Registration DB smoke test (creates rows only inside an outer transaction and always rolls them back):
 
     php tools/test-register.php
+
+SMTP mail is configured from `src/backend/.env`. Gmail SMTP uses STARTTLS on port 587. Credentials and app passwords must never be committed.
+
+Safe SMTP authentication check (does not send an email):
+
+    php tools/test-mail.php

@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=5003fb1c";
-import {pondokList} from "./context-switcher.js?v=5003fb1c";
+import {getState,setState} from "../store.js?v=1e1aaab7";
+import {pondokList,canPersonal} from "./context-switcher.js?v=1e1aaab7";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -80,7 +80,7 @@ function accountMenu(){
    ${["super_admin","musyrif"].includes(getState().persona)?"":`<button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
-    <button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>
+    ${canPersonal()?`<button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>`:""}
     ${pondokChoices()}
    </div>`}
    <button class="account-action danger-text" id="logoutTopBtn" type="button">Logout</button>
@@ -109,7 +109,7 @@ export function shell(content){
  const navRoute=["santri-progress","tabel-progress"].includes(route)?"halaqah":route;
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?(s.pondokProfile?.name||"Pondok Al-Furqan"):s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=5003fb1c">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=1e1aaab7">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>

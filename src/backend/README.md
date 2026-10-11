@@ -65,3 +65,8 @@ Registration endpoint:
     POST /api/auth/register
 
 Personal registration creates `users` and `auth_credentials`. Pondok registration additionally creates `pondoks` and an active `pondok_memberships` row with role `admin`, all in one transaction. Passwords are stored only through PHP `password_hash()`.
+
+
+Registration DB smoke test (creates rows only inside an outer transaction and always rolls them back):
+
+    php tools/test-register.php

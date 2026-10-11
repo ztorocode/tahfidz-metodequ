@@ -111,4 +111,17 @@ final class RegisterRepository
 
         return $pondokId;
     }
+
+    public function createEmailVerification(int $userId, string $tokenHash, string $expiresAt): void
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO email_verifications (user_id, token_hash, expires_at)
+             VALUES (:user_id, :token_hash, :expires_at)'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'token_hash' => $tokenHash,
+            'expires_at' => $expiresAt,
+        ]);
+    }
 }

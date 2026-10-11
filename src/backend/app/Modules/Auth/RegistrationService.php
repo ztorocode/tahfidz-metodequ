@@ -32,8 +32,21 @@ final class RegistrationService
                 $data['username'],
             );
 
-            if ($conflict !== null) {
+            if ($conflict !== null && $conflict !== 'username') {
                 throw $this->conflictException($conflict);
+            }
+
+            if ($conflict === 'username') {
+                // Prefix email sudah dipakai user lain: username = email penuh.
+                $data['username'] = $data['email'];
+                $conflict = $this->repository->findUserConflict(
+                    $data['email'],
+                    $data['phone'],
+                    $data['username'],
+                );
+                if ($conflict !== null) {
+                    throw $this->conflictException($conflict);
+                }
             }
 
             $passwordHash = password_hash($data['password'], PASSWORD_DEFAULT);

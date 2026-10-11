@@ -29,7 +29,7 @@ final class RegisterValidator
         }
 
         $username = $this->usernameFromEmail($email);
-        if ($username === '' || mb_strlen($username) > 100) {
+        if ($username === '') {
             $errors['email'] = 'Bagian email sebelum @ tidak dapat digunakan sebagai username.';
         }
 

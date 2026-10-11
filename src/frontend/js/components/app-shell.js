@@ -127,7 +127,11 @@ export function bindShell(){
  });
 
  const logout=()=>{
-  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null});
+  const token=getState().authToken;
+  if(token){
+   fetch("/api/auth/logout",{method:"POST",headers:{"Authorization":"Bearer "+token}}).catch(()=>{});
+  }
+  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null,authToken:null,authUser:null});
   location.hash="login";
  };
  document.querySelector("#logoutBtn")?.addEventListener("click",logout);

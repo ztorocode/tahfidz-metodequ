@@ -156,8 +156,9 @@ export function bindLogin(){
  const bindLoginActions=(method="whatsapp")=>{
   document.querySelector("#authWhatsapp")?.addEventListener("click",()=>renderMethod("whatsapp"));
   document.querySelector("#authEmail")?.addEventListener("click",()=>renderMethod("email"));
-  document.querySelector("#loginBtn")?.addEventListener("click",()=>{
+  document.querySelector("#loginBtn")?.addEventListener("click",async ()=>{
    const message=document.querySelector("#loginMessage");
+   const button=document.querySelector("#loginBtn");
    if(method==="whatsapp"){
     const phone=document.querySelector("#loginWhatsapp")?.value.trim()||"";
     const account=demoAccounts.find(item=>normalizePhone(item.phone)===normalizePhone(phone));
@@ -170,9 +171,38 @@ export function bindLogin(){
    }
    const email=(document.querySelector("#loginEmail")?.value||"").trim().toLowerCase();
    const password=document.querySelector("#loginPassword")?.value||"";
+   if(!email||!password){
+    if(message){message.textContent="Email dan password wajib diisi.";message.style.color="var(--danger)";}
+    return;
+   }
+   if(button){button.disabled=true;button.textContent="Masuk...";}
+   if(message){message.textContent="";message.style.color="";}
+   try{
+    const response=await fetch("/api/auth/login",{
+     method:"POST",
+     headers:{"Content-Type":"application/json","Accept":"application/json"},
+     body:JSON.stringify({identifier:email,password})
+    });
+    let body={};
+    try{body=await response.json()}catch{}
+    if(response.ok&&body?.data?.token){
+     const user=body.data.user||{};
+     const profileOverrides={member:{name:user.name||email,email:user.email||email,phone:user.phone||""}};
+     go("member","personal",{authToken:body.data.token,authUser:user,profileOverrides});
+     return;
+    }
+    if(response.status!==401&&response.status!==422){
+     throw new Error(body?.message||"Login gagal. Silakan coba lagi.");
+    }
+   }catch(error){
+    if(message){message.textContent=error?.message||"Login gagal. Silakan coba lagi.";message.style.color="var(--danger)";}
+    if(button){button.disabled=false;button.textContent="Masuk";}
+    return;
+   }
    const account=demoAccounts.find(item=>item.email===email&&item.password===password);
    if(!account){
-    if(message){message.textContent="Email atau password demo tidak sesuai.";message.style.color="var(--danger)";}
+    if(message){message.textContent="Email atau password tidak sesuai.";message.style.color="var(--danger)";}
+    if(button){button.disabled=false;button.textContent="Masuk";}
     return;
    }
    go(account.persona,account.context,{musyrifType:account.musyrifType||null});

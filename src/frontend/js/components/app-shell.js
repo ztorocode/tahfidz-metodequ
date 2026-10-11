@@ -1,4 +1,5 @@
-import {getState,setState} from "../store.js?v=ffe6b2ae";
+import {getState,setState} from "../store.js?v=5003fb1c";
+import {pondokList} from "./context-switcher.js?v=5003fb1c";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -58,6 +59,12 @@ function currentAccount(){
  return {...base,...overrides};
 }
 
+function pondokChoices(){
+ const list=pondokList();
+ const active=list.find(p=>p.id===(getState().activePondokId??list[0]?.id))||list[0];
+ return list.map(p=>`<button class="account-choice ${getState().context==="pondok"&&active?.id===p.id?"active":""}" data-switch-context="pondok" data-pondok-id="${p.id}" type="button"><span class="avatar">P</span><span><b>${p.name}</b><small class="muted" style="display:block">Konteks pondok</small></span></button>`).join("");
+}
+
 function accountMenu(){
  const account=currentAccount();
  return `<div class="account-wrap">
@@ -74,7 +81,7 @@ function accountMenu(){
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
     <button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>
-    <button class="account-choice ${getState().context==="pondok"?"active":""}" data-switch-context="pondok" type="button"><span class="avatar">P</span><span><b>${getState().pondokProfile?.name||"Pondok Al-Furqan"}</b><small class="muted" style="display:block">Konteks pondok</small></span></button>
+    ${pondokChoices()}
    </div>`}
    <button class="account-action danger-text" id="logoutTopBtn" type="button">Logout</button>
   </div>
@@ -102,7 +109,7 @@ export function shell(content){
  const navRoute=["santri-progress","tabel-progress"].includes(route)?"halaqah":route;
  const nav=navItems().map(([r,l])=>`<a href="#${r}" class="${navRoute===r?"active":""}">${l}</a>`).join("");
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?(s.pondokProfile?.name||"Pondok Al-Furqan"):s.context==="personal"?"Personal":(s.pondokProfile?.name||"Pondok Al-Furqan");
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=ffe6b2ae">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=5003fb1c">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
@@ -147,7 +154,11 @@ export function bindShell(){
  document.querySelectorAll("[data-switch-context]").forEach(button=>button.addEventListener("click",()=>{
   const context=button.dataset.switchContext;
   const persona=getState().persona;
-  setState({context});
+  const patch={context};
+  if(context==="pondok"&&button.dataset.pondokId!==undefined){
+   patch.activePondokId=isNaN(Number(button.dataset.pondokId))?button.dataset.pondokId:Number(button.dataset.pondokId);
+  }
+  setState(patch);
   menu?.classList.add("hidden");
   if(context==="personal")location.hash="dashboard";
   else location.hash=persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";

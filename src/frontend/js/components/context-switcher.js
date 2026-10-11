@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=ffe6b2ae";
+import {getState,setState} from "../store.js?v=5003fb1c";
 
-function pondokList(){
+export function pondokList(){
  const s=getState();
  const mine=[...(s.myPondoks||[])];
  if(s.pondokProfile&&!mine.some(p=>p.id===(s.pondokProfile.id??0))){

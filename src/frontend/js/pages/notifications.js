@@ -1,2 +1,2 @@
-import {notifications} from "../data/dummy-data.js?v=ffe6b2ae";import {badge} from "../utils/helpers.js?v=ffe6b2ae";
+import {notifications} from "../data/dummy-data.js?v=5003fb1c";import {badge} from "../utils/helpers.js?v=5003fb1c";
 export function notificationsPage(){return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Pusat Aktivitas</p><h1>Notifikasi</h1></div><button class="btn">Tandai semua dibaca</button></div><div class="card"><div class="list">${notifications.map(n=>`<div class="list-item"><span class="dot" style="background:var(--${n.tone==="success"?"brand":n.tone})"></span><div class="grow"><b>${n.title}</b><small class="muted" style="display:block">${n.body}</small></div>${badge(n.time,"")}</div>`).join("")}</div></div>`}

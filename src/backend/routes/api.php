@@ -10,4 +10,7 @@ return static function (Router $router): void {
 
     $registerAuth = require dirname(__DIR__) . '/app/Modules/Auth/routes.php';
     $registerAuth($router);
+
+    $registerMusyrifs = require dirname(__DIR__) . '/app/Modules/Musyrifs/routes.php';
+    $registerMusyrifs($router);
 };

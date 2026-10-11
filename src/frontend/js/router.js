@@ -1,20 +1,20 @@
-import {getState} from "./store.js?v=1e1aaab7";
-import {loginPage} from "./pages/login.js?v=1e1aaab7";
-import {memberDashboard} from "./pages/member-dashboard.js?v=1e1aaab7";
-import {programPage} from "./pages/program.js?v=1e1aaab7";
-import {activityPage} from "./pages/activity.js?v=1e1aaab7";
-import {submissionPage} from "./pages/submission.js?v=1e1aaab7";
-import {murajaahPage} from "./pages/murajaah.js?v=1e1aaab7";
-import {notificationsPage} from "./pages/notifications.js?v=1e1aaab7";
-import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=1e1aaab7";
-import {reviewPage} from "./pages/review.js?v=1e1aaab7";
-import {adminDashboard} from "./pages/admin-dashboard.js?v=1e1aaab7";
-import {halaqahPage} from "./pages/halaqah.js?v=1e1aaab7";
-import {studentProgressPage} from "./pages/santri-progress.js?v=1e1aaab7";
-import {memberProgressPage} from "./pages/member-progress.js?v=1e1aaab7";
-import {progressTablePage} from "./pages/tabel-progress.js?v=1e1aaab7";
-import {whatsappPage} from "./pages/whatsapp.js?v=1e1aaab7";
-import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=1e1aaab7";
+import {getState} from "./store.js?v=bc1e4f7d";
+import {loginPage} from "./pages/login.js?v=bc1e4f7d";
+import {memberDashboard} from "./pages/member-dashboard.js?v=bc1e4f7d";
+import {programPage} from "./pages/program.js?v=bc1e4f7d";
+import {activityPage} from "./pages/activity.js?v=bc1e4f7d";
+import {submissionPage} from "./pages/submission.js?v=bc1e4f7d";
+import {murajaahPage} from "./pages/murajaah.js?v=bc1e4f7d";
+import {notificationsPage} from "./pages/notifications.js?v=bc1e4f7d";
+import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=bc1e4f7d";
+import {reviewPage} from "./pages/review.js?v=bc1e4f7d";
+import {adminDashboard} from "./pages/admin-dashboard.js?v=bc1e4f7d";
+import {halaqahPage} from "./pages/halaqah.js?v=bc1e4f7d";
+import {studentProgressPage} from "./pages/santri-progress.js?v=bc1e4f7d";
+import {memberProgressPage} from "./pages/member-progress.js?v=bc1e4f7d";
+import {progressTablePage} from "./pages/tabel-progress.js?v=bc1e4f7d";
+import {whatsappPage} from "./pages/whatsapp.js?v=bc1e4f7d";
+import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=bc1e4f7d";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,

@@ -58,3 +58,10 @@ The migration runner loads `src/backend/.env`, verifies checksums for already-ap
 Implementation order: Auth + user identity first, then Pondok membership/authorization, then Progress sync. For offline-first PWA sync, IndexedDB remains the client queue while PHP/MySQL becomes the server source of truth.
 
 Do not trust context, pondok_id, musyrif type, or role values from the browser without server-side authorization checks.
+
+
+Registration endpoint:
+
+    POST /api/auth/register
+
+Personal registration creates `users` and `auth_credentials`. Pondok registration additionally creates `pondoks` and an active `pondok_memberships` row with role `admin`, all in one transaction. Passwords are stored only through PHP `password_hash()`.

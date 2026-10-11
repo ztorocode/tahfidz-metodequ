@@ -7,4 +7,7 @@ use App\Core\Router;
 return static function (Router $router): void {
     $registerHealth = require dirname(__DIR__) . '/app/Modules/Health/routes.php';
     $registerHealth($router);
+
+    $registerAuth = require dirname(__DIR__) . '/app/Modules/Auth/routes.php';
+    $registerAuth($router);
 };

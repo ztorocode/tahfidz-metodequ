@@ -18,7 +18,9 @@ final class Request
     public static function capture(): self
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $headers = self::headers();
+        $requestUri = $headers['x-metodequ-original-uri'] ?? ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = parse_url($requestUri, PHP_URL_PATH) ?: '/';
         $rawBody = file_get_contents('php://input') ?: '';
         $body = [];
 
@@ -35,7 +37,7 @@ final class Request
             method: $method,
             path: rtrim($path, '/') ?: '/',
             query: $_GET,
-            headers: self::headers(),
+            headers: $headers,
             body: $body,
         );
     }

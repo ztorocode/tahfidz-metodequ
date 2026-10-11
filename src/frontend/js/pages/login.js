@@ -50,16 +50,16 @@ function registerForm(mode="personal"){
   <button id="registerPondok" class="${pondok?"active":""}" type="button">Pondok</button>
  </div>
  <div class="stack" id="registerFields">
-  <div><label class="label">${pondok?"Nama pengelola":"Nama lengkap"}</label><input class="input" id="registerName" value="Ahmad Fauzi"></div>
+  <div><label class="label">${pondok?"Nama pengelola":"Nama lengkap"}</label><input class="input" id="registerName" autocomplete="name" placeholder="Nama lengkap"></div>
   <div>
    <label class="label">Email</label>
-   <input class="input" id="registerEmail" type="email" autocomplete="email" value="ahmad.fauzi@example.com">
-   <small class="muted" id="usernamePreview">Username otomatis: <b>ahmad.fauzi</b></small>
+   <input class="input" id="registerEmail" type="email" autocomplete="email" placeholder="nama@email.com">
+   <small class="muted" id="usernamePreview">Username otomatis akan dibuat dari email.</small>
   </div>
-  <div><label class="label">Nomor WhatsApp</label><input class="input" id="registerWhatsapp" inputmode="tel" value="+62 812 3456 7890"></div>
-  <div><label class="label">Password</label><input class="input" id="registerPassword" type="password" autocomplete="new-password" value="metodequ123"></div>
-  ${pondok?`<div><label class="label">Nama Pondok / Lembaga</label><input class="input" id="registerPondokName" value="Pondok Tahfidz Al-Ikhlas"></div>
-  <div><label class="label">Alamat Pondok</label><input class="input" id="registerPondokAddress" value="Bantul, Yogyakarta"></div>
+  <div><label class="label">Nomor WhatsApp</label><input class="input" id="registerWhatsapp" inputmode="tel" autocomplete="tel" placeholder="+62 ..."></div>
+  <div><label class="label">Password</label><input class="input" id="registerPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+  ${pondok?`<div><label class="label">Nama Pondok / Lembaga</label><input class="input" id="registerPondokName" placeholder="Nama pondok"></div>
+  <div><label class="label">Alamat Pondok</label><input class="input" id="registerPondokAddress" placeholder="Alamat pondok"></div>
   <div><label class="label">Nomor WhatsApp Pondok <span class="muted">(opsional)</span></label><input class="input" id="registerPondokWhatsapp" inputmode="tel" placeholder="+62 ..."></div>`:""}
  </div>
  <small class="muted" id="registerMessage"></small>
@@ -79,6 +79,24 @@ export function loginPage(){return `<section class="auth">
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
+
+async function postRegistration(payload){
+ const response=await fetch("/api/auth/register",{
+  method:"POST",
+  headers:{"Content-Type":"application/json","Accept":"application/json"},
+  body:JSON.stringify(payload)
+ });
+
+ let body={};
+ try{body=await response.json()}catch{}
+
+ if(!response.ok){
+  const firstError=body?.errors&&Object.values(body.errors)[0];
+  throw new Error(firstError||body?.message||"Registrasi gagal. Silakan coba lagi.");
+ }
+
+ return body.data;
+}
 
 export function bindLogin(){
  const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
@@ -173,13 +191,13 @@ export function bindLogin(){
   document.querySelector("#registerPersonal")?.addEventListener("click",()=>renderRegister("personal"));
   document.querySelector("#registerPondok")?.addEventListener("click",()=>renderRegister("pondok"));
   document.querySelector("#backToLogin")?.addEventListener("click",showLogin);
-  document.querySelector("#registerBtn")?.addEventListener("click",()=>{
+  document.querySelector("#registerBtn")?.addEventListener("click",async event=>{
+   const button=event.currentTarget;
    const name=document.querySelector("#registerName")?.value.trim()||"";
    const value=(email?.value||"").trim();
    const phone=document.querySelector("#registerWhatsapp")?.value.trim()||"";
    const password=document.querySelector("#registerPassword")?.value||"";
    const message=document.querySelector("#registerMessage");
-   const username=value.includes("@")?value.split("@")[0]:"";
    if(!name||!phone){
     if(message){message.textContent="Nama dan nomor WhatsApp wajib diisi.";message.style.color="var(--danger)";}
     return;
@@ -188,11 +206,12 @@ export function bindLogin(){
     if(message){message.textContent="Masukkan email yang valid.";message.style.color="var(--danger)";}
     return;
    }
-   if(password.length<6){
-    if(message){message.textContent="Password minimal 6 karakter.";message.style.color="var(--danger)";}
+   if(password.length<8){
+    if(message){message.textContent="Password minimal 8 karakter.";message.style.color="var(--danger)";}
     return;
    }
-   const profileOverrides={};
+
+   const payload={mode,name,email:value,phone,password};
    if(mode==="pondok"){
     const pondokName=document.querySelector("#registerPondokName")?.value.trim()||"";
     const address=document.querySelector("#registerPondokAddress")?.value.trim()||"";
@@ -201,12 +220,43 @@ export function bindLogin(){
      if(message){message.textContent="Nama dan alamat pondok wajib diisi.";message.style.color="var(--danger)";}
      return;
     }
-    profileOverrides.admin={name,email:value,phone};
-    go("admin","pondok",{registeredUsername:username,profileOverrides,pondokProfile:{name:pondokName,address,phone:pondokPhone}});
-    return;
+    payload.pondok_name=pondokName;
+    payload.pondok_address=address;
+    payload.pondok_phone=pondokPhone;
    }
-   profileOverrides.member={name,email:value,phone};
-   go("member","personal",{registeredUsername:username,profileOverrides});
+
+   button.disabled=true;
+   const originalText=button.textContent;
+   button.textContent="Mendaftarkan...";
+   if(message){message.textContent="";message.style.color="";}
+
+   try{
+    const result=await postRegistration(payload);
+    const user=result.user;
+    const profileOverrides={};
+
+    if(result.account_type==="pondok"){
+     profileOverrides.admin={name:user.name,email:user.email,phone:user.phone};
+     go("admin","pondok",{
+      registeredUserId:user.id,
+      registeredUsername:user.username,
+      profileOverrides,
+      pondokProfile:result.pondok
+     });
+     return;
+    }
+
+    profileOverrides.member={name:user.name,email:user.email,phone:user.phone};
+    go("member","personal",{
+     registeredUserId:user.id,
+     registeredUsername:user.username,
+     profileOverrides
+    });
+   }catch(error){
+    if(message){message.textContent=error?.message||"Registrasi gagal. Silakan coba lagi.";message.style.color="var(--danger)";}
+    button.disabled=false;
+    button.textContent=originalText;
+   }
   });
  };
 

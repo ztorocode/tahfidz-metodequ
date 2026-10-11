@@ -1,0 +1,17 @@
+http://tahfidz-metodequ.rubiantoro.com {
+    encode zstd br gzip
+
+    handle /api/* {
+        route {
+            request_header X-MetodeQu-Original-URI {uri}
+            root * /var/www/html/tahfidz-metodequ.rubiantoro.com/src/backend/public
+            php_server
+        }
+    }
+
+    handle {
+        root * /var/www/html/tahfidz-metodequ.rubiantoro.com/src/frontend
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}

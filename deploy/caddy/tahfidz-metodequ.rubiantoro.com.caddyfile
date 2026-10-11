@@ -14,4 +14,12 @@ http://tahfidz-metodequ.rubiantoro.com {
         try_files {path} {path}/ /index.html
         file_server
     }
+
+    # Entry point + SW jangan di-cache (selalu ambil ?v= terbaru).
+    @nocache path / /index.html /service-worker.js /manifest.webmanifest
+    header @nocache Cache-Control "no-cache"
+
+    # Aset berversi ?v= boleh di-cache lama (immutable).
+    @versioned query v=*
+    header @versioned Cache-Control "public, max-age=31536000, immutable"
 }

@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=dev-b3f742d1";
+import {getState} from "../store.js?v=b8f61f27";
 
 export function adminDashboard(){
  const pondokName=getState().pondokProfile?.name||"Pondok Tahfidz Al-Furqan";

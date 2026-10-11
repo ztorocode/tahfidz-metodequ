@@ -42,7 +42,7 @@ final class RegisterRepository
         return 'username';
     }
 
-    public function createUser(array $data, string $passwordHash): int
+    public function createUser(array $data, string $passwordHash, string $role = 'member'): int
     {
         $statement = $this->pdo->prepare(
             'INSERT INTO users (name, username, email, phone_e164, status)
@@ -66,11 +66,14 @@ final class RegisterRepository
             'password_hash' => $passwordHash,
         ]);
 
-        $role = $this->pdo->prepare(
+        if (!in_array($role, ['member', 'admin', 'musyrif', 'super_admin'], true)) {
+            throw new \InvalidArgumentException('Role tidak valid.');
+        }
+        $roleStmt = $this->pdo->prepare(
             'INSERT INTO user_roles (user_id, role, status)
-             VALUES (:user_id, \'member\', \'active\')'
+             VALUES (:user_id, :role, \'active\')'
         );
-        $role->execute(['user_id' => $userId]);
+        $roleStmt->execute(['user_id' => $userId, 'role' => $role]);
 
         return $userId;
     }
@@ -114,13 +117,6 @@ final class RegisterRepository
             'pondok_id' => $pondokId,
             'user_id' => $userId,
         ]);
-
-        $adminRole = $this->pdo->prepare(
-            'INSERT INTO user_roles (user_id, role, status)
-             VALUES (:user_id, \'admin\', \'active\')
-             ON DUPLICATE KEY UPDATE status = \'active\''
-        );
-        $adminRole->execute(['user_id' => $userId]);
 
         return $pondokId;
     }

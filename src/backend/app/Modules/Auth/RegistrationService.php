@@ -41,7 +41,11 @@ final class RegistrationService
                 throw new \RuntimeException('Password hashing failed.');
             }
 
-            $userId = $this->repository->createUser($data, $passwordHash);
+            $userId = $this->repository->createUser(
+                $data,
+                $passwordHash,
+                $data['mode'] === 'pondok' ? 'admin' : 'member',
+            );
 
             $verifyToken = bin2hex(random_bytes(32));
             $expiresAt = (new \DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');

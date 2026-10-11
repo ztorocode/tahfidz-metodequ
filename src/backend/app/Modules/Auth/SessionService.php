@@ -55,6 +55,7 @@ final class SessionService
                 'phone' => $user['phone_e164'],
                 'email_verified' => $user['email_verified_at'] !== null,
                 'roles' => $this->activeRoles((int) $user['id']),
+                'pondoks' => $this->activePondoks((int) $user['id']),
             ],
         ];
     }
@@ -84,6 +85,7 @@ final class SessionService
                 'phone' => $user['phone_e164'] ?? $user['phone'] ?? '',
                 'email_verified' => ($user['email_verified_at'] ?? null) !== null,
                 'roles' => $this->activeRoles((int) $user['id']),
+                'pondoks' => $this->activePondoks((int) $user['id']),
             ],
         ];
     }
@@ -113,6 +115,28 @@ final class SessionService
         );
         $statement->execute(['user_id' => $userId]);
         return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
+    /** @return array<int,array{id:int,name:string,slug:string,role:string}> */
+    private function activePondoks(int $userId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT p.id, p.name, p.slug, m.role
+             FROM pondok_memberships m
+             JOIN pondoks p ON p.id = m.pondok_id
+             WHERE m.user_id = :user_id AND m.status = 'active' AND p.status = 'active'
+             ORDER BY p.name"
+        );
+        $statement->execute(['user_id' => $userId]);
+        return array_map(
+            static fn(array $row) => [
+                'id' => (int) $row['id'],
+                'name' => $row['name'],
+                'slug' => $row['slug'],
+                'role' => $row['role'],
+            ],
+            $statement->fetchAll(PDO::FETCH_ASSOC)
+        );
     }
 
     public function userFromToken(string $token): ?array
@@ -146,6 +170,7 @@ final class SessionService
             'phone' => $row['phone_e164'],
             'email_verified' => $row['email_verified_at'] !== null,
             'roles' => $this->activeRoles((int) $row['id']),
+            'pondoks' => $this->activePondoks((int) $row['id']),
         ];
     }
 

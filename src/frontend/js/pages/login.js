@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=b1b08be4";
+import {setState} from "../store.js?v=ffe6b2ae";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -75,7 +75,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=b1b08be4">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=ffe6b2ae">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -110,12 +110,16 @@ export function bindLogin(){
   const roles=user.roles||[];
   const email=user.email||"";
   const demo=demoAccounts.find(item=>item.email===email);
+  const myPondoks=(user.pondoks||[]).map(p=>({id:p.id,name:p.name,slug:p.slug,role:p.role}));
+  if(myPondoks.length===0&&demo?.context==="pondok"){
+   myPondoks.push({id:0,name:"Pondok Al-Furqan",slug:"",role:demo.persona==="admin"?"admin":"member",demo:true});
+  }
   let persona="member", context="personal";
   if(roles.includes("super_admin")){persona="super_admin";context="platform";}
-  else if(roles.includes("admin")){persona="admin";context=demo?.context||"pondok";}
-  else if(roles.includes("musyrif")){persona="musyrif";context=demo?.context||"pondok";}
-  const profileOverrides={member:{name:user.name||email,email,email,phone:user.phone||""}};
-  go(persona,context,{authToken:data.token,authUser:user,musyrifType:demo?.musyrifType||null,profileOverrides});
+  else if(roles.includes("admin")){persona="admin";context=myPondoks.length?"pondok":"personal";}
+  else if(roles.includes("musyrif")){persona="musyrif";context=myPondoks.length?"pondok":"personal";}
+  const profileOverrides={member:{name:user.name||email,email,phone:user.phone||""}};
+  go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId:myPondoks[0]?.id??null,musyrifType:demo?.musyrifType||null,profileOverrides});
  };
 
  const renderMethod=(method)=>{
@@ -323,11 +327,14 @@ export function bindLogin(){
 
     if(result.account_type==="pondok"){
      profileOverrides.admin={name:user.name,email:user.email,phone:user.phone};
+     const pnd=result.pondok||{};
      go("admin","pondok",{
       registeredUserId:user.id,
       registeredUsername:user.username,
       profileOverrides,
-      pondokProfile:result.pondok
+      pondokProfile:pnd,
+      myPondoks:pnd.id?[{id:pnd.id,name:pnd.name,slug:pnd.slug||"",role:"admin"}]:[],
+      activePondokId:pnd.id??null
      });
      return;
     }
@@ -336,7 +343,9 @@ export function bindLogin(){
     go("member","personal",{
      registeredUserId:user.id,
      registeredUsername:user.username,
-     profileOverrides
+     profileOverrides,
+     myPondoks:[],
+     activePondokId:null
     });
    }catch(error){
     if(message){message.textContent=error?.message||"Registrasi gagal. Silakan coba lagi.";message.style.color="var(--danger)";}

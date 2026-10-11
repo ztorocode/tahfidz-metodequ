@@ -66,6 +66,12 @@ final class RegisterRepository
             'password_hash' => $passwordHash,
         ]);
 
+        $role = $this->pdo->prepare(
+            'INSERT INTO user_roles (user_id, role, status)
+             VALUES (:user_id, \'member\', \'active\')'
+        );
+        $role->execute(['user_id' => $userId]);
+
         return $userId;
     }
 
@@ -108,6 +114,13 @@ final class RegisterRepository
             'pondok_id' => $pondokId,
             'user_id' => $userId,
         ]);
+
+        $adminRole = $this->pdo->prepare(
+            'INSERT INTO user_roles (user_id, role, status)
+             VALUES (:user_id, \'admin\', \'active\')
+             ON DUPLICATE KEY UPDATE status = \'active\''
+        );
+        $adminRole->execute(['user_id' => $userId]);
 
         return $pondokId;
     }

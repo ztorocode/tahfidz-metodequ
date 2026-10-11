@@ -65,8 +65,19 @@ final class SessionService
                 'email' => $user['email'],
                 'phone' => $user['phone_e164'],
                 'email_verified' => $user['email_verified_at'] !== null,
+                'roles' => $this->activeRoles((int) $user['id']),
             ],
         ];
+    }
+
+    /** @return string[] */
+    private function activeRoles(int $userId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT role FROM user_roles WHERE user_id = :user_id AND status = 'active'"
+        );
+        $statement->execute(['user_id' => $userId]);
+        return array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
     }
 
     public function userFromToken(string $token): ?array
@@ -99,6 +110,7 @@ final class SessionService
             'email' => $row['email'],
             'phone' => $row['phone_e164'],
             'email_verified' => $row['email_verified_at'] !== null,
+            'roles' => $this->activeRoles((int) $row['id']),
         ];
     }
 

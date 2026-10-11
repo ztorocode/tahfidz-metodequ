@@ -187,8 +187,14 @@ export function bindLogin(){
     try{body=await response.json()}catch{}
     if(response.ok&&body?.data?.token){
      const user=body.data.user||{};
+     const roles=user.roles||[];
+     const demo=demoAccounts.find(item=>item.email===(user.email||email));
+     let persona="member", context="personal";
+     if(roles.includes("super_admin")){persona="super_admin";context="platform";}
+     else if(roles.includes("admin")){persona="admin";context=demo?.context||"pondok";}
+     else if(roles.includes("musyrif")){persona="musyrif";context=demo?.context||"pondok";}
      const profileOverrides={member:{name:user.name||email,email:user.email||email,phone:user.phone||""}};
-     go("member","personal",{authToken:body.data.token,authUser:user,profileOverrides});
+     go(persona,context,{authToken:body.data.token,authUser:user,musyrifType:demo?.musyrifType||null,profileOverrides});
      return;
     }
     if(response.status!==401&&response.status!==422){

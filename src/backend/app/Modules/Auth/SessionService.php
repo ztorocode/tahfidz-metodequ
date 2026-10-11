@@ -41,18 +41,7 @@ final class SessionService
         $token = bin2hex(random_bytes(32));
         $expiresAt = (new \DateTimeImmutable('+' . self::SESSION_DAYS . ' days'))->format('Y-m-d H:i:s');
 
-        $statement = $this->pdo->prepare(
-            'INSERT INTO auth_sessions (user_id, refresh_token_hash, device_id, ip_address, user_agent, expires_at)
-             VALUES (:user_id, :token_hash, :device_id, :ip_address, :user_agent, :expires_at)'
-        );
-        $statement->execute([
-            'user_id' => (int) $user['id'],
-            'token_hash' => hash('sha256', $token),
-            'device_id' => substr((string) ($context['device_id'] ?? ''), 0, 120) ?: null,
-            'ip_address' => substr((string) ($context['ip'] ?? ''), 0, 45) ?: null,
-            'user_agent' => substr((string) ($context['user_agent'] ?? ''), 0, 500) ?: null,
-            'expires_at' => $expiresAt,
-        ]);
+        $this->insertSession((int) $user['id'], $token, $expiresAt, $context);
 
         return [
             'token' => $token,
@@ -68,6 +57,52 @@ final class SessionService
                 'roles' => $this->activeRoles((int) $user['id']),
             ],
         ];
+    }
+
+    /**
+     * Terbitkan sesi untuk user yang sudah terverifikasi lewat jalur lain (OTP).
+     *
+     * @param array{id:int|string,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string} $user
+     * @param array{ip?:string,user_agent?:string,device_id?:string} $context
+     */
+    public function startSession(array $user, array $context = []): array
+    {
+        $token = bin2hex(random_bytes(32));
+        $expiresAt = (new \DateTimeImmutable('+' . self::SESSION_DAYS . ' days'))->format('Y-m-d H:i:s');
+
+        $this->insertSession((int) $user['id'], $token, $expiresAt, $context);
+
+        return [
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'expires_at' => $expiresAt,
+            'user' => [
+                'id' => (int) $user['id'],
+                'name' => $user['name'],
+                'username' => $user['username'],
+                'email' => $user['email'],
+                'phone' => $user['phone_e164'] ?? $user['phone'] ?? '',
+                'email_verified' => ($user['email_verified_at'] ?? null) !== null,
+                'roles' => $this->activeRoles((int) $user['id']),
+            ],
+        ];
+    }
+
+    /** @param array{ip?:string,user_agent?:string,device_id?:string} $context */
+    private function insertSession(int $userId, string $token, string $expiresAt, array $context): void
+    {
+        $statement = $this->pdo->prepare(
+            'INSERT INTO auth_sessions (user_id, refresh_token_hash, device_id, ip_address, user_agent, expires_at)
+             VALUES (:user_id, :token_hash, :device_id, :ip_address, :user_agent, :expires_at)'
+        );
+        $statement->execute([
+            'user_id' => $userId,
+            'token_hash' => hash('sha256', $token),
+            'device_id' => substr((string) ($context['device_id'] ?? ''), 0, 120) ?: null,
+            'ip_address' => substr((string) ($context['ip'] ?? ''), 0, 45) ?: null,
+            'user_agent' => substr((string) ($context['user_agent'] ?? ''), 0, 500) ?: null,
+            'expires_at' => $expiresAt,
+        ]);
     }
 
     /** @return string[] */

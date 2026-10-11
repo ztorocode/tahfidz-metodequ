@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=b8f61f27";
+import {setState} from "../store.js?v=b1b08be4";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -22,7 +22,7 @@ function demoAccountsInfo(){
     <small class="muted" style="display:block">Password: ${account.password}</small>
    </div>
   </button>`).join("")}
-  <small class="muted">OTP demo WhatsApp: <b>123456</b></small>
+  <small class="muted">Login WhatsApp memakai kode OTP yang dikirim ke nomor Anda.</small>
  </div>`;
 }
 
@@ -75,7 +75,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=b8f61f27">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=b1b08be4">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -105,6 +105,19 @@ export function bindLogin(){
   location.hash=homeRoute(persona);
  };
 
+ const goWithSession=(data)=>{
+  const user=data?.user||{};
+  const roles=user.roles||[];
+  const email=user.email||"";
+  const demo=demoAccounts.find(item=>item.email===email);
+  let persona="member", context="personal";
+  if(roles.includes("super_admin")){persona="super_admin";context="platform";}
+  else if(roles.includes("admin")){persona="admin";context=demo?.context||"pondok";}
+  else if(roles.includes("musyrif")){persona="musyrif";context=demo?.context||"pondok";}
+  const profileOverrides={member:{name:user.name||email,email,email,phone:user.phone||""}};
+  go(persona,context,{authToken:data.token,authUser:user,musyrifType:demo?.musyrifType||null,profileOverrides});
+ };
+
  const renderMethod=(method)=>{
   const form=document.querySelector("#loginForm");
   if(!form)return;
@@ -112,30 +125,61 @@ export function bindLogin(){
   bindLoginActions(method);
  };
 
- const showOtp=(phone,account)=>{
+ const showOtp=(phone)=>{
   const form=document.querySelector("#loginForm");
   if(!form)return;
   form.innerHTML=`<div class="stack">
-   <div><h3 style="margin-bottom:6px">Masukkan kode OTP</h3><p class="muted" style="margin-bottom:0">Kode OTP demo telah dikirim ke <b>${phone}</b>.</p></div>
+   <div><h3 style="margin-bottom:6px">Masukkan kode OTP</h3><p class="muted" style="margin-bottom:0">Kode OTP telah dikirim via WhatsApp ke <b>${phone}</b>.</p></div>
    <div><label class="label">Kode OTP</label><input class="input" id="otpCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 digit kode OTP"></div>
-   <small class="muted" id="otpMessage">Untuk demo gunakan kode <b>123456</b>.</small>
+   <small class="muted" id="otpMessage">Kode berlaku 5 menit.</small>
    <button class="btn primary full" id="submitOtpBtn">Verifikasi OTP</button>
    <div class="row between"><button class="btn" id="changePhoneBtn" type="button">Ganti nomor</button><button class="btn soft" id="resendOtpBtn" type="button">Kirim ulang kode</button></div>
   </div>`;
   const otp=document.querySelector("#otpCode");
   otp?.focus();
-  document.querySelector("#submitOtpBtn")?.addEventListener("click",()=>{
+  document.querySelector("#submitOtpBtn")?.addEventListener("click",async ()=>{
    const message=document.querySelector("#otpMessage");
-   if(otp?.value.trim()!=="123456"){
-    if(message){message.textContent="Kode OTP demo salah. Gunakan 123456.";message.style.color="var(--danger)";}
+   const button=document.querySelector("#submitOtpBtn");
+   const code=otp?.value.trim()||"";
+   if(!/^\d{6}$/.test(code)){
+    if(message){message.textContent="Masukkan 6 digit kode OTP.";message.style.color="var(--danger)";}
     return;
    }
-   go(account.persona,account.context,{musyrifType:account.musyrifType||null});
+   if(button){button.disabled=true;button.textContent="Memverifikasi...";}
+   try{
+    const response=await fetch("/api/auth/otp/verify",{
+     method:"POST",
+     headers:{"Content-Type":"application/json","Accept":"application/json"},
+     body:JSON.stringify({phone,code})
+    });
+    let body={};
+    try{body=await response.json()}catch{}
+    if(response.ok&&body?.data?.token){
+     goWithSession(body.data);
+     return;
+    }
+    throw new Error(body?.message||"Verifikasi gagal.");
+   }catch(error){
+    if(message){message.textContent=error?.message||"Verifikasi gagal.";message.style.color="var(--danger)";}
+    if(button){button.disabled=false;button.textContent="Verifikasi OTP";}
+   }
   });
   document.querySelector("#changePhoneBtn")?.addEventListener("click",()=>renderMethod("whatsapp"));
-  document.querySelector("#resendOtpBtn")?.addEventListener("click",()=>{
+  document.querySelector("#resendOtpBtn")?.addEventListener("click",async ()=>{
    const message=document.querySelector("#otpMessage");
-   if(message){message.innerHTML='Kode OTP demo dikirim ulang. Gunakan <b>123456</b>.';message.style.color="var(--brand)";}
+   try{
+    const response=await fetch("/api/auth/otp/request",{
+     method:"POST",
+     headers:{"Content-Type":"application/json","Accept":"application/json"},
+     body:JSON.stringify({phone})
+    });
+    let body={};
+    try{body=await response.json()}catch{}
+    if(!response.ok)throw new Error(body?.message||"Gagal mengirim ulang.");
+    if(message){message.textContent="Kode baru dikirim via WhatsApp.";message.style.color="var(--brand)";}
+   }catch(error){
+    if(message){message.textContent=error?.message||"Gagal mengirim ulang.";message.style.color="var(--danger)";}
+   }
    otp?.focus();
   });
  };
@@ -161,12 +205,26 @@ export function bindLogin(){
    const button=document.querySelector("#loginBtn");
    if(method==="whatsapp"){
     const phone=document.querySelector("#loginWhatsapp")?.value.trim()||"";
-    const account=demoAccounts.find(item=>normalizePhone(item.phone)===normalizePhone(phone));
-    if(!account){
-     if(message){message.textContent="Nomor WhatsApp tidak ditemukan pada akun demo.";message.style.color="var(--danger)";}
+    if(!phone){
+     if(message){message.textContent="Nomor WhatsApp wajib diisi.";message.style.color="var(--danger)";}
      return;
     }
-    showOtp(account.phone,account);
+    if(button){button.disabled=true;button.textContent="Mengirim...";}
+    if(message){message.textContent="";message.style.color="";}
+    try{
+     const response=await fetch("/api/auth/otp/request",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({phone})
+     });
+     let body={};
+     try{body=await response.json()}catch{}
+     if(!response.ok)throw new Error(body?.message||"Gagal mengirim kode OTP.");
+     showOtp(phone);
+    }catch(error){
+     if(message){message.textContent=error?.message||"Gagal mengirim kode OTP.";message.style.color="var(--danger)";}
+     if(button){button.disabled=false;button.textContent="Kirim kode OTP";}
+    }
     return;
    }
    const email=(document.querySelector("#loginEmail")?.value||"").trim().toLowerCase();
@@ -186,15 +244,7 @@ export function bindLogin(){
     let body={};
     try{body=await response.json()}catch{}
     if(response.ok&&body?.data?.token){
-     const user=body.data.user||{};
-     const roles=user.roles||[];
-     const demo=demoAccounts.find(item=>item.email===(user.email||email));
-     let persona="member", context="personal";
-     if(roles.includes("super_admin")){persona="super_admin";context="platform";}
-     else if(roles.includes("admin")){persona="admin";context=demo?.context||"pondok";}
-     else if(roles.includes("musyrif")){persona="musyrif";context=demo?.context||"pondok";}
-     const profileOverrides={member:{name:user.name||email,email:user.email||email,phone:user.phone||""}};
-     go(persona,context,{authToken:body.data.token,authUser:user,musyrifType:demo?.musyrifType||null,profileOverrides});
+     goWithSession(body.data);
      return;
     }
     if(response.status!==401&&response.status!==422){

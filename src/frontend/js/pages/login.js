@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=e86b4db1";
+import {setState} from "../store.js?v=525a18a3";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -75,7 +75,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=e86b4db1">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=525a18a3">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -118,7 +118,11 @@ export function bindLogin(){
   if(roles.includes("super_admin")){persona="super_admin";context="platform";}
   else if(roles.includes("admin")){persona="admin";context=myPondoks.length?"pondok":"personal";}
   else if(roles.includes("musyrif")){persona="musyrif";context=myPondoks.length?"pondok":"personal";}
-  const profileOverrides={member:{name:user.name||email,email,phone:user.phone||""}};
+  const displayName=user.name||email;
+  const initials=displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Musyrif":"Member";
+  const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
+  const profileOverrides={member:profile,[persona]:profile};
   go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId:myPondoks[0]?.id??null,musyrifType:demo?.musyrifType||null,profileOverrides});
  };
 

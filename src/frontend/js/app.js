@@ -1,8 +1,8 @@
-import {view,routeName} from "./router.js?v=bc1e4f7d";
-import {getState,setState} from "./store.js?v=bc1e4f7d";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=bc1e4f7d";
-import {bindLogin} from "./pages/login.js?v=bc1e4f7d";
-import {toast} from "./utils/helpers.js?v=bc1e4f7d";
+import {view,routeName} from "./router.js?v=e86b4db1";
+import {getState,setState} from "./store.js?v=e86b4db1";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e86b4db1";
+import {bindLogin} from "./pages/login.js?v=e86b4db1";
+import {toast} from "./utils/helpers.js?v=e86b4db1";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -70,5 +70,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=bc1e4f7d"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e86b4db1"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

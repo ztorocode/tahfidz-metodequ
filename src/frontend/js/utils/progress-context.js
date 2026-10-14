@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=9f893d91";
+import {getState,setState} from "../store.js?v=6a86f974";
 
 function emptyProgressContext(){
  return {week:1,openDay:null,fields:{},checks:{}};

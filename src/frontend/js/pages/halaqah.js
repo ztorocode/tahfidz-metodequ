@@ -1,14 +1,39 @@
-import {getState,setState} from "../store.js?v=9f893d91";
-import {students} from "../data/dummy-data.js?v=9f893d91";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=9f893d91";
+import {getState,setState} from "../store.js?v=6a86f974";
+import {students} from "../data/dummy-data.js?v=6a86f974";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=6a86f974";
 
 let selectedHalaqahId=null;
 
-const musyrifOptions=[
+const demoMusyrifOptions=[
  {id:"musyrif-rahmat",name:"Ust. Rahmat Hidayat"},
  {id:"musyrif-abdullah",name:"Ust. Abdullah Karim"},
  {id:"musyrif-yusuf",name:"Ust. Yusuf Maulana"}
 ];
+
+function activePondokId(){
+ const st=getState();
+ return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
+}
+
+function musyrifOptions(){
+ const real=getState().realMusyrifs;
+ if(Array.isArray(real)&&real.length)return real.map(m=>({id:"user-"+m.id,name:m.name}));
+ return demoMusyrifOptions;
+}
+
+function refreshMusyrifs(){
+ const st=getState();
+ const pid=activePondokId();
+ const token=st.authToken;
+ if(!pid||!token||st.musyrifSrc===pid)return;
+ setState({musyrifSrc:pid});
+ fetch("/api/pondoks/musyrifs?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
+  .then(r=>r.json().then(b=>({ok:r.ok,b})))
+  .then(({ok,b})=>{
+   if(ok&&Array.isArray(b.data)){setState({realMusyrifs:b.data});window.dispatchEvent(new Event("app:render"));}
+  })
+  .catch(()=>{});
+}
 
 const defaultHalaqahs=[
  {
@@ -48,11 +73,14 @@ function halaqahs(){
 }
 
 function musyrifName(id){
- return musyrifOptions.find(item=>item.id===id)?.name||"Belum ditentukan";
+ return musyrifOptions().find(item=>item.id===id)?.name||"Belum ditentukan";
 }
 
 function pondokName(){
- return getState().pondokProfile?.name||"Pondok Al-Furqan";
+ const st=getState();
+ const mine=st.myPondoks||[];
+ const active=mine.find(x=>x.id===(st.activePondokId??mine[0]?.id))||mine[0];
+ return active?.name||st.pondokProfile?.name||"Pondok";
 }
 
 function adminList(items){
@@ -73,7 +101,7 @@ function adminList(items){
    <form class="stack" id="halaqahForm" style="margin-top:16px">
     <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahName" placeholder="Contoh: Halaqah Ali" required></div>
     <div><label class="label">Musyrif</label><select class="input" id="halaqahMusyrif" required>
-     ${musyrifOptions.map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join("")}
+     ${musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join("")}
     </select></div>
     <small class="muted">Satu halaqah memiliki satu musyrif. Santri dapat ditambahkan setelah halaqah dibuat.</small>
     <small class="muted" id="halaqahFormMessage"></small>
@@ -127,12 +155,16 @@ export function halaqahPage(){
   return `<div class="card"><p class="eyebrow">Halaqah</p><h2>Aktifkan konteks Pondok</h2><p class="muted">Menu Halaqah tersedia ketika konteks aktif berada di Pondok. Gunakan menu avatar untuk berpindah konteks.</p></div>`;
  }
 
+ refreshMusyrifs();
  const items=halaqahs();
  const selected=items.find(item=>item.id===selectedHalaqahId);
  if(selected)return detail(selected,state.persona==="admin");
 
  if(state.persona==="admin")return adminList(items);
- if(state.persona==="musyrif")return musyrifList(items.filter(item=>item.musyrifId==="musyrif-rahmat"));
+ if(state.persona==="musyrif"){
+  const myId=state.authUser?("user-"+state.authUser.id):"musyrif-rahmat";
+  return musyrifList(items.filter(item=>item.musyrifId===myId));
+ }
 
  return `<div class="card"><h2>Halaqah</h2><p class="muted">Akun ini tidak memiliki akses pengelolaan halaqah.</p></div>`;
 }

@@ -27,8 +27,9 @@ final class InviteService
         $pondokId = (int) ($input['pondok_id'] ?? 0);
         $role = strtolower(trim((string) ($input['role'] ?? 'musyrif')));
         $name = trim((string) ($input['name'] ?? ''));
+        $phoneRaw = trim((string) ($input['phone'] ?? ''));
         $email = strtolower(trim((string) ($input['email'] ?? '')));
-        $phone = $this->normalizePhone((string) ($input['phone'] ?? ''));
+        $phone = $phoneRaw === '' ? null : $this->normalizePhone($phoneRaw);
 
         $errors = [];
         if ($pondokId <= 0) {
@@ -37,17 +38,20 @@ final class InviteService
         if (!in_array($role, ['musyrif', 'santri'], true)) {
             $errors['role'] = 'Role undangan harus musyrif atau santri.';
         }
-        if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
+        if ($name !== '' && (mb_strlen($name) < 2 || mb_strlen($name) > 150)) {
             $errors['name'] = 'Nama harus 2-150 karakter.';
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) {
             $errors['email'] = 'Email tidak valid.';
         }
-        if ($phone === null) {
+        if ($phoneRaw !== '' && $phone === null) {
             $errors['phone'] = 'Nomor WhatsApp tidak valid.';
         }
         if ($errors !== []) {
             throw new RegistrationException('Data undangan belum valid.', 422, $errors);
+        }
+        if ($name === '') {
+            $name = substr($email, 0, (int) strpos($email, '@'));
         }
 
         PondokAccess::assertPondokAdmin($this->pdo, $actor, $pondokId);
@@ -61,7 +65,7 @@ final class InviteService
             throw new RegistrationException('Pondok tidak ditemukan.', 404);
         }
 
-        $conflict = $this->accounts->findUserConflict($email, $phone, substr($email, 0, (int) strpos($email, '@')));
+        $conflict = $this->accounts->findUserConflict($email, $phone ?? '+', substr($email, 0, (int) strpos($email, '@')));
         if ($conflict === 'email' || $conflict === 'phone') {
             throw new RegistrationException(
                 $conflict === 'email' ? 'Email sudah terdaftar.' : 'Nomor WhatsApp sudah terdaftar.',
@@ -96,11 +100,11 @@ final class InviteService
             . "<p><a href=\"{$link}\">Terima Undangan</a></p>"
             . "<p>Link: {$link}</p>"
         );
-        $waSent = $this->tryWa(
+        $waSent = $phone !== null ? $this->tryWa(
             $phone,
             "Assalamu'alaikum {$name}, Anda diundang menjadi " . ($role === 'musyrif' ? 'Musyrif' : 'Santri')
             . " di {$safePondok} (MetodeQu). Terima di sini (7 hari): {$link}"
-        );
+        ) : false;
 
         return [
             'id' => $inviteId,
@@ -169,6 +173,7 @@ final class InviteService
             'pondok_name' => $pondokName,
             'role' => $row['role'],
             'email' => (string) $row['invited_email'],
+            'phone' => $row['invited_phone_e164'] !== null ? (string) $row['invited_phone_e164'] : null,
             'expires_at' => (string) $row['expires_at'],
         ];
     }
@@ -176,7 +181,7 @@ final class InviteService
     /**
      * @return array{user:array{id:int,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string},pondok_id:int,role:string}
      */
-    public function accept(string $token, string $name, string $password): array
+    public function accept(string $token, string $name, string $password, ?string $phoneInput = null): array
     {
         $name = trim($name);
         if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
@@ -198,7 +203,12 @@ final class InviteService
             }
 
             $email = (string) $invite['invited_email'];
-            $phone = (string) $invite['invited_phone_e164'];
+            $phone = $invite['invited_phone_e164'] !== null
+                ? (string) $invite['invited_phone_e164']
+                : $this->normalizePhone((string) $phoneInput);
+            if ($phone === null) {
+                throw new RegistrationException('Nomor WhatsApp wajib diisi.', 422, ['phone' => 'Nomor WhatsApp wajib diisi.']);
+            }
             $username = substr($email, 0, (int) strpos($email, '@'));
             $conflict = $this->accounts->findUserConflict($email, $phone, $username);
             if ($conflict !== null && $conflict !== 'username') {

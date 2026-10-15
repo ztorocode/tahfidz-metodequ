@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=73c7381e";
+import {getState,setState} from "../store.js?v=a2fa9420";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -8,7 +8,7 @@ function inviteToken(){
 
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=73c7381e">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=a2fa9420">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }
@@ -31,19 +31,24 @@ export function bindInvite(){
    <div class="stack">
     <div><label class="label">Email undangan</label><input class="input" value="${info.email}" disabled></div>
     <div><label class="label">Nama lengkap</label><input class="input" id="inviteName" autocomplete="name" placeholder="Nama lengkap"></div>
+   <div><label class="label">Nomor WhatsApp</label><input class="input" id="invitePhone" inputmode="tel" placeholder="+62 ..."></div>
     <div><label class="label">Buat password</label><input class="input" id="invitePassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
     <small class="muted" id="inviteMessage"></small>
     <button class="btn primary full" id="acceptInviteBtn" type="button">Terima & Buat Akun</button>
    </div>`;
+   const phoneInput=document.querySelector("#invitePhone");
+   if(info.phone){phoneInput.value=info.phone;phoneInput.disabled=true;}
    document.querySelector("#acceptInviteBtn")?.addEventListener("click",async e=>{
     const btn=e.currentTarget,msg=document.querySelector("#inviteMessage");
     const name=document.querySelector("#inviteName")?.value.trim()||"";
     const password=document.querySelector("#invitePassword")?.value||"";
+    const phone=document.querySelector("#invitePhone")?.value.trim()||"";
     if(name.length<2){if(msg){msg.textContent="Nama minimal 2 karakter.";}return;}
+    if(!phone){if(msg){msg.textContent="Nomor WhatsApp wajib diisi.";}return;}
     if(password.length<8){if(msg){msg.textContent="Password minimal 8 karakter.";}return;}
     btn.disabled=true;btn.textContent="Memproses...";
     try{
-     const r=await fetch("/api/pondok-invites/accept",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({token,name,password})});
+     const r=await fetch("/api/pondok-invites/accept",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({token,name,password,phone})});
      let rb={};try{rb=await r.json()}catch{}
      if(!r.ok||!rb?.data?.token)throw new Error(rb?.message||"Gagal menerima undangan.");
      const user=rb.data.user||{};

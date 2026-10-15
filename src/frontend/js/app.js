@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=73c7381e";
-import {getState,setState} from "./store.js?v=73c7381e";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=73c7381e";
-import {bindLogin} from "./pages/login.js?v=73c7381e";
-import {bindInvite} from "./pages/terima-undangan.js?v=73c7381e";
-import {toast} from "./utils/helpers.js?v=73c7381e";
+import {view,routeName} from "./router.js?v=a2fa9420";
+import {getState,setState} from "./store.js?v=a2fa9420";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a2fa9420";
+import {bindLogin} from "./pages/login.js?v=a2fa9420";
+import {bindInvite} from "./pages/terima-undangan.js?v=a2fa9420";
+import {toast} from "./utils/helpers.js?v=a2fa9420";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -72,9 +72,9 @@ function bindPageActions(){
  document.querySelector("#inviteSantriBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
   const pid=pondokId();
-  const payload={pondok_id:pid,role:"santri",name:document.querySelector("#santriName")?.value.trim()||"",email:(document.querySelector("#santriEmail")?.value||"").trim(),phone:document.querySelector("#santriPhone")?.value.trim()||""};
-  if(!pid||!payload.name||!payload.email||!payload.phone){
-   if(msg){msg.textContent="Lengkapi nama, email, dan nomor WA.";msg.style.color="var(--danger)";}
+  const payload={pondok_id:pid,role:"santri",email:(document.querySelector("#santriEmail")?.value||"").trim()};
+  if(!pid||!payload.email){
+   if(msg){msg.textContent="Email wajib diisi.";msg.style.color="var(--danger)";}
    return;
   }
   btn.disabled=true;btn.textContent="Mengirim...";
@@ -83,7 +83,7 @@ function bindPageActions(){
    const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify(payload)});
    const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
    if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
-   ["#santriName","#santriEmail","#santriPhone"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+   document.querySelector("#santriEmail").value="";
    loadSantriList();
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
@@ -114,7 +114,7 @@ function bindPageActions(){
     try{
      const b=await api("/api/pondoks/musyrifs/attach",{method:"POST",body:JSON.stringify({pondok_id:pondokId(),user_id:selectedUserId})});
      if(msg){msg.textContent=b?.data?.name+" dijadikan musyrif.";msg.style.color="var(--brand)";}
-     ["#musyrifName","#musyrifEmail","#musyrifPhone"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+     document.querySelector("#musyrifEmail").value="";
      suggestBox.innerHTML="";setMode(null);loadMusyrifList();
     }catch(err){
      if(msg){msg.textContent=err?.message||"Gagal.";msg.style.color="var(--danger)";}
@@ -146,9 +146,7 @@ function bindPageActions(){
     suggestBox.innerHTML=rows.map(u=>`<button type="button" class="list-item" data-suggest-user='${JSON.stringify(u)}' style="width:100%;text-align:left"><span class="avatar">${(u.name||"?").slice(0,1)}</span><div class="grow"><b>${u.name}</b><small class="muted" style="display:block">${u.email} · ${u.phone}${u.pondok_role?(" · "+u.pondok_role):""}</small></div></button>`).join("");
     suggestBox.querySelectorAll("[data-suggest-user]").forEach(btn=>btn.addEventListener("click",()=>{
      const u=JSON.parse(btn.dataset.suggestUser);
-     document.querySelector("#musyrifName").value=u.name||"";
      document.querySelector("#musyrifEmail").value=u.email||"";
-     document.querySelector("#musyrifPhone").value=u.phone||"";
      suggestBox.innerHTML="";
      setMode(u);
     }));
@@ -158,9 +156,9 @@ function bindPageActions(){
  document.querySelector("#inviteMusyrifBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
   const pid=pondokId();
-  const payload={pondok_id:pid,role:"musyrif",name:document.querySelector("#musyrifName")?.value.trim()||"",email:(document.querySelector("#musyrifEmail")?.value||"").trim(),phone:document.querySelector("#musyrifPhone")?.value.trim()||""};
-  if(!pid||!payload.name||!payload.email||!payload.phone){
-   if(msg){msg.textContent="Lengkapi nama, email, dan nomor WA.";msg.style.color="var(--danger)";}
+  const payload={pondok_id:pid,role:"musyrif",email:(document.querySelector("#musyrifEmail")?.value||"").trim()};
+  if(!pid||!payload.email){
+   if(msg){msg.textContent="Email wajib diisi.";msg.style.color="var(--danger)";}
    return;
   }
   btn.disabled=true;btn.textContent="Mengirim...";
@@ -169,7 +167,7 @@ function bindPageActions(){
    const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify(payload)});
    const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
    if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
-   ["#musyrifName","#musyrifEmail","#musyrifPhone"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+   document.querySelector("#musyrifEmail").value="";
    loadMusyrifList();
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
@@ -192,5 +190,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=73c7381e"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a2fa9420"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

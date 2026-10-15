@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=73c7381e";
+import {getState} from "../store.js?v=a2fa9420";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -6,10 +6,8 @@ export function adminMusyrifPage(){
 <div class="grid-2"><div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div>
 <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div></div>
 <div class="card"><h3>Undang Musyrif</h3><div class="stack">
-<div><label class="label">Nama musyrif</label><input class="input" id="musyrifName" placeholder="Nama lengkap"></div>
-<div><label class="label">Email</label><input class="input" id="musyrifEmail" type="email" placeholder="nama@email.com"></div>
-<div><label class="label">Nomor WhatsApp</label><input class="input" id="musyrifPhone" inputmode="tel" placeholder="+62 ..."></div>
-<small class="muted" id="musyrifMessage">Undangan berisi link; musyrif membuat password sendiri (berlaku 7 hari).</small>
+<div><label class="label">Email</label><input class="input" id="musyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
+<small class="muted" id="musyrifMessage">Ketik email — bila sudah terdaftar akan muncul saran. Nama & WA diisi musyrif saat terima undangan.</small>Undangan berisi link; musyrif membuat password sendiri (berlaku 7 hari).</small>
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 </div></div></div>`;
 }

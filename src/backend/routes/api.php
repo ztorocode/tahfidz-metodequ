@@ -13,4 +13,7 @@ return static function (Router $router): void {
 
     $registerMusyrifs = require dirname(__DIR__) . '/app/Modules/Musyrifs/routes.php';
     $registerMusyrifs($router);
+
+    $registerUsers = require dirname(__DIR__) . '/app/Modules/Users/routes.php';
+    $registerUsers($router);
 };

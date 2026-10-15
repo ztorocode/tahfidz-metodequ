@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=0a85dd0d";
-import {pondokList,canPersonal} from "./context-switcher.js?v=0a85dd0d";
+import {getState,setState} from "../store.js?v=e456ddf9";
+import {pondokList,canPersonal} from "./context-switcher.js?v=e456ddf9";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -95,10 +95,14 @@ function profileModal(){
    <div class="row between"><div><p class="eyebrow">Akun</p><h2>Edit Profil</h2></div><button class="btn" id="closeProfileBtn" type="button">Tutup</button></div>
    <div class="stack">
     <div><label class="label">Nama</label><input class="input" id="profileName" value="${account.name}"></div>
-    <div><label class="label">Email</label><input class="input" id="profileEmail" type="email" value="${account.email}"></div>
+    <div><label class="label">Email</label><input class="input" id="profileEmail" type="email" value="${account.email}" disabled><small class="muted">Email tidak dapat diubah.</small></div>
     <div><label class="label">Nomor WhatsApp</label><input class="input" id="profilePhone" value="${account.phone}"></div>
     <small class="muted" id="profileMessage"></small>
     <button class="btn primary full" id="saveProfileBtn" type="button">Simpan Profil</button>
+    <div><label class="label">Password lama</label><input class="input" id="profileCurrentPassword" type="password" autocomplete="current-password"></div>
+    <div><label class="label">Password baru</label><input class="input" id="profileNewPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+    <small class="muted" id="passwordMessage"></small>
+    <button class="btn full" id="changePasswordBtn" type="button">Ganti Password</button>
    </div>
   </div>
  </div>`;
@@ -112,7 +116,7 @@ export function shell(content){
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?pondokName:s.context==="personal"?"Personal":pondokName;
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=0a85dd0d">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=e456ddf9">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
@@ -177,23 +181,66 @@ export function bindShell(){
  document.querySelector("#closeProfileBtn")?.addEventListener("click",()=>modal?.classList.add("hidden"));
  modal?.addEventListener("click",event=>{if(event.target===modal)modal.classList.add("hidden")});
 
- document.querySelector("#saveProfileBtn")?.addEventListener("click",()=>{
+ document.querySelector("#saveProfileBtn")?.addEventListener("click",async ()=>{
   const s=getState();
+  const btn=document.querySelector("#saveProfileBtn");
   const name=document.querySelector("#profileName")?.value.trim()||"";
-  const email=document.querySelector("#profileEmail")?.value.trim()||"";
   const phone=document.querySelector("#profilePhone")?.value.trim()||"";
   const message=document.querySelector("#profileMessage");
-  if(!name||!email||!phone){
-   if(message){message.textContent="Nama, email, dan nomor WhatsApp wajib diisi.";message.style.color="var(--danger)";}
+  if(!name||!phone){
+   if(message){message.textContent="Nama dan nomor WhatsApp wajib diisi.";message.style.color="var(--danger)";}
    return;
   }
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-   if(message){message.textContent="Format email belum valid.";message.style.color="var(--danger)";}
+  const applyLocal=(email)=>{
+   const profile={...(currentAccount()),name,email:email||currentAccount().email,phone};
+   const profileOverrides={...(s.profileOverrides||{}),[s.persona]:profile};
+   const authUser=s.authUser?{...s.authUser,name,phone}:s.authUser;
+   setState({profileOverrides,authUser});
+   modal?.classList.add("hidden");
+   window.dispatchEvent(new Event("app:render"));
+  };
+  if(!s.authToken){
+   applyLocal();
    return;
   }
-  const profileOverrides={...(s.profileOverrides||{}),[s.persona]:{name,email,phone}};
-  setState({profileOverrides});
-  modal?.classList.add("hidden");
-  window.dispatchEvent(new Event("app:render"));
+  btn.disabled=true;
+  if(message){message.textContent="";message.style.color="";}
+  try{
+   const r=await fetch("/api/users/me",{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+s.authToken},body:JSON.stringify({name,phone})});
+   let b={};try{b=await r.json()}catch{}
+   if(!r.ok)throw new Error(b?.errors&&Object.values(b.errors)[0]||b?.message||"Gagal menyimpan.");
+   applyLocal(b.data.user.email);
+   if(message){message.textContent="Profil diperbarui.";message.style.color="var(--brand)";}
+  }catch(err){
+   if(message){message.textContent=err?.message||"Gagal menyimpan.";message.style.color="var(--danger)";}
+  }
+  btn.disabled=false;
+ });
+ document.querySelector("#changePasswordBtn")?.addEventListener("click",async (e)=>{
+  const btn=e.currentTarget,msg=document.querySelector("#passwordMessage");
+  const s=getState();
+  const current=document.querySelector("#profileCurrentPassword")?.value||"";
+  const next=document.querySelector("#profileNewPassword")?.value||"";
+  if(!s.authToken){
+   if(msg){msg.textContent="Login ulang untuk ganti password.";msg.style.color="var(--danger)";}
+   return;
+  }
+  if(next.length<8){
+   if(msg){msg.textContent="Password baru minimal 8 karakter.";msg.style.color="var(--danger)";}
+   return;
+  }
+  btn.disabled=true;
+  if(msg){msg.textContent="";msg.style.color="";}
+  try{
+   const r=await fetch("/api/users/me/password",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+s.authToken},body:JSON.stringify({current_password:current,password:next})});
+   let b={};try{b=await r.json()}catch{}
+   if(!r.ok)throw new Error(b?.errors&&Object.values(b.errors)[0]||b?.message||"Gagal mengganti.");
+   if(msg){msg.textContent="Password diganti. Silakan login ulang.";msg.style.color="var(--brand)";}
+   document.querySelector("#profileCurrentPassword").value="";
+   document.querySelector("#profileNewPassword").value="";
+  }catch(err){
+   if(msg){msg.textContent=err?.message||"Gagal mengganti.";msg.style.color="var(--danger)";}
+  }
+  btn.disabled=false;
  });
 }

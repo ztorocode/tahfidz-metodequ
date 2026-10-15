@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=0fd13399";
-import {getState,setState} from "./store.js?v=0fd13399";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=0fd13399";
-import {bindLogin} from "./pages/login.js?v=0fd13399";
-import {bindInvite} from "./pages/terima-undangan.js?v=0fd13399";
-import {toast} from "./utils/helpers.js?v=0fd13399";
+import {view,routeName} from "./router.js?v=10a66b8d";
+import {getState,setState} from "./store.js?v=10a66b8d";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=10a66b8d";
+import {bindLogin} from "./pages/login.js?v=10a66b8d";
+import {bindInvite} from "./pages/terima-undangan.js?v=10a66b8d";
+import {toast} from "./utils/helpers.js?v=10a66b8d";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -48,9 +48,45 @@ async function loadMusyrifList(){
   }
  }catch(e){}
 }
+async function refreshMyInvites(){
+ const s=getState();
+ if(!s.authToken||!s.authUser?.email)return;
+ try{
+  const r=await fetch("/api/pondok-invites/mine",{headers:{Accept:"application/json",Authorization:"Bearer "+s.authToken}});
+  const b=await r.json();
+  if(r.ok)setState({myInvites:b.data||[]});
+ }catch(e){}
+}
+async function loadInviteBanner(){
+ const box=document.querySelector("#inviteBanner");
+ if(box){
+  await refreshMyInvites();
+  const mine=getState().myInvites||[];
+  box.innerHTML=mine.length?`<div class="card" style="margin-bottom:16px;border-left:4px solid var(--brand)"><div class="row between"><div><b>Anda punya ${mine.length} undangan pondok</b><small class="muted" style="display:block">${mine.map(v=>v.pondok_name).join(", ")}</small></div><a class="btn primary" href="#notifications">Lihat</a></div></div>`:"";
+ }
+ document.querySelectorAll("[data-accept-invite]").forEach(btn=>btn.addEventListener("click",async ()=>{
+  const s=getState();
+  btn.disabled=true;
+  try{
+   const r=await fetch("/api/pondok-invites/accept-mine",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+s.authToken},body:JSON.stringify({id:Number(btn.dataset.acceptInvite)})});
+   let b={};try{b=await r.json()}catch{}
+   if(!r.ok)throw new Error(b?.message||"Gagal menerima.");
+   const user=b.data.user||{};
+   const pondok=(user.pondoks||[])[0];
+   const myPondoks=[...(s.myPondoks||[])];
+   if(pondok&&!myPondoks.some(p=>p.id===pondok.id))myPondoks.push(pondok);
+   setState({authToken:b.data.token,authUser:user,myPondoks,activePondokId:pondok?.id??s.activePondokId,myInvites:(s.myInvites||[]).filter(v=>v.id!==Number(btn.dataset.acceptInvite))});
+   window.dispatchEvent(new Event("app:render"));
+  }catch(err){
+   alert(err?.message||"Gagal menerima.");
+   btn.disabled=false;
+  }
+ }));
+}
 function bindPageActions(){
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
+ loadInviteBanner();
  async function loadSantriList(){
   const box=document.querySelector("#santriList");
   if(!box)return;
@@ -154,5 +190,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=0fd13399"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=10a66b8d"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

@@ -1,7 +1,7 @@
-import {member} from "../data/dummy-data.js?v=0fd13399";
-import {getState} from "../store.js?v=0fd13399";
-import {getProgressContext} from "../utils/progress-context.js?v=0fd13399";
-import {badge} from "../utils/helpers.js?v=0fd13399";
+import {member} from "../data/dummy-data.js?v=10a66b8d";
+import {getState} from "../store.js?v=10a66b8d";
+import {getProgressContext} from "../utils/progress-context.js?v=10a66b8d";
+import {badge} from "../utils/helpers.js?v=10a66b8d";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const weekdayIds=["ahad","senin","selasa","rabu","kamis","jumat","sabtu"];
@@ -93,6 +93,7 @@ export function memberDashboard(){
  return `
 <div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${escapeHtml(member.name)}</h1><p class="muted">Konteks aktif: <b>${escapeHtml(contextLabel)}</b> · Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
 
+<div id="inviteBanner"></div>
 <div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(member.personalProgram)}</h2><b>Target hari ini: ${targetText}</b></div><a class="btn" href="#progress" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
 
 <div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Progress Pekan ${week}</h3><small class="muted">Dihitung langsung dari form Progress konteks ${escapeHtml(contextLabel)}.</small></div><a href="#progress" class="muted">Lihat detail</a></div><div class="progress" style="--value:${weekPct}%;margin-top:14px"><span></span></div>

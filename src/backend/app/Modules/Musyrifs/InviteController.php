@@ -83,6 +83,43 @@ final class InviteController
         }
     }
 
+    public function mine(Request $request): never
+    {
+        $me = $this->actor($request);
+        $pdo = Database::connection();
+        $email = (string) $pdo->query(
+            'SELECT email FROM users WHERE id = ' . (int) $me['id']
+        )->fetchColumn();
+        $list = $this->service()->mine($email);
+        Response::json(['success' => true, 'data' => $list]);
+    }
+
+    public function acceptMine(Request $request): never
+    {
+        try {
+            $me = $this->actor($request);
+            $result = $this->service()->acceptById($me['id'], (int) ($request->body()['id'] ?? 0));
+
+            $pdo = Database::connection();
+            $sessions = new SessionService($pdo, new LoginValidator());
+            $session = $sessions->startSession($result['user'], [
+                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                'user_agent' => $request->headers['user-agent'] ?? '',
+            ]);
+
+            Response::json([
+                'success' => true,
+                'message' => 'Undangan diterima. Selamat bergabung!',
+                'data' => $session,
+            ]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], $exception->statusCode);
+        }
+    }
+
     public function info(Request $request): never
     {
         try {
@@ -100,12 +137,20 @@ final class InviteController
     {
         try {
             $body = $request->body();
+            $actorId = null;
+            if (isset($request->headers['authorization'])) {
+                $pdo = Database::connection();
+                $sessions = new SessionService($pdo, new LoginValidator());
+                $me = $sessions->userFromToken(SessionService::bearerToken($request->headers));
+                $actorId = $me !== null ? (int) $me['id'] : null;
+            }
             $result = $this->service()->accept(
                 (string) ($body['token'] ?? ''),
                 (string) ($body['name'] ?? ''),
                 (string) ($body['password'] ?? ''),
                 isset($body['phone']) ? (string) $body['phone'] : null,
                 isset($body['login_password']) ? (string) $body['login_password'] : null,
+                $actorId,
             );
 
             $pdo = Database::connection();

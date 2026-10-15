@@ -195,7 +195,7 @@ final class InviteService
     /**
      * @return array{user:array{id:int,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string},pondok_id:int,role:string}
      */
-    public function accept(string $token, string $name, string $password, ?string $phoneInput = null, ?string $loginPassword = null): array
+    public function accept(string $token, string $name, string $password, ?string $phoneInput = null, ?string $loginPassword = null, ?int $actorUserId = null): array
     {
         $name = trim($name);
 
@@ -233,7 +233,8 @@ final class InviteService
                 if ($existingUser['status'] !== 'active') {
                     throw new RegistrationException('Akun tidak aktif.', 403);
                 }
-                if ($loginPassword === null || !password_verify($loginPassword, (string) $existingUser['password_hash'])) {
+                $isOwner = $actorUserId !== null && $actorUserId === (int) $existingUser['id'];
+                if (!$isOwner && ($loginPassword === null || !password_verify($loginPassword, (string) $existingUser['password_hash']))) {
                     throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.']);
                 }
                 $userId = (int) $existingUser['id'];
@@ -349,6 +350,90 @@ final class InviteService
              VALUES (:pondok_id, :user_id, :role, 'active', CURRENT_TIMESTAMP(3))
              ON DUPLICATE KEY UPDATE role = :role2, status = 'active', joined_at = CURRENT_TIMESTAMP(3)"
         )->execute(['pondok_id' => $pondokId, 'user_id' => $userId, 'role' => $role, 'role2' => $role]);
+    }
+
+    /** @return array<int,array{id:int,pondok_id:int,pondok_name:string,role:string,expires_at:string}> */
+    public function mine(string $email): array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT i.id, i.pondok_id, p.name AS pondok_name, i.role, i.expires_at
+             FROM pondok_invites i
+             JOIN pondoks p ON p.id = i.pondok_id
+             WHERE i.invited_email = :email AND i.status = \'pending\'
+               AND i.expires_at > CURRENT_TIMESTAMP(3)
+             ORDER BY i.id DESC LIMIT 20'
+        );
+        $statement->execute(['email' => strtolower(trim($email))]);
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(static fn(array $row) => [
+            'id' => (int) $row['id'],
+            'pondok_id' => (int) $row['pondok_id'],
+            'pondok_name' => (string) $row['pondok_name'],
+            'role' => $row['role'],
+            'expires_at' => (string) $row['expires_at'],
+        ], $rows);
+    }
+
+    /**
+     * Terima undangan milik sendiri yang sedang login (tanpa token).
+     *
+     * @return array{user:array{id:int,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string},pondok_id:int,role:string}
+     */
+    public function acceptById(int $actorUserId, int $inviteId): array
+    {
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $statement = $this->pdo->prepare(
+                'SELECT i.id, i.pondok_id, i.role, i.invited_email, i.status, i.expires_at, u.id AS uid
+                 FROM pondok_invites i
+                 JOIN users u ON u.email = i.invited_email
+                 WHERE i.id = :id AND u.id = :user_id LIMIT 1 FOR UPDATE'
+            );
+            $statement->execute(['id' => $inviteId, 'user_id' => $actorUserId]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if (!is_array($row) || $row['status'] !== 'pending' || strtotime((string) $row['expires_at']) < time()) {
+                throw new RegistrationException('Undangan tidak valid atau sudah kedaluwarsa.', 410);
+            }
+
+            $this->linkMembership((int) $row['uid'], (int) $row['pondok_id'], $row['role']);
+            $this->pdo->prepare(
+                'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
+                 WHERE id = :id AND status = \'pending\''
+            )->execute(['user_id' => (int) $row['uid'], 'id' => (int) $row['id']]);
+
+            $user = $this->pdo->prepare(
+                'SELECT id, name, username, email, phone_e164, email_verified_at FROM users WHERE id = :id'
+            );
+            $user->execute(['id' => (int) $row['uid']]);
+            $userRow = $user->fetch(PDO::FETCH_ASSOC);
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return [
+                'user' => [
+                    'id' => (int) $userRow['id'],
+                    'name' => (string) $userRow['name'],
+                    'username' => (string) $userRow['username'],
+                    'email' => (string) $userRow['email'],
+                    'phone_e164' => (string) $userRow['phone_e164'],
+                    'email_verified_at' => $userRow['email_verified_at'],
+                ],
+                'pondok_id' => (int) $row['pondok_id'],
+                'role' => $row['role'],
+            ];
+        } catch (\Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
     }
 
     /** @return array<string,mixed>|null */

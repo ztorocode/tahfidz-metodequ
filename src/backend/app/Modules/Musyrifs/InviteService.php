@@ -65,13 +65,21 @@ final class InviteService
             throw new RegistrationException('Pondok tidak ditemukan.', 404);
         }
 
-        $conflict = $this->accounts->findUserConflict($email, $phone ?? '+', substr($email, 0, (int) strpos($email, '@')));
-        if ($conflict === 'email' || $conflict === 'phone') {
-            throw new RegistrationException(
-                $conflict === 'email' ? 'Email sudah terdaftar.' : 'Nomor WhatsApp sudah terdaftar.',
-                409,
-                [$conflict => 'Sudah terdaftar.']
+        $existingStmt = $this->pdo->prepare('SELECT id, phone_e164 FROM users WHERE email = :email LIMIT 1');
+        $existingStmt->execute(['email' => $email]);
+        $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
+        if ($phone === null && is_array($existing)) {
+            $phone = (string) $existing['phone_e164'];
+        }
+        if (is_array($existing)) {
+            $already = $this->pdo->prepare(
+                "SELECT 1 FROM pondok_memberships
+                 WHERE pondok_id = :pondok_id AND user_id = :user_id AND role = :role AND status = 'active' LIMIT 1"
             );
+            $already->execute(['pondok_id' => $pondokId, 'user_id' => (int) $existing['id'], 'role' => $role]);
+            if ($already->fetchColumn() !== false) {
+                throw new RegistrationException('User ini sudah menjadi ' . $role . ' di pondok tersebut.', 409);
+            }
         }
 
         $token = bin2hex(random_bytes(32));
@@ -168,8 +176,14 @@ final class InviteService
         $pondok->execute(['id' => (int) $row['pondok_id']]);
         $pondokName = (string) $pondok->fetchColumn();
 
+        $registered = $this->pdo->prepare('SELECT name FROM users WHERE email = :email LIMIT 1');
+        $registered->execute(['email' => (string) $row['invited_email']]);
+        $registeredName = $registered->fetchColumn();
+
         return [
             'pondok_id' => (int) $row['pondok_id'],
+            'registered' => $registeredName !== false,
+            'registered_name' => $registeredName !== false ? (string) $registeredName : null,
             'pondok_name' => $pondokName,
             'role' => $row['role'],
             'email' => (string) $row['invited_email'],
@@ -181,15 +195,9 @@ final class InviteService
     /**
      * @return array{user:array{id:int,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string},pondok_id:int,role:string}
      */
-    public function accept(string $token, string $name, string $password, ?string $phoneInput = null): array
+    public function accept(string $token, string $name, string $password, ?string $phoneInput = null, ?string $loginPassword = null): array
     {
         $name = trim($name);
-        if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
-            throw new RegistrationException('Nama harus 2-150 karakter.', 422);
-        }
-        if (strlen($password) < 8 || strlen($password) > 255) {
-            throw new RegistrationException('Password minimal 8 karakter.', 422);
-        }
 
         $ownsTransaction = !$this->pdo->inTransaction();
         if ($ownsTransaction) {
@@ -203,6 +211,56 @@ final class InviteService
             }
 
             $email = (string) $invite['invited_email'];
+
+            if (!is_array($this->findUserByEmail($email))) {
+                if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
+                    throw new RegistrationException('Nama harus 2-150 karakter.', 422);
+                }
+                if (strlen($password) < 8 || strlen($password) > 255) {
+                    throw new RegistrationException('Password minimal 8 karakter.', 422);
+                }
+            }
+
+            $existsStmt = $this->pdo->prepare(
+                'SELECT u.id, u.name, u.username, u.email, u.phone_e164, u.email_verified_at, u.status, c.password_hash
+                 FROM users u JOIN auth_credentials c ON c.user_id = u.id
+                 WHERE u.email = :email LIMIT 1'
+            );
+            $existsStmt->execute(['email' => $email]);
+            $existingUser = $existsStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (is_array($existingUser)) {
+                if ($existingUser['status'] !== 'active') {
+                    throw new RegistrationException('Akun tidak aktif.', 403);
+                }
+                if ($loginPassword === null || !password_verify($loginPassword, (string) $existingUser['password_hash'])) {
+                    throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.']);
+                }
+                $userId = (int) $existingUser['id'];
+                $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
+                $this->pdo->prepare(
+                    'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
+                     WHERE id = :id AND status = \'pending\''
+                )->execute(['user_id' => $userId, 'id' => (int) $invite['id']]);
+
+                if ($ownsTransaction) {
+                    $this->pdo->commit();
+                }
+
+                return [
+                    'user' => [
+                        'id' => $userId,
+                        'name' => (string) $existingUser['name'],
+                        'username' => (string) $existingUser['username'],
+                        'email' => $email,
+                        'phone_e164' => (string) $existingUser['phone_e164'],
+                        'email_verified_at' => $existingUser['email_verified_at'],
+                    ],
+                    'pondok_id' => (int) $invite['pondok_id'],
+                    'role' => $invite['role'],
+                ];
+            }
+
             $phone = $invite['invited_phone_e164'] !== null
                 ? (string) $invite['invited_phone_e164']
                 : $this->normalizePhone((string) $phoneInput);
@@ -230,21 +288,7 @@ final class InviteService
                 $globalRole,
             );
 
-            if ($invite['role'] === 'musyrif') {
-                $this->pdo->prepare(
-                    "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
-                     VALUES (:user_id, 'pondok', :pondok_id, 'active')"
-                )->execute(['user_id' => $userId, 'pondok_id' => (int) $invite['pondok_id']]);
-            }
-
-            $this->pdo->prepare(
-                "INSERT INTO pondok_memberships (pondok_id, user_id, role, status, joined_at)
-                 VALUES (:pondok_id, :user_id, :role, 'active', CURRENT_TIMESTAMP(3))"
-            )->execute([
-                'pondok_id' => (int) $invite['pondok_id'],
-                'user_id' => $userId,
-                'role' => $invite['role'] === 'musyrif' ? 'musyrif' : 'santri',
-            ]);
+            $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
 
             $this->pdo->prepare(
                 'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
@@ -281,6 +325,39 @@ final class InviteService
             }
             throw $exception;
         }
+    }
+
+    private function linkMembership(int $userId, int $pondokId, string $role): void
+    {
+        $globalRole = $role === 'musyrif' ? 'musyrif' : 'member';
+        $this->pdo->prepare(
+            'INSERT INTO user_roles (user_id, role, status)
+             VALUES (:user_id, :role, \'active\')
+             ON DUPLICATE KEY UPDATE status = \'active\''
+        )->execute(['user_id' => $userId, 'role' => $globalRole]);
+
+        if ($role === 'musyrif') {
+            $this->pdo->prepare(
+                "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
+                 VALUES (:user_id, 'pondok', :pondok_id, 'active')
+                 ON DUPLICATE KEY UPDATE pondok_id = :pondok_id2, status = 'active'"
+            )->execute(['user_id' => $userId, 'pondok_id' => $pondokId, 'pondok_id2' => $pondokId]);
+        }
+
+        $this->pdo->prepare(
+            "INSERT INTO pondok_memberships (pondok_id, user_id, role, status, joined_at)
+             VALUES (:pondok_id, :user_id, :role, 'active', CURRENT_TIMESTAMP(3))
+             ON DUPLICATE KEY UPDATE role = :role2, status = 'active', joined_at = CURRENT_TIMESTAMP(3)"
+        )->execute(['pondok_id' => $pondokId, 'user_id' => $userId, 'role' => $role, 'role2' => $role]);
+    }
+
+    /** @return array<string,mixed>|null */
+    private function findUserByEmail(string $email): ?array
+    {
+        $statement = $this->pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+        $statement->execute(['email' => $email]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
     }
 
     /** @return array<string,mixed>|null */

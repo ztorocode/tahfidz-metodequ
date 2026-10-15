@@ -105,6 +105,7 @@ final class InviteController
                 (string) ($body['name'] ?? ''),
                 (string) ($body['password'] ?? ''),
                 isset($body['phone']) ? (string) $body['phone'] : null,
+                isset($body['login_password']) ? (string) $body['login_password'] : null,
             );
 
             $pdo = Database::connection();

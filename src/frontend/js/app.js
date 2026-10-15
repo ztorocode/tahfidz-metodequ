@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=a2fa9420";
-import {getState,setState} from "./store.js?v=a2fa9420";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a2fa9420";
-import {bindLogin} from "./pages/login.js?v=a2fa9420";
-import {bindInvite} from "./pages/terima-undangan.js?v=a2fa9420";
-import {toast} from "./utils/helpers.js?v=a2fa9420";
+import {view,routeName} from "./router.js?v=0fd13399";
+import {getState,setState} from "./store.js?v=0fd13399";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=0fd13399";
+import {bindLogin} from "./pages/login.js?v=0fd13399";
+import {bindInvite} from "./pages/terima-undangan.js?v=0fd13399";
+import {toast} from "./utils/helpers.js?v=0fd13399";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -91,48 +91,14 @@ function bindPageActions(){
   btn.disabled=false;btn.textContent="Kirim Undangan";
  });
  loadSantriList();
- let suggestTimer=null,selectedUserId=null;
+ let suggestTimer=null;
  const emailInput=document.querySelector("#musyrifEmail");
  const suggestBox=document.createElement("div");
  suggestBox.id="emailSuggest";
  suggestBox.className="list";
  suggestBox.style.marginTop="4px";
  emailInput?.after(suggestBox);
- const setMode=(user)=>{
-  selectedUserId=user?.id||null;
-  const inviteBtn=document.querySelector("#inviteMusyrifBtn");
-  let attachBtn=document.querySelector("#attachMusyrifBtn");
-  if(user&&!attachBtn){
-   attachBtn=document.createElement("button");
-   attachBtn.id="attachMusyrifBtn";
-   attachBtn.type="button";
-   attachBtn.className="btn primary full";
-   inviteBtn?.after(attachBtn);
-   attachBtn.addEventListener("click",async ()=>{
-    const msg=document.querySelector("#musyrifMessage");
-    attachBtn.disabled=true;
-    try{
-     const b=await api("/api/pondoks/musyrifs/attach",{method:"POST",body:JSON.stringify({pondok_id:pondokId(),user_id:selectedUserId})});
-     if(msg){msg.textContent=b?.data?.name+" dijadikan musyrif.";msg.style.color="var(--brand)";}
-     document.querySelector("#musyrifEmail").value="";
-     suggestBox.innerHTML="";setMode(null);loadMusyrifList();
-    }catch(err){
-     if(msg){msg.textContent=err?.message||"Gagal.";msg.style.color="var(--danger)";}
-    }
-    attachBtn.disabled=false;
-   });
-  }
-  if(attachBtn){
-   attachBtn.classList.toggle("hidden",!user);
-   if(user){
-    const pr=user.pondok_role?(" ("+user.pondok_role+" pondok ini)"):(" (sudah terdaftar)");
-    attachBtn.textContent="Jadikan Musyrif: "+user.name+pr;
-    if(inviteBtn)inviteBtn.classList.add("hidden");
-   }else if(inviteBtn)inviteBtn.classList.remove("hidden");
-  }
- };
  emailInput?.addEventListener("input",()=>{
-  setMode(null);
   suggestBox.innerHTML="";
   clearTimeout(suggestTimer);
   const q=emailInput.value.trim();
@@ -143,12 +109,10 @@ function bindPageActions(){
     if(!pid)return;
     const b=await api("/api/users/search?pondok_id="+pid+"&q="+encodeURIComponent(q));
     const rows=b.data||[];
-    suggestBox.innerHTML=rows.map(u=>`<button type="button" class="list-item" data-suggest-user='${JSON.stringify(u)}' style="width:100%;text-align:left"><span class="avatar">${(u.name||"?").slice(0,1)}</span><div class="grow"><b>${u.name}</b><small class="muted" style="display:block">${u.email} · ${u.phone}${u.pondok_role?(" · "+u.pondok_role):""}</small></div></button>`).join("");
-    suggestBox.querySelectorAll("[data-suggest-user]").forEach(btn=>btn.addEventListener("click",()=>{
-     const u=JSON.parse(btn.dataset.suggestUser);
-     document.querySelector("#musyrifEmail").value=u.email||"";
+    suggestBox.innerHTML=rows.map(u=>`<button type="button" class="list-item" data-suggest-email="${u.email}" style="width:100%;text-align:left"><span class="avatar">${(u.name||"?").slice(0,1)}</span><div class="grow"><b>${u.name}</b><small class="muted" style="display:block">${u.email} · ${u.phone}${u.pondok_role?(" · sudah "+u.pondok_role+" di pondok ini"):" · sudah terdaftar"}</small></div></button>`).join("");
+    suggestBox.querySelectorAll("[data-suggest-email]").forEach(btn=>btn.addEventListener("click",()=>{
+     document.querySelector("#musyrifEmail").value=btn.dataset.suggestEmail;
      suggestBox.innerHTML="";
-     setMode(u);
     }));
    }catch(e){}
   },300);
@@ -190,5 +154,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a2fa9420"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=0fd13399"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

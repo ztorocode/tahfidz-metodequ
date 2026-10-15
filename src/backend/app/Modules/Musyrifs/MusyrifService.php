@@ -21,16 +21,9 @@ final class MusyrifService
     /** @param array{id:int,roles:string[]} $actor */
     public function assertPondokAdmin(array $actor, int $pondokId): void
     {
-        if (in_array('super_admin', $actor['roles'] ?? [], true)) {
-            return;
-        }
-        $statement = $this->pdo->prepare(
-            "SELECT 1 FROM pondok_memberships
-             WHERE pondok_id = :pondok_id AND user_id = :user_id
-               AND role = 'admin' AND status = 'active' LIMIT 1"
-        );
-        $statement->execute(['pondok_id' => $pondokId, 'user_id' => (int) $actor['id']]);
-        if ($statement->fetchColumn() === false) {
+        try {
+            PondokAccess::assertPondokAdmin($this->pdo, $actor, $pondokId);
+        } catch (RegistrationException $exception) {
             throw new RegistrationException('Hanya admin pondok yang boleh mengelola musyrif.', 403);
         }
     }

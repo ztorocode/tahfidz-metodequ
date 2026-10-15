@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=e456ddf9";
-import {getState,setState} from "./store.js?v=e456ddf9";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e456ddf9";
-import {bindLogin} from "./pages/login.js?v=e456ddf9";
-import {bindInvite} from "./pages/terima-undangan.js?v=e456ddf9";
-import {toast} from "./utils/helpers.js?v=e456ddf9";
+import {view,routeName} from "./router.js?v=a2ba1716";
+import {getState,setState} from "./store.js?v=a2ba1716";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a2ba1716";
+import {bindLogin} from "./pages/login.js?v=a2ba1716";
+import {bindInvite} from "./pages/terima-undangan.js?v=a2ba1716";
+import {toast} from "./utils/helpers.js?v=a2ba1716";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -51,6 +51,46 @@ async function loadMusyrifList(){
 function bindPageActions(){
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
+ async function loadSantriList(){
+  const box=document.querySelector("#santriList");
+  if(!box)return;
+  const pid=pondokId();
+  if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
+  try{
+   const b=await api("/api/pondoks/santris?pondok_id="+pid);
+   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada santri.</small>';
+  }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
+  try{
+   const box2=document.querySelector("#santriInviteList");
+   if(box2){
+    const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=santri");
+    const rows=(ib.data||[]);
+    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
+   }
+  }catch(e){}
+ }
+ document.querySelector("#inviteSantriBtn")?.addEventListener("click",async e=>{
+  const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
+  const pid=pondokId();
+  const payload={pondok_id:pid,role:"santri",name:document.querySelector("#santriName")?.value.trim()||"",email:(document.querySelector("#santriEmail")?.value||"").trim(),phone:document.querySelector("#santriPhone")?.value.trim()||""};
+  if(!pid||!payload.name||!payload.email||!payload.phone){
+   if(msg){msg.textContent="Lengkapi nama, email, dan nomor WA.";msg.style.color="var(--danger)";}
+   return;
+  }
+  btn.disabled=true;btn.textContent="Mengirim...";
+  if(msg){msg.textContent="";msg.style.color="";}
+  try{
+   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify(payload)});
+   const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
+   if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
+   ["#santriName","#santriEmail","#santriPhone"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+   loadSantriList();
+  }catch(err){
+   if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
+  }
+  btn.disabled=false;btn.textContent="Kirim Undangan";
+ });
+ loadSantriList();
  document.querySelector("#inviteMusyrifBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
   const pid=pondokId();
@@ -74,7 +114,7 @@ function bindPageActions(){
  });
  document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener("click",async ()=>{
   if(!confirm("Batalkan undangan ini?"))return;
-  try{await api("/api/pondok-invites/revoke",{method:"POST",body:JSON.stringify({id:Number(b.dataset.revokeInvite)})});loadMusyrifList();}
+  try{await api("/api/pondok-invites/revoke",{method:"POST",body:JSON.stringify({id:Number(b.dataset.revokeInvite)})});loadMusyrifList();loadSantriList();}
   catch(err){alert(err?.message||"Gagal membatalkan.");}
  }));
  document.querySelector("#recordBtn")?.addEventListener("click",e=>{e.currentTarget.textContent="■ Sedang Merekam";toast("Rekaman demo dimulai")});
@@ -88,5 +128,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e456ddf9"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a2ba1716"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

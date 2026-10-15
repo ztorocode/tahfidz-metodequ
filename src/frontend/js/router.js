@@ -1,27 +1,28 @@
-import {getState} from "./store.js?v=e456ddf9";
-import {loginPage} from "./pages/login.js?v=e456ddf9";
-import {memberDashboard} from "./pages/member-dashboard.js?v=e456ddf9";
-import {programPage} from "./pages/program.js?v=e456ddf9";
-import {activityPage} from "./pages/activity.js?v=e456ddf9";
-import {submissionPage} from "./pages/submission.js?v=e456ddf9";
-import {murajaahPage} from "./pages/murajaah.js?v=e456ddf9";
-import {notificationsPage} from "./pages/notifications.js?v=e456ddf9";
-import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=e456ddf9";
-import {reviewPage} from "./pages/review.js?v=e456ddf9";
-import {acceptInvitePage} from "./pages/terima-undangan.js?v=e456ddf9";
-import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=e456ddf9";
-import {adminDashboard} from "./pages/admin-dashboard.js?v=e456ddf9";
-import {halaqahPage} from "./pages/halaqah.js?v=e456ddf9";
-import {studentProgressPage} from "./pages/santri-progress.js?v=e456ddf9";
-import {memberProgressPage} from "./pages/member-progress.js?v=e456ddf9";
-import {progressTablePage} from "./pages/tabel-progress.js?v=e456ddf9";
-import {whatsappPage} from "./pages/whatsapp.js?v=e456ddf9";
-import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=e456ddf9";
+import {getState} from "./store.js?v=a2ba1716";
+import {loginPage} from "./pages/login.js?v=a2ba1716";
+import {memberDashboard} from "./pages/member-dashboard.js?v=a2ba1716";
+import {programPage} from "./pages/program.js?v=a2ba1716";
+import {activityPage} from "./pages/activity.js?v=a2ba1716";
+import {submissionPage} from "./pages/submission.js?v=a2ba1716";
+import {murajaahPage} from "./pages/murajaah.js?v=a2ba1716";
+import {notificationsPage} from "./pages/notifications.js?v=a2ba1716";
+import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=a2ba1716";
+import {reviewPage} from "./pages/review.js?v=a2ba1716";
+import {acceptInvitePage} from "./pages/terima-undangan.js?v=a2ba1716";
+import {adminSantriPage} from "./pages/admin-santri.js?v=a2ba1716";
+import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=a2ba1716";
+import {adminDashboard} from "./pages/admin-dashboard.js?v=a2ba1716";
+import {halaqahPage} from "./pages/halaqah.js?v=a2ba1716";
+import {studentProgressPage} from "./pages/santri-progress.js?v=a2ba1716";
+import {memberProgressPage} from "./pages/member-progress.js?v=a2ba1716";
+import {progressTablePage} from "./pages/tabel-progress.js?v=a2ba1716";
+import {whatsappPage} from "./pages/whatsapp.js?v=a2ba1716";
+import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=a2ba1716";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,
  progress:memberProgressPage,report:progressTablePage,
- musyrif:musyrifDashboard,review:reviewPage,admin:adminDashboard,"kelola-musyrif":adminMusyrifPage,"terima-undangan":acceptInvitePage,halaqah:halaqahPage,"santri-progress":studentProgressPage,"tabel-progress":progressTablePage,whatsapp:whatsappPage,
+ musyrif:musyrifDashboard,review:reviewPage,admin:adminDashboard,"kelola-musyrif":adminMusyrifPage,"kelola-santri":adminSantriPage,"terima-undangan":acceptInvitePage,halaqah:halaqahPage,"santri-progress":studentProgressPage,"tabel-progress":progressTablePage,whatsapp:whatsappPage,
  "super-admin":superAdminDashboard,users:userManagementPage,pondoks:platformPondoksPage,"platform-musyrif":platformMusyrifPage,"platform-settings":platformSettingsPage
 };
 const platformRoutes=["super-admin","users","pondoks","platform-musyrif","platform-settings"];

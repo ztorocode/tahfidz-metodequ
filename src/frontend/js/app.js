@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=a2ba1716";
-import {getState,setState} from "./store.js?v=a2ba1716";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a2ba1716";
-import {bindLogin} from "./pages/login.js?v=a2ba1716";
-import {bindInvite} from "./pages/terima-undangan.js?v=a2ba1716";
-import {toast} from "./utils/helpers.js?v=a2ba1716";
+import {view,routeName} from "./router.js?v=73c7381e";
+import {getState,setState} from "./store.js?v=73c7381e";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=73c7381e";
+import {bindLogin} from "./pages/login.js?v=73c7381e";
+import {bindInvite} from "./pages/terima-undangan.js?v=73c7381e";
+import {toast} from "./utils/helpers.js?v=73c7381e";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -91,6 +91,70 @@ function bindPageActions(){
   btn.disabled=false;btn.textContent="Kirim Undangan";
  });
  loadSantriList();
+ let suggestTimer=null,selectedUserId=null;
+ const emailInput=document.querySelector("#musyrifEmail");
+ const suggestBox=document.createElement("div");
+ suggestBox.id="emailSuggest";
+ suggestBox.className="list";
+ suggestBox.style.marginTop="4px";
+ emailInput?.after(suggestBox);
+ const setMode=(user)=>{
+  selectedUserId=user?.id||null;
+  const inviteBtn=document.querySelector("#inviteMusyrifBtn");
+  let attachBtn=document.querySelector("#attachMusyrifBtn");
+  if(user&&!attachBtn){
+   attachBtn=document.createElement("button");
+   attachBtn.id="attachMusyrifBtn";
+   attachBtn.type="button";
+   attachBtn.className="btn primary full";
+   inviteBtn?.after(attachBtn);
+   attachBtn.addEventListener("click",async ()=>{
+    const msg=document.querySelector("#musyrifMessage");
+    attachBtn.disabled=true;
+    try{
+     const b=await api("/api/pondoks/musyrifs/attach",{method:"POST",body:JSON.stringify({pondok_id:pondokId(),user_id:selectedUserId})});
+     if(msg){msg.textContent=b?.data?.name+" dijadikan musyrif.";msg.style.color="var(--brand)";}
+     ["#musyrifName","#musyrifEmail","#musyrifPhone"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+     suggestBox.innerHTML="";setMode(null);loadMusyrifList();
+    }catch(err){
+     if(msg){msg.textContent=err?.message||"Gagal.";msg.style.color="var(--danger)";}
+    }
+    attachBtn.disabled=false;
+   });
+  }
+  if(attachBtn){
+   attachBtn.classList.toggle("hidden",!user);
+   if(user){
+    const pr=user.pondok_role?(" ("+user.pondok_role+" pondok ini)"):(" (sudah terdaftar)");
+    attachBtn.textContent="Jadikan Musyrif: "+user.name+pr;
+    if(inviteBtn)inviteBtn.classList.add("hidden");
+   }else if(inviteBtn)inviteBtn.classList.remove("hidden");
+  }
+ };
+ emailInput?.addEventListener("input",()=>{
+  setMode(null);
+  suggestBox.innerHTML="";
+  clearTimeout(suggestTimer);
+  const q=emailInput.value.trim();
+  if(q.length<2)return;
+  suggestTimer=setTimeout(async ()=>{
+   try{
+    const pid=pondokId();
+    if(!pid)return;
+    const b=await api("/api/users/search?pondok_id="+pid+"&q="+encodeURIComponent(q));
+    const rows=b.data||[];
+    suggestBox.innerHTML=rows.map(u=>`<button type="button" class="list-item" data-suggest-user='${JSON.stringify(u)}' style="width:100%;text-align:left"><span class="avatar">${(u.name||"?").slice(0,1)}</span><div class="grow"><b>${u.name}</b><small class="muted" style="display:block">${u.email} · ${u.phone}${u.pondok_role?(" · "+u.pondok_role):""}</small></div></button>`).join("");
+    suggestBox.querySelectorAll("[data-suggest-user]").forEach(btn=>btn.addEventListener("click",()=>{
+     const u=JSON.parse(btn.dataset.suggestUser);
+     document.querySelector("#musyrifName").value=u.name||"";
+     document.querySelector("#musyrifEmail").value=u.email||"";
+     document.querySelector("#musyrifPhone").value=u.phone||"";
+     suggestBox.innerHTML="";
+     setMode(u);
+    }));
+   }catch(e){}
+  },300);
+ });
  document.querySelector("#inviteMusyrifBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
   const pid=pondokId();
@@ -128,5 +192,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a2ba1716"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=73c7381e"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

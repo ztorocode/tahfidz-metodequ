@@ -107,6 +107,65 @@ final class MusyrifService
     }
 
     /** @param array{id:int,roles:string[]} $actor */
+    public function attachExisting(array $actor, int $pondokId, int $userId): array
+    {
+        $this->assertPondokAdmin($actor, $pondokId);
+
+        $user = $this->pdo->prepare(
+            "SELECT id, name, username, email, phone_e164, status FROM users WHERE id = :id LIMIT 1"
+        );
+        $user->execute(['id' => $userId]);
+        $row = $user->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            throw new RegistrationException('User tidak ditemukan.', 404);
+        }
+        if ($row['status'] !== 'active') {
+            throw new RegistrationException('Akun tidak aktif.', 403);
+        }
+
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $this->pdo->prepare(
+                'INSERT INTO user_roles (user_id, role, status)
+                 VALUES (:user_id, \'musyrif\', \'active\')
+                 ON DUPLICATE KEY UPDATE status = \'active\''
+            )->execute(['user_id' => $userId]);
+
+            $this->pdo->prepare(
+                "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
+                 VALUES (:user_id, 'pondok', :pondok_id, 'active')
+                 ON DUPLICATE KEY UPDATE pondok_id = :pondok_id2, status = 'active'"
+            )->execute(['user_id' => $userId, 'pondok_id' => $pondokId, 'pondok_id2' => $pondokId]);
+
+            $this->pdo->prepare(
+                "INSERT INTO pondok_memberships (pondok_id, user_id, role, status, joined_at)
+                 VALUES (:pondok_id, :user_id, 'musyrif', 'active', CURRENT_TIMESTAMP(3))
+                 ON DUPLICATE KEY UPDATE role = 'musyrif', status = 'active', joined_at = CURRENT_TIMESTAMP(3)"
+            )->execute(['pondok_id' => $pondokId, 'user_id' => $userId]);
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+
+            return [
+                'id' => $userId,
+                'name' => $row['name'],
+                'email' => $row['email'],
+                'phone' => $row['phone_e164'],
+            ];
+        } catch (\Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
+    }
+
+    /** @param array{id:int,roles:string[]} $actor */
     public function listPondokMusyrifs(array $actor, int $pondokId): array
     {
         $this->assertPondokAdmin($actor, $pondokId);

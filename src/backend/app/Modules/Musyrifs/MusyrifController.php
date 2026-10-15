@@ -48,6 +48,27 @@ final class MusyrifController
         }
     }
 
+    public function attach(Request $request): never
+    {
+        try {
+            $pdo = Database::connection();
+            $service = new MusyrifService($pdo, new RegisterRepository($pdo), new MusyrifValidator());
+            $body = $request->body();
+            $musyrif = $service->attachExisting(
+                $this->actor($request),
+                (int) ($body['pondok_id'] ?? 0),
+                (int) ($body['user_id'] ?? 0)
+            );
+            Response::json(['success' => true, 'message' => 'Musyrif berhasil ditambahkan.', 'data' => $musyrif], 201);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     public function index(Request $request): never
     {
         try {

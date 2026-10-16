@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=f3ae0417";
-import {students} from "../data/dummy-data.js?v=f3ae0417";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=f3ae0417";
+import {getState,setState} from "../store.js?v=7a69ad2e";
+import {students} from "../data/dummy-data.js?v=7a69ad2e";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=7a69ad2e";
 
 let selectedHalaqahId=null;
 
@@ -107,10 +107,10 @@ function pondokName(){
 }
 
 function adminList(items){
- return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
-  <div><p class="eyebrow">Pondok / Halaqah</p><h1>Halaqah</h1><p class="muted">Kelola halaqah, tentukan musyrif, dan lihat santri di setiap halaqah.</p></div>
-  <button class="btn primary" type="button" data-halaqah-add>+ Tambah Halaqah</button>
- </div>
+ return `<div style="margin-bottom:18px">
+  <p class="eyebrow">Pondok / Halaqah</p>
+  <div class="row between" style="gap:12px"><h1 style="margin:0">Halaqah</h1><button class="btn primary" type="button" data-halaqah-add>+Halaqah</button></div>
+  <p class="muted">Kelola halaqah, tentukan musyrif, dan lihat santri di setiap halaqah.</p></div>
  <div class="grid-3">
   ${items.length?items.map(item=>`<div class="card stack">
    <div class="row between"><div><h3>${escapeHtml(item.name)}</h3><small class="muted">${escapeHtml(musyrifName(item.musyrifId))}</small></div>${badge("Aktif","success")}</div>

@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=2533b863";
-import {getState,setState} from "./store.js?v=2533b863";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=2533b863";
-import {bindLogin} from "./pages/login.js?v=2533b863";
-import {bindInvite} from "./pages/terima-undangan.js?v=2533b863";
-import {toast} from "./utils/helpers.js?v=2533b863";
+import {view,routeName} from "./router.js?v=a0c5dd17";
+import {getState,setState} from "./store.js?v=a0c5dd17";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a0c5dd17";
+import {bindLogin} from "./pages/login.js?v=a0c5dd17";
+import {bindInvite} from "./pages/terima-undangan.js?v=a0c5dd17";
+import {toast} from "./utils/helpers.js?v=a0c5dd17";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -200,8 +200,11 @@ function bindPageActions(){
  });
   document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
    const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
-   const link=btn.dataset.link||"";
-   if(!link)return;
+   const link=btn.dataset.link||getState().lastSantriInviteLink||"";
+   if(!link){
+    if(msg){msg.textContent="Belum ada link. Isi email lalu tekan Kirim Undangan dulu.";msg.style.color="var(--danger)";}
+    return;
+   }
    try{
     if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
     else{
@@ -216,8 +219,11 @@ function bindPageActions(){
   });
   document.querySelector("#copyMusyrifLinkBtn")?.addEventListener("click",async e=>{
    const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
-   const link=btn.dataset.link||"";
-   if(!link)return;
+   const link=btn.dataset.link||getState().lastMusyrifInviteLink||"";
+   if(!link){
+    if(msg){msg.textContent="Belum ada link. Isi email lalu tekan Kirim Undangan dulu.";msg.style.color="var(--danger)";}
+    return;
+   }
    try{
     if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
     else{
@@ -283,5 +289,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=2533b863"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a0c5dd17"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

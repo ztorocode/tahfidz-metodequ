@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=8d268536";
-import {toast} from "../utils/helpers.js?v=8d268536";
+import {getState,setState} from "../store.js?v=91f0394e";
+import {toast} from "../utils/helpers.js?v=91f0394e";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -9,7 +9,7 @@ function inviteToken(){
 
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=8d268536">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=91f0394e">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }

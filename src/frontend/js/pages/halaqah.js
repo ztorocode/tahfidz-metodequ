@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=8d268536";
-import {students} from "../data/dummy-data.js?v=8d268536";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=8d268536";
+import {getState,setState} from "../store.js?v=91f0394e";
+import {students} from "../data/dummy-data.js?v=91f0394e";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=91f0394e";
 
 let selectedHalaqahId=null;
 
@@ -243,11 +243,11 @@ document.addEventListener("click",event=>{
    const box=document.querySelector("#santriCheckList");
    if(!box)return;
    const chosen=new Set((item.students||[]).map(x=>x.santriUserId||x.name));
-   box.innerHTML=list.length?list.map(u=>{
+   box.innerHTML=list.length?`<div class="check-group">`+list.map(u=>{
     const key=u.id||u.email;
     const checked=(item.students||[]).some(x=>x.santriUserId===u.id||x.name===u.name);
-    return `<label class="list-item"><input type="checkbox" data-santri-check="${u.id||""}" data-santri-name="${escapeHtml(u.name)}" data-santri-email="${escapeHtml(u.email||"")}" ${checked?"checked":""}><span class="avatar">${escapeHtml((u.name||"?").slice(0,1))}</span><div class="grow"><b>${escapeHtml(u.name)}</b><small class="muted" style="display:block">${escapeHtml(u.email||"")}</small></div></label>`;
-   }).join(""):'<small class="muted">Belum ada santri di pondok ini. Undang dulu via menu Santri.</small>';
+    return `<label class="check-row"><input type="checkbox" data-santri-check="${u.id||""}" data-santri-name="${escapeHtml(u.name)}" data-santri-email="${escapeHtml(u.email||"")}" ${checked?"checked":""}><span class="avatar">${escapeHtml((u.name||"?").slice(0,1))}</span><div class="grow"><b>${escapeHtml(u.name)}</b><small class="muted" style="display:block">${escapeHtml(u.email||"")}</small></div></label>`;
+   }).join("")+`</div>`:'<small class="muted">Belum ada santri di pondok ini. Undang dulu via menu Santri.</small>';
   };
   renderList(realSantriList());
   refreshSantris(true,true).then(()=>renderList(realSantriList()));

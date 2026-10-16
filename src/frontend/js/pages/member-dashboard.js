@@ -1,7 +1,7 @@
-import {member} from "../data/dummy-data.js?v=8d268536";
-import {getState} from "../store.js?v=8d268536";
-import {getProgressContext} from "../utils/progress-context.js?v=8d268536";
-import {badge} from "../utils/helpers.js?v=8d268536";
+import {member} from "../data/dummy-data.js?v=91f0394e";
+import {getState} from "../store.js?v=91f0394e";
+import {getProgressContext} from "../utils/progress-context.js?v=91f0394e";
+import {badge} from "../utils/helpers.js?v=91f0394e";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const weekdayIds=["ahad","senin","selasa","rabu","kamis","jumat","sabtu"];

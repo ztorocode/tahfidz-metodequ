@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=8d268536";
-import {getState,setState} from "./store.js?v=8d268536";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=8d268536";
-import {bindLogin} from "./pages/login.js?v=8d268536";
-import {bindInvite} from "./pages/terima-undangan.js?v=8d268536";
-import {toast} from "./utils/helpers.js?v=8d268536";
+import {view,routeName} from "./router.js?v=91f0394e";
+import {getState,setState} from "./store.js?v=91f0394e";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=91f0394e";
+import {bindLogin} from "./pages/login.js?v=91f0394e";
+import {bindInvite} from "./pages/terima-undangan.js?v=91f0394e";
+import {toast} from "./utils/helpers.js?v=91f0394e";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -391,5 +391,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=8d268536"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=91f0394e"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

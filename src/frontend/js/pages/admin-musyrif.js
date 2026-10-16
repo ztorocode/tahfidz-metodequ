@@ -10,5 +10,19 @@ export function adminMusyrifPage(){
 <small class="muted" id="musyrifMessage">Ketik email — bila sudah terdaftar akan muncul saran. Nama & WA diisi musyrif saat terima undangan.</small>Undangan berisi link; musyrif membuat password sendiri (berlaku 7 hari).</small>
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
-</div></div></div>`;
+<button class="btn full" id="addMusyrifBtn" type="button">+Musyrif</button>
+</div></div></div>
+<div class="modal-backdrop hidden" id="musyrifModal">
+ <div class="modal-card">
+  <div class="row between"><div><p class="eyebrow">Musyrif</p><h2>Tambah Musyrif</h2></div><button class="btn" id="closeMusyrifBtn" type="button">Tutup</button></div>
+  <div class="stack">
+   <div><label class="label">Nama lengkap</label><input class="input" id="newMusyrifName" autocomplete="off" placeholder="Nama lengkap"></div>
+   <div><label class="label">Email</label><input class="input" id="newMusyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
+   <div><label class="label">Nomor WhatsApp</label><input class="input" id="newMusyrifPhone" inputmode="tel" placeholder="+62 ..."></div>
+   <div><label class="label">Password awal</label><input class="input" id="newMusyrifPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+   <small class="muted" id="newMusyrifMessage"></small>
+   <button class="btn primary full" id="saveMusyrifBtn" type="button">Simpan Musyrif</button>
+  </div>
+ </div>
+</div>`;
 }

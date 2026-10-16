@@ -228,6 +228,39 @@ function bindPageActions(){
    await copyStandingLink("musyrif",document.querySelector("#musyrifMessage"));
    btn.disabled=false;
   });
+  const musyrifModal=()=>document.querySelector("#musyrifModal");
+  document.querySelector("#addMusyrifBtn")?.addEventListener("click",()=>{
+   const m=musyrifModal();if(!m)return;
+   const msg=document.querySelector("#newMusyrifMessage");
+   if(msg){msg.textContent="";msg.style.color="";}
+   m.classList.remove("hidden");
+   document.querySelector("#newMusyrifName")?.focus();
+  });
+  document.querySelector("#closeMusyrifBtn")?.addEventListener("click",()=>musyrifModal()?.classList.add("hidden"));
+  musyrifModal()?.addEventListener("click",event=>{if(event.target===musyrifModal())musyrifModal()?.classList.add("hidden");});
+  document.querySelector("#saveMusyrifBtn")?.addEventListener("click",async e=>{
+   const btn=e.currentTarget,msg=document.querySelector("#newMusyrifMessage");
+   const pid=pondokId();
+   const payload={
+    pondok_id:pid,
+    name:(document.querySelector("#newMusyrifName")?.value||"").trim(),
+    email:(document.querySelector("#newMusyrifEmail")?.value||"").trim(),
+    phone:(document.querySelector("#newMusyrifPhone")?.value||"").trim(),
+    password:document.querySelector("#newMusyrifPassword")?.value||""
+   };
+   if(msg){msg.textContent="";msg.style.color="";}
+   btn.disabled=true;btn.textContent="Menyimpan...";
+   try{
+    const b=await api("/api/pondoks/musyrifs",{method:"POST",body:JSON.stringify(payload)});
+    if(msg){msg.textContent="Musyrif "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
+    ["#newMusyrifName","#newMusyrifEmail","#newMusyrifPhone","#newMusyrifPassword"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
+    loadMusyrifList();
+    setTimeout(()=>musyrifModal()?.classList.add("hidden"),800);
+   }catch(err){
+    if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
+   }
+   btn.disabled=false;btn.textContent="Simpan Musyrif";
+  });
   document.querySelectorAll("[data-copy-invite-link]").forEach(btn=>btn.addEventListener("click",async ()=>{
    const link=btn.dataset.copyInviteLink||"";
    if(!link)return;

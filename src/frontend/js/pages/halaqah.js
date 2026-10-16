@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=ec26735e";
-import {students} from "../data/dummy-data.js?v=ec26735e";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=ec26735e";
+import {getState,setState} from "../store.js?v=8d268536";
+import {students} from "../data/dummy-data.js?v=8d268536";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=8d268536";
 
 let selectedHalaqahId=null;
 
@@ -170,12 +170,12 @@ function detail(item,isAdmin){
    </div>
   </div>
  </div>
- <div class="grid-4" style="margin-bottom:16px">
+ <div class="kpi-row" style="margin-bottom:16px">
   <div class="kpi"><b>${item.students.length}</b><span class="muted">Santri</span></div>
   <div class="kpi"><b>${item.students.reduce((sum,s)=>sum+(Number(s.mutqin)||0),0)}</b><span class="muted">Total Mutqin</span></div>
   <div class="kpi"><b>${item.students.reduce((sum,s)=>sum+(Number(s.pending)||0),0)}</b><span class="muted">Setoran Pending</span></div>
-  <div class="kpi"><b>${isAdmin?"Admin":"Musyrif"}</b><span class="muted">Akses aktif</span></div>
  </div>
+ <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Musyrif"}</b><span class="muted">Akses aktif</span></div>
  <div class="card">
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>
   ${item.students.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Setoran pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>

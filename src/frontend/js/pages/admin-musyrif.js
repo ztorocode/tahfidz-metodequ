@@ -1,15 +1,16 @@
-import {getState} from "../store.js?v=25bd8658";
+import {getState} from "../store.js?v=1cc40fc3";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Kelola Musyrif</p><h1>Musyrif ${pondokName}</h1><p class="muted">Undang musyrif lewat email & WhatsApp, mereka buat password sendiri.</p></div></div>
-<div class="grid-2"><div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div>
-<h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div></div>
-<div class="card"><h3>Undang Musyrif</h3><div class="stack">
+<div class="grid-2"><div class="card"><h3>Undang Musyrif</h3><div class="stack">
 <p class="muted" style="margin:0">Undang banyak musyrif sekaligus lewat email & WhatsApp, mereka buat password sendiri.</p>
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
 <button class="btn full" id="addMusyrifBtn" type="button">+Musyrif</button>
+</div></div>
+<div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div>
+<h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div></div>
 </div></div></div>
 <div class="modal-backdrop hidden" id="inviteMusyrifModal">
  <div class="modal-card">

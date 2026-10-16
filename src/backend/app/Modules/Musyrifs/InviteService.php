@@ -408,10 +408,12 @@ final class InviteService
                 }
                 $userId = (int) $existingUser['id'];
                 $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
-                $this->pdo->prepare(
-                    'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
-                     WHERE id = :id AND status = \'pending\''
-                )->execute(['user_id' => $userId, 'id' => (int) $invite['id']]);
+                if ($invite['invited_email'] !== null) {
+                    $this->pdo->prepare(
+                        'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
+                         WHERE id = :id AND status = \'pending\''
+                    )->execute(['user_id' => $userId, 'id' => (int) $invite['id']]);
+                }
 
                 if ($ownsTransaction) {
                     $this->pdo->commit();
@@ -463,10 +465,12 @@ final class InviteService
 
             $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
 
-            $this->pdo->prepare(
-                'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
-                 WHERE id = :id AND status = \'pending\''
-            )->execute(['user_id' => $userId, 'id' => (int) $invite['id']]);
+            if ($invite['invited_email'] !== null) {
+                $this->pdo->prepare(
+                    'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
+                     WHERE id = :id AND status = \'pending\''
+                )->execute(['user_id' => $userId, 'id' => (int) $invite['id']]);
+            }
 
             if ($ownsTransaction) {
                 $this->pdo->commit();

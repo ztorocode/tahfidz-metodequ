@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=7a69ad2e";
-import {students} from "../data/dummy-data.js?v=7a69ad2e";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=7a69ad2e";
+import {getState,setState} from "../store.js?v=ec26735e";
+import {students} from "../data/dummy-data.js?v=ec26735e";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=ec26735e";
 
 let selectedHalaqahId=null;
 
@@ -112,11 +112,15 @@ function adminList(items){
   <div class="row between" style="gap:12px"><h1 style="margin:0">Halaqah</h1><button class="btn primary" type="button" data-halaqah-add>+Halaqah</button></div>
   <p class="muted">Kelola halaqah, tentukan musyrif, dan lihat santri di setiap halaqah.</p></div>
  <div class="grid-3">
-  ${items.length?items.map(item=>`<div class="card stack">
-   <div class="row between"><div><h3>${escapeHtml(item.name)}</h3><small class="muted">${escapeHtml(musyrifName(item.musyrifId))}</small></div>${badge("Aktif","success")}</div>
-   <div class="row between"><span class="muted">Jumlah santri</span><b>${item.students.length}</b></div>
-   <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
-  </div>`).join(""):`<div class="card"><p class="muted">Belum ada halaqah. Tekan <b>+ Tambah Halaqah</b> untuk membuat yang pertama.</p></div>`}
+  ${items.length?items.map(item=>`<div class="card">
+   <div class="row" style="gap:12px">
+    <div class="grow" style="min-width:0">
+     <div class="row between" style="gap:8px"><b>${escapeHtml(item.name)}</b>${badge("Aktif","success")}</div>
+     <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Musyrif ${escapeHtml(musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
+    </div>
+    <button class="btn" type="button" data-halaqah-view="${item.id}" aria-label="Lihat detail" style="font-size:22px;padding:6px 14px">›</button>
+   </div>
+  </div>`).join(""):`<div class="card"><p class="muted">Belum ada halaqah. Tekan <b>+Halaqah</b> untuk membuat yang pertama.</p></div>`}
  </div>
  <div class="modal-backdrop hidden" id="halaqahModal">
   <div class="modal-card">

@@ -394,6 +394,9 @@ final class InviteService
             $username = substr($email, 0, (int) strpos($email, '@'));
             $conflict = $this->accounts->findUserConflict($email, $phone, $username);
             if ($conflict !== null && $conflict !== 'username') {
+                if ($conflict === 'phone') {
+                    throw new RegistrationException('Nomor WhatsApp ini sudah terdaftar. Silakan gunakan nomor lain.', 409);
+                }
                 throw new RegistrationException('Data ini sudah terdaftar. Silakan login.', 409);
             }
             if ($conflict === 'username') {

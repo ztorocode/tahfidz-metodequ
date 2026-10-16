@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Core\Router;
 use App\Modules\Musyrifs\InviteController;
 use App\Modules\Musyrifs\MusyrifController;
+use App\Modules\Musyrifs\PondokMemberController;
 use App\Modules\Musyrifs\SantriController;
 
 return static function (Router $router): void {

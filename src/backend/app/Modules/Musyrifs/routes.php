@@ -15,6 +15,7 @@ return static function (Router $router): void {
     $router->post('/api/pondok-invites', [new InviteController(), 'store']);
     $router->post('/api/pondok-invites/revoke', [new InviteController(), 'revoke']);
     $router->post('/api/pondok-invites/regenerate', [new InviteController(), 'regenerate']);
+    $router->post('/api/pondok-invites/standing-link', [new InviteController(), 'standingLink']);
     $router->get('/api/pondok-invites/info', [new InviteController(), 'info']);
     $router->get('/api/pondok-invites/mine', [new InviteController(), 'mine']);
     $router->post('/api/pondok-invites/accept-mine', [new InviteController(), 'acceptMine']);

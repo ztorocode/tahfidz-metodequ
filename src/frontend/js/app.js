@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=a0c5dd17";
-import {getState,setState} from "./store.js?v=a0c5dd17";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a0c5dd17";
-import {bindLogin} from "./pages/login.js?v=a0c5dd17";
-import {bindInvite} from "./pages/terima-undangan.js?v=a0c5dd17";
-import {toast} from "./utils/helpers.js?v=a0c5dd17";
+import {view,routeName} from "./router.js?v=589a06fb";
+import {getState,setState} from "./store.js?v=589a06fb";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=589a06fb";
+import {bindLogin} from "./pages/login.js?v=589a06fb";
+import {bindInvite} from "./pages/terima-undangan.js?v=589a06fb";
+import {toast} from "./utils/helpers.js?v=589a06fb";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -198,43 +198,35 @@ function bindPageActions(){
   }
   btn.disabled=false;btn.textContent="Kirim Undangan";
  });
-  document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
-   const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
-   const link=btn.dataset.link||getState().lastSantriInviteLink||"";
-   if(!link){
-    if(msg){msg.textContent="Belum ada link. Isi email lalu tekan Kirim Undangan dulu.";msg.style.color="var(--danger)";}
-    return;
-   }
+  async function copyStandingLink(role,msg){
+   const pid=pondokId();
+   if(!pid){if(msg){msg.textContent="Pondok tidak diketahui.";msg.style.color="var(--danger)";}return;}
    try{
+    const b=await api("/api/pondok-invites/standing-link",{method:"POST",body:JSON.stringify({pondok_id:pid,role})});
+    const link=b.data?.link||"";
+    if(!link)throw new Error("Link tidak tersedia.");
     if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
     else{
      const ta=document.createElement("textarea");
      ta.value=link;document.body.appendChild(ta);ta.select();
      document.execCommand("copy");ta.remove();
     }
-    if(msg){msg.textContent="Link tersalin. Bagikan ke calon santri.";msg.style.color="var(--brand)";}
+    if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+role+".";msg.style.color="var(--brand)";}
    }catch(err){
-    prompt("Salin link berikut:",link);
+    if(msg){msg.textContent=err?.message||"Gagal menyalin link.";msg.style.color="var(--danger)";}
    }
+  }
+  document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
+   const btn=e.currentTarget;
+   btn.disabled=true;
+   await copyStandingLink("santri",document.querySelector("#santriMessage"));
+   btn.disabled=false;
   });
   document.querySelector("#copyMusyrifLinkBtn")?.addEventListener("click",async e=>{
-   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
-   const link=btn.dataset.link||getState().lastMusyrifInviteLink||"";
-   if(!link){
-    if(msg){msg.textContent="Belum ada link. Isi email lalu tekan Kirim Undangan dulu.";msg.style.color="var(--danger)";}
-    return;
-   }
-   try{
-    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
-    else{
-     const ta=document.createElement("textarea");
-     ta.value=link;document.body.appendChild(ta);ta.select();
-     document.execCommand("copy");ta.remove();
-    }
-    if(msg){msg.textContent="Link tersalin. Bagikan ke calon musyrif.";msg.style.color="var(--brand)";}
-   }catch(err){
-    prompt("Salin link berikut:",link);
-   }
+   const btn=e.currentTarget;
+   btn.disabled=true;
+   await copyStandingLink("musyrif",document.querySelector("#musyrifMessage"));
+   btn.disabled=false;
   });
   document.querySelectorAll("[data-copy-invite-link]").forEach(btn=>btn.addEventListener("click",async ()=>{
    const link=btn.dataset.copyInviteLink||"";
@@ -289,5 +281,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a0c5dd17"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=589a06fb"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

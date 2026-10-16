@@ -83,11 +83,29 @@ final class InviteController
         }
     }
 
-    public function regenerate(Request $request): never
-    {
+    public function regenerate(Request $request): never    {
         try {
             $invite = $this->service()->regenerateLink($this->actor($request), (int) ($request->body()['id'] ?? 0));
             Response::json(['success' => true, 'message' => 'Link undangan baru dibuat.', 'data' => $invite]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
+    public function standingLink(Request $request): never
+    {
+        try {
+            $body = $request->body();
+            $link = $this->service()->standingLink(
+                $this->actor($request),
+                (int) ($body['pondok_id'] ?? 0),
+                (string) ($body['role'] ?? '')
+            );
+            Response::json(['success' => true, 'message' => 'Link undangan siap disalin.', 'data' => $link]);
         } catch (RegistrationException $exception) {
             Response::json([
                 'success' => false,
@@ -165,6 +183,7 @@ final class InviteController
                 isset($body['phone']) ? (string) $body['phone'] : null,
                 isset($body['login_password']) ? (string) $body['login_password'] : null,
                 $actorId,
+                isset($body['email']) ? (string) $body['email'] : null,
             );
 
             $pdo = Database::connection();

@@ -184,6 +184,74 @@ final class InviteService
         ];
     }
 
+    /**
+     * Link undangan umum multi-pakai per pondok+role (tanpa email, tanpa kirim dulu).
+     * Baris generik dipakai ulang; token plaintext disimpan agar link stabil.
+     *
+     * @param array{id:int,roles:string[]} $actor
+     * @return array{id:int,link:string,role:string,pondok:array{id:int,name:string}}
+     */
+    public function standingLink(array $actor, int $pondokId, string $role): array
+    {
+        $role = strtolower(trim($role));
+        if ($pondokId <= 0) {
+            throw new RegistrationException('Pondok wajib dipilih.', 422);
+        }
+        if (!in_array($role, ['musyrif', 'santri'], true)) {
+            throw new RegistrationException('Role undangan harus musyrif atau santri.', 422);
+        }
+
+        PondokAccess::assertPondokAdmin($this->pdo, $actor, $pondokId);
+
+        $pondok = $this->pdo->prepare(
+            "SELECT id, name FROM pondoks WHERE id = :id AND status = 'active' LIMIT 1"
+        );
+        $pondok->execute(['id' => $pondokId]);
+        $pondokRow = $pondok->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($pondokRow)) {
+            throw new RegistrationException('Pondok tidak ditemukan.', 404);
+        }
+
+        $existing = $this->pdo->prepare(
+            "SELECT id, invite_token_plain FROM pondok_invites
+              WHERE pondok_id = :pondok_id AND role = :role AND status = 'pending'
+                AND invited_email IS NULL AND expires_at > CURRENT_TIMESTAMP(3)
+              ORDER BY id DESC LIMIT 1"
+        );
+        $existing->execute(['pondok_id' => $pondokId, 'role' => $role]);
+        $row = $existing->fetch(PDO::FETCH_ASSOC);
+
+        $baseUrl = rtrim((string) (getenv('APP_URL') ?: ''), '/');
+
+        if (is_array($row) && is_string($row['invite_token_plain']) && $row['invite_token_plain'] !== '') {
+            return [
+                'id' => (int) $row['id'],
+                'link' => $baseUrl . '/#terima-undangan?token=' . urlencode($row['invite_token_plain']),
+                'role' => $role,
+                'pondok' => ['id' => (int) $pondokRow['id'], 'name' => (string) $pondokRow['name']],
+            ];
+        }
+
+        $token = bin2hex(random_bytes(32));
+        $this->pdo->prepare(
+            'INSERT INTO pondok_invites (pondok_id, role, token_hash, invite_token_plain, invited_email, invited_phone_e164, created_by, expires_at)
+             VALUES (:pondok_id, :role, :token_hash, :token_plain, NULL, NULL, :created_by, DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 90 DAY))'
+        )->execute([
+            'pondok_id' => $pondokId,
+            'role' => $role,
+            'token_hash' => hash('sha256', $token),
+            'token_plain' => $token,
+            'created_by' => (int) $actor['id'],
+        ]);
+
+        return [
+            'id' => (int) $this->pdo->lastInsertId(),
+            'link' => $baseUrl . '/#terima-undangan?token=' . urlencode($token),
+            'role' => $role,
+            'pondok' => ['id' => (int) $pondokRow['id'], 'name' => (string) $pondokRow['name']],
+        ];
+    }
+
     /** @param array{id:int,roles:string[]} $actor */
     public function revoke(array $actor, int $inviteId): bool    {
         $statement = $this->pdo->prepare(
@@ -216,17 +284,25 @@ final class InviteService
         $pondok->execute(['id' => (int) $row['pondok_id']]);
         $pondokName = (string) $pondok->fetchColumn();
 
-        $registered = $this->pdo->prepare('SELECT name FROM users WHERE email = :email LIMIT 1');
-        $registered->execute(['email' => (string) $row['invited_email']]);
-        $registeredName = $registered->fetchColumn();
+        $registered = null;
+        $registeredName = null;
+        $email = $row['invited_email'] !== null ? (string) $row['invited_email'] : null;
+        $isGeneric = $email === null;
+        if (!$isGeneric) {
+            $registeredStmt = $this->pdo->prepare('SELECT name FROM users WHERE email = :email LIMIT 1');
+            $registeredStmt->execute(['email' => $email]);
+            $registeredName = $registeredStmt->fetchColumn();
+            $registered = $registeredName !== false;
+        }
 
         return [
             'pondok_id' => (int) $row['pondok_id'],
-            'registered' => $registeredName !== false,
-            'registered_name' => $registeredName !== false ? (string) $registeredName : null,
+            'registered' => $registered === true,
+            'registered_name' => is_string($registeredName) ? $registeredName : null,
+            'generic' => $isGeneric,
             'pondok_name' => $pondokName,
             'role' => $row['role'],
-            'email' => (string) $row['invited_email'],
+            'email' => $email,
             'phone' => $row['invited_phone_e164'] !== null ? (string) $row['invited_phone_e164'] : null,
             'expires_at' => (string) $row['expires_at'],
         ];
@@ -235,7 +311,7 @@ final class InviteService
     /**
      * @return array{user:array{id:int,name:string,username:string,email:string,phone_e164:string,email_verified_at:?string},pondok_id:int,role:string}
      */
-    public function accept(string $token, string $name, string $password, ?string $phoneInput = null, ?string $loginPassword = null, ?int $actorUserId = null): array
+    public function accept(string $token, string $name, string $password, ?string $phoneInput = null, ?string $loginPassword = null, ?int $actorUserId = null, ?string $emailInput = null): array
     {
         $name = trim($name);
 
@@ -250,7 +326,14 @@ final class InviteService
                 throw new RegistrationException('Undangan tidak valid atau sudah kedaluwarsa.', 410);
             }
 
-            $email = (string) $invite['invited_email'];
+            $email = $invite['invited_email'] !== null
+                ? (string) $invite['invited_email']
+                : strtolower(trim((string) $emailInput));
+            if ($invite['invited_email'] === null) {
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) {
+                    throw new RegistrationException('Email tidak valid.', 422, ['email' => 'Email tidak valid.']);
+                }
+            }
 
             if (!is_array($this->findUserByEmail($email))) {
                 if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
@@ -275,7 +358,7 @@ final class InviteService
                 }
                 $isOwner = $actorUserId !== null && $actorUserId === (int) $existingUser['id'];
                 if (!$isOwner && ($loginPassword === null || !password_verify($loginPassword, (string) $existingUser['password_hash']))) {
-                    throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.']);
+                    throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.', 'login_password' => 'Password akun Anda salah.']);
                 }
                 $userId = (int) $existingUser['id'];
                 $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);

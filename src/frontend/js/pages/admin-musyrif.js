@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=1cc40fc3";
+import {getState} from "../store.js?v=e976d3c2";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -8,9 +8,9 @@ export function adminMusyrifPage(){
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
 <button class="btn full" id="addMusyrifBtn" type="button">+Musyrif</button>
+<h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div>
 </div></div>
-<div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div>
-<h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div></div>
+<div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div></div>
 </div></div></div>
 <div class="modal-backdrop hidden" id="inviteMusyrifModal">
  <div class="modal-card">

@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=f83cd011";
-import {getState,setState} from "./store.js?v=f83cd011";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=f83cd011";
-import {bindLogin} from "./pages/login.js?v=f83cd011";
-import {bindInvite} from "./pages/terima-undangan.js?v=f83cd011";
-import {toast} from "./utils/helpers.js?v=f83cd011";
+import {view,routeName} from "./router.js?v=94890144";
+import {getState,setState} from "./store.js?v=94890144";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=94890144";
+import {bindLogin} from "./pages/login.js?v=94890144";
+import {bindInvite} from "./pages/terima-undangan.js?v=94890144";
+import {toast} from "./utils/helpers.js?v=94890144";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -235,6 +235,40 @@ function bindPageActions(){
    await copyStandingLink("santri",document.querySelector("#santriMessage"));
    btn.disabled=false;
   });
+  const santriModal=()=>document.querySelector("#santriModal");
+  document.querySelector("#addSantriBtn")?.addEventListener("click",()=>{
+   const m=santriModal();if(!m)return;
+   const msg=document.querySelector("#newSantriMessage");
+   if(msg){msg.textContent="";msg.style.color="";}
+   m.classList.remove("hidden");
+   document.querySelector("#newSantriName")?.focus();
+  });
+  document.querySelector("#closeSantriBtn")?.addEventListener("click",()=>santriModal()?.classList.add("hidden"));
+  santriModal()?.addEventListener("click",event=>{if(event.target===santriModal())santriModal()?.classList.add("hidden");});
+  document.querySelector("#saveSantriBtn")?.addEventListener("click",async e=>{
+   const btn=e.currentTarget,msg=document.querySelector("#newSantriMessage");
+   const pid=pondokId();
+   const payload={
+    pondok_id:pid,
+    name:(document.querySelector("#newSantriName")?.value||"").trim(),
+    email:(document.querySelector("#newSantriEmail")?.value||"").trim(),
+    phone:(document.querySelector("#newSantriPhone")?.value||"").trim(),
+    password:document.querySelector("#newSantriPassword")?.value||""
+   };
+   if(msg){msg.textContent="";msg.style.color="";}
+   btn.disabled=true;btn.textContent="Menyimpan...";
+   try{
+    const b=await api("/api/pondoks/santris",{method:"POST",body:JSON.stringify(payload)});
+    if(msg){msg.textContent="Santri "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
+    ["#newSantriName","#newSantriEmail","#newSantriPhone","#newSantriPassword"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
+    if(typeof loadSantriList==="function")loadSantriList();
+    else window.dispatchEvent(new Event("app:render"));
+    setTimeout(()=>santriModal()?.classList.add("hidden"),800);
+   }catch(err){
+    if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
+   }
+   btn.disabled=false;btn.textContent="Simpan Santri";
+  });
   document.querySelector("#copyMusyrifLinkBtn")?.addEventListener("click",async e=>{
    const btn=e.currentTarget;
    btn.disabled=true;
@@ -329,5 +363,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f83cd011"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=94890144"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

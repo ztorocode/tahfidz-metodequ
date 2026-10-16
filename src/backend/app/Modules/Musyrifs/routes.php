@@ -11,6 +11,7 @@ return static function (Router $router): void {
     $router->get('/api/pondoks/musyrifs', [new MusyrifController(), 'index']);
     $router->post('/api/pondoks/musyrifs', [new MusyrifController(), 'store']);
     $router->get('/api/pondoks/santris', [new SantriController(), 'index']);
+    $router->post('/api/pondoks/santris', [new SantriController(), 'store']);
     $router->get('/api/pondok-invites', [new InviteController(), 'index']);
     $router->post('/api/pondok-invites', [new InviteController(), 'store']);
     $router->post('/api/pondok-invites/revoke', [new InviteController(), 'revoke']);

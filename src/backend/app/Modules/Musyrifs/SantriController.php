@@ -8,11 +8,17 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Modules\Auth\LoginValidator;
+use App\Modules\Auth\RegisterRepository;
 use App\Modules\Auth\RegistrationException;
 use App\Modules\Auth\SessionService;
 
 final class SantriController
 {
+    private function service(): SantriService
+    {
+        $pdo = Database::connection();
+        return new SantriService($pdo, new RegisterRepository($pdo), new SantriValidator());
+    }
     /** @return array{id:int,roles:string[]} */
     private function actor(Request $request): array
     {
@@ -25,6 +31,20 @@ final class SantriController
         }
 
         return ['id' => $user['id'], 'roles' => $user['roles'] ?? []];
+    }
+
+    public function store(Request $request): never
+    {
+        try {
+            $santri = $this->service()->addPondokSantri($this->actor($request), $request->body());
+            Response::json(['success' => true, 'message' => 'Santri berhasil ditambahkan.', 'data' => $santri], 201);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
     }
 
     public function index(Request $request): never

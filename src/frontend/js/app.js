@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=58854a7a";
-import {getState,setState} from "./store.js?v=58854a7a";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=58854a7a";
-import {bindLogin} from "./pages/login.js?v=58854a7a";
-import {bindInvite} from "./pages/terima-undangan.js?v=58854a7a";
-import {toast} from "./utils/helpers.js?v=58854a7a";
+import {view,routeName} from "./router.js?v=d14f57b1";
+import {getState,setState} from "./store.js?v=d14f57b1";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=d14f57b1";
+import {bindLogin} from "./pages/login.js?v=d14f57b1";
+import {bindInvite} from "./pages/terima-undangan.js?v=d14f57b1";
+import {toast} from "./utils/helpers.js?v=d14f57b1";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -31,22 +31,22 @@ async function api(path,options={}){
  return b;
 }
 async function loadMusyrifList(){
- const box=document.querySelector("#musyrifList");
- if(!box)return;
- const pid=pondokId();
- if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
- try{
-  const b=await api("/api/pondoks/musyrifs?pondok_id="+pid);
-  box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada musyrif.</small>';
- }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
- try{
-  const box2=document.querySelector("#inviteList");
-  if(box2){
-   const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=musyrif");
-   const rows=(ib.data||[]);
-   box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
-  }
- }catch(e){}
+  const box=document.querySelector("#musyrifList");
+  if(!box)return;
+  const pid=pondokId();
+  if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
+  try{
+   const b=await api("/api/pondoks/musyrifs?pondok_id="+pid);
+   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada musyrif.</small>';
+  }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
+  try{
+   const box2=document.querySelector("#inviteList");
+   if(box2){
+    const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=musyrif");
+    const rows=(ib.data||[]);
+    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button>${v.link?`<button class="btn secondary" type="button" data-copy-invite-link="${v.link}">Salin Link</button>`:""}`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
+   }
+  }catch(e){}
 }
 async function refreshMyInvites(){
  const s=getState();
@@ -101,7 +101,7 @@ function bindPageActions(){
    if(box2){
     const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=santri");
     const rows=(ib.data||[]);
-    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
+    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button>${v.link?`<button class="btn secondary" type="button" data-copy-invite-link="${v.link}">Salin Link</button>`:""}`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
    }
   }catch(e){}
  }
@@ -124,8 +124,16 @@ function bindPageActions(){
    if(copyBtn&&b.data.link){
     copyBtn.dataset.link=b.data.link;
     copyBtn.classList.remove("hidden");
+    setState({lastSantriInviteLink:b.data.link});
    }
    loadSantriList();
+  // Tampilkan kembali tombol salin bila ada link undangan terakhir (tersimpan di localStorage).
+  const lastSantri=getState().lastSantriInviteLink||"";
+  const restoreSantri=document.querySelector("#copySantriLinkBtn");
+  if(restoreSantri&&lastSantri){restoreSantri.dataset.link=lastSantri;restoreSantri.classList.remove("hidden");}
+  const lastMusyrif=getState().lastMusyrifInviteLink||"";
+  const restoreMusyrif=document.querySelector("#copyMusyrifLinkBtn");
+  if(restoreMusyrif&&lastMusyrif){restoreMusyrif.dataset.link=lastMusyrif;restoreMusyrif.classList.remove("hidden");}
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
   }
@@ -173,28 +181,67 @@ function bindPageActions(){
    const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
    if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
    document.querySelector("#musyrifEmail").value="";
+   const copyBtn=document.querySelector("#copyMusyrifLinkBtn");
+   if(copyBtn&&b.data.link){
+    copyBtn.dataset.link=b.data.link;
+    copyBtn.classList.remove("hidden");
+    setState({lastMusyrifInviteLink:b.data.link});
+   }
    loadMusyrifList();
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
   }
   btn.disabled=false;btn.textContent="Kirim Undangan";
  });
- document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
-  const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
-  const link=btn.dataset.link||"";
-  if(!link)return;
-  try{
-   if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
-   else{
-    const ta=document.createElement("textarea");
-    ta.value=link;document.body.appendChild(ta);ta.select();
-    document.execCommand("copy");ta.remove();
+  document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
+   const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
+   const link=btn.dataset.link||"";
+   if(!link)return;
+   try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+    else{
+     const ta=document.createElement("textarea");
+     ta.value=link;document.body.appendChild(ta);ta.select();
+     document.execCommand("copy");ta.remove();
+    }
+    if(msg){msg.textContent="Link tersalin. Bagikan ke calon santri.";msg.style.color="var(--brand)";}
+   }catch(err){
+    prompt("Salin link berikut:",link);
    }
-   if(msg){msg.textContent="Link tersalin. Bagikan ke calon santri.";msg.style.color="var(--brand)";}
-  }catch(err){
-   prompt("Salin link berikut:",link);
-  }
- });
+  });
+  document.querySelector("#copyMusyrifLinkBtn")?.addEventListener("click",async e=>{
+   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
+   const link=btn.dataset.link||"";
+   if(!link)return;
+   try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+    else{
+     const ta=document.createElement("textarea");
+     ta.value=link;document.body.appendChild(ta);ta.select();
+     document.execCommand("copy");ta.remove();
+    }
+    if(msg){msg.textContent="Link tersalin. Bagikan ke calon musyrif.";msg.style.color="var(--brand)";}
+   }catch(err){
+    prompt("Salin link berikut:",link);
+   }
+  });
+  document.querySelectorAll("[data-copy-invite-link]").forEach(btn=>btn.addEventListener("click",async ()=>{
+   const link=btn.dataset.copyInviteLink||"";
+   if(!link)return;
+   try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+    else{
+     const ta=document.createElement("textarea");
+     ta.value=link;document.body.appendChild(ta);ta.select();
+     document.execCommand("copy");ta.remove();
+    }
+    // find a nearby message element to show success
+    const msg=btn.closest('.list-item')?.querySelector('.muted')||null;
+    if(msg){msg.textContent="Link tersalin.";msg.style.color="var(--brand)";}
+   }catch(err){
+    prompt("Salin link berikut:",link);
+   }
+  }));
  document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener("click",async ()=>{
   if(!confirm("Batalkan undangan ini?"))return;
   try{await api("/api/pondok-invites/revoke",{method:"POST",body:JSON.stringify({id:Number(b.dataset.revokeInvite)})});loadMusyrifList();loadSantriList();}
@@ -211,5 +258,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=58854a7a"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d14f57b1"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=589a06fb";
+import {getState,setState} from "../store.js?v=11c34fe5";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -8,7 +8,7 @@ function inviteToken(){
 
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=589a06fb">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=11c34fe5">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }
@@ -46,7 +46,7 @@ export function bindInvite(){
   card.innerHTML='<h1>Undangan tidak valid</h1><p class="muted">Link undangan tidak lengkap.</p>';
   return;
  }
- fetch("/api/pondok-invites/info?token="+encodeURIComponent(token),{headers:{Accept:"application/json"}})
+ fetch("/api/pondok-invites/info?token="+encodeURIComponent(token),{headers:{Accept:"application/json"},cache:"no-store",signal:(function(){const c=new AbortController();setTimeout(()=>c.abort(new Error("timeout")),20000);return c.signal;})()})
   .then(r=>r.json().then(b=>({ok:r.ok,b})))
   .then(({ok,b})=>{
    if(!ok)throw new Error(b?.message||"Undangan tidak valid.");
@@ -122,5 +122,5 @@ export function bindInvite(){
     });
    }
   })
-  .catch(err=>{card.innerHTML='<h1>Undangan bermasalah</h1><p class="muted">'+(err?.message||"Coba lagi.")+'</p>';});
+  .catch(err=>{card.innerHTML='<h1>Undangan bermasalah</h1><p class="muted">'+(err?.message||"Coba lagi.")+'</p><button class="btn primary full" onclick="location.reload()" type="button">Coba Lagi</button>';});
 }

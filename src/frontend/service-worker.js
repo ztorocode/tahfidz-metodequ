@@ -1,4 +1,4 @@
-const CACHE='metodequ-b3af9b05';
+const CACHE='metodequ-f3ae0417';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=f3ae0417','./assets/css/base.css?v=f3ae0417','./assets/css/layout.css?v=f3ae0417',

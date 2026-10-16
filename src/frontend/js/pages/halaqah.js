@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=d116d033";
-import {students} from "../data/dummy-data.js?v=d116d033";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=d116d033";
+import {getState,setState} from "../store.js?v=24a0eced";
+import {students} from "../data/dummy-data.js?v=24a0eced";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=24a0eced";
 
 let selectedHalaqahId=null;
 
@@ -21,11 +21,11 @@ function musyrifOptions(){
  return demoMusyrifOptions;
 }
 
-function refreshSantris(){
+function refreshSantris(force){
  const st=getState();
  const pid=activePondokId();
  const token=st.authToken;
- if(!pid||!token||st.santriSrc===pid)return Promise.resolve();
+ if(!pid||!token||(!force&&st.santriSrc===pid))return Promise.resolve();
  setState({santriSrc:pid});
  return fetch("/api/pondoks/santris?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
   .then(r=>r.json().then(b=>({ok:r.ok,b})))
@@ -238,7 +238,7 @@ document.addEventListener("click",event=>{
    }).join(""):'<small class="muted">Belum ada santri di pondok ini. Undang dulu via menu Santri.</small>';
   };
   renderList(realSantriList());
-  refreshSantris().then(()=>renderList(realSantriList()));
+  refreshSantris(true).then(()=>renderList(realSantriList()));
   return;
  }
 

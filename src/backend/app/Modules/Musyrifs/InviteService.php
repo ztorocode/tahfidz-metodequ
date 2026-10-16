@@ -407,7 +407,8 @@ final class InviteService
                     throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.', 'login_password' => 'Password akun Anda salah.']);
                 }
                 $userId = (int) $existingUser['id'];
-                $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
+                $memberStatus = $invite['invited_email'] === null ? 'invited' : 'active';
+                $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role'], $memberStatus);
                 if ($invite['invited_email'] !== null) {
                     $this->pdo->prepare(
                         'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
@@ -430,6 +431,7 @@ final class InviteService
                     ],
                     'pondok_id' => (int) $invite['pondok_id'],
                     'role' => $invite['role'],
+                    'membership_status' => $memberStatus,
                 ];
             }
 
@@ -463,7 +465,8 @@ final class InviteService
                 $globalRole,
             );
 
-            $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role']);
+            $memberStatus = $invite['invited_email'] === null ? 'invited' : 'active';
+                $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role'], $memberStatus);
 
             if ($invite['invited_email'] !== null) {
                 $this->pdo->prepare(
@@ -487,6 +490,7 @@ final class InviteService
                 ],
                 'pondok_id' => (int) $invite['pondok_id'],
                 'role' => $invite['role'],
+                'membership_status' => $memberStatus,
             ];
         } catch (PDOException $exception) {
             if ($ownsTransaction && $this->pdo->inTransaction()) {
@@ -504,8 +508,11 @@ final class InviteService
         }
     }
 
-    private function linkMembership(int $userId, int $pondokId, string $role): void
+    private function linkMembership(int $userId, int $pondokId, string $role, string $status = 'active'): void
     {
+        if (!in_array($status, ['active', 'invited'], true)) {
+            $status = 'active';
+        }
         $globalRole = $role === 'musyrif' ? 'musyrif' : 'member';
         $this->pdo->prepare(
             'INSERT INTO user_roles (user_id, role, status)
@@ -513,7 +520,7 @@ final class InviteService
              ON DUPLICATE KEY UPDATE status = \'active\''
         )->execute(['user_id' => $userId, 'role' => $globalRole]);
 
-        if ($role === 'musyrif') {
+        if ($role === 'musyrif' && $status === 'active') {
             $this->pdo->prepare(
                 "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
                  VALUES (:user_id, 'pondok', :pondok_id, 'active')
@@ -521,11 +528,25 @@ final class InviteService
             )->execute(['user_id' => $userId, 'pondok_id' => $pondokId, 'pondok_id2' => $pondokId]);
         }
 
+        $existing = $this->pdo->prepare(
+            'SELECT status FROM pondok_memberships WHERE pondok_id = :pondok_id AND user_id = :user_id LIMIT 1'
+        );
+        $existing->execute(['pondok_id' => $pondokId, 'user_id' => $userId]);
+        $current = $existing->fetchColumn();
+        if ($current === 'active') {
+            return;
+        }
+        if ($current !== false) {
+            $this->pdo->prepare(
+                'UPDATE pondok_memberships SET role = :role, status = :status, joined_at = CURRENT_TIMESTAMP(3)
+                 WHERE pondok_id = :pondok_id AND user_id = :user_id'
+            )->execute(['role' => $role, 'status' => $status, 'pondok_id' => $pondokId, 'user_id' => $userId]);
+            return;
+        }
         $this->pdo->prepare(
             "INSERT INTO pondok_memberships (pondok_id, user_id, role, status, joined_at)
-             VALUES (:pondok_id, :user_id, :role, 'active', CURRENT_TIMESTAMP(3))
-             ON DUPLICATE KEY UPDATE role = :role2, status = 'active', joined_at = CURRENT_TIMESTAMP(3)"
-        )->execute(['pondok_id' => $pondokId, 'user_id' => $userId, 'role' => $role, 'role2' => $role]);
+             VALUES (:pondok_id, :user_id, :role, :status, CURRENT_TIMESTAMP(3))"
+        )->execute(['pondok_id' => $pondokId, 'user_id' => $userId, 'role' => $role, 'status' => $status]);
     }
 
     /** @return array<int,array{id:int,pondok_id:int,pondok_name:string,role:string,expires_at:string}> */

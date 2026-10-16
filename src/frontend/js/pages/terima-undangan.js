@@ -1,4 +1,5 @@
-import {getState,setState} from "../store.js?v=94890144";
+import {getState,setState} from "../store.js?v=b3af9b05";
+import {toast} from "../utils/helpers.js?v=b3af9b05";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -8,7 +9,7 @@ function inviteToken(){
 
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=94890144">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=b3af9b05">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }
@@ -93,6 +94,7 @@ export function bindInvite(){
      const profile={name:displayName,email:user.email||info.email||payload.email,phone:user.phone||"",role:roleLabel,initials:displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()};
      const persona=info.role==="musyrif"?"musyrif":"member";
      setState({loggedIn:true,persona,context:"pondok",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:info.role==="musyrif"?["musyrif"]:["member"],pondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}]},myPondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile,[persona]:profile}});
+     if(/Menunggu persetujuan/.test(rb.message||""))toast("Pendaftaran terkirim. Menunggu persetujuan admin pondok.");
      location.hash=persona==="musyrif"?"musyrif":"dashboard";
     }catch(err){
      if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
@@ -114,7 +116,8 @@ export function bindInvite(){
       const profile={name:displayName,email:user.email||info.email,phone:user.phone||"",role:roleLabel,initials:displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase()};
       const persona=info.role==="musyrif"?"musyrif":"member";
       setState({loggedIn:true,persona,context:"pondok",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:info.role==="musyrif"?["musyrif"]:["member"],pondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}]},myPondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile,[persona]:profile}});
-      location.hash=persona==="musyrif"?"musyrif":"dashboard";
+      if(/Menunggu persetujuan/.test(rb.message||""))toast("Pendaftaran terkirim. Menunggu persetujuan admin pondok.");
+     location.hash=persona==="musyrif"?"musyrif":"dashboard";
      }catch(err){
       if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
       btn.disabled=false;btn.textContent="Terima & Buat Akun";

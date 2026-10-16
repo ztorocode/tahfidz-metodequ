@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=94890144";
-import {getState,setState} from "./store.js?v=94890144";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=94890144";
-import {bindLogin} from "./pages/login.js?v=94890144";
-import {bindInvite} from "./pages/terima-undangan.js?v=94890144";
-import {toast} from "./utils/helpers.js?v=94890144";
+import {view,routeName} from "./router.js?v=b3af9b05";
+import {getState,setState} from "./store.js?v=b3af9b05";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b3af9b05";
+import {bindLogin} from "./pages/login.js?v=b3af9b05";
+import {bindInvite} from "./pages/terima-undangan.js?v=b3af9b05";
+import {toast} from "./utils/helpers.js?v=b3af9b05";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -47,6 +47,7 @@ async function loadMusyrifList(){
     box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.generic?"Link umum":v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
    }
   }catch(e){}
+ loadPendingList("musyrif","pendingMusyrifList",()=>loadMusyrifList());
 }
 async function refreshMyInvites(){
  const s=getState();
@@ -88,6 +89,32 @@ async function loadInviteBanner(){
   }
  }));
 }
+async function loadPendingList(role,boxId,reload){
+ const box=document.querySelector("#"+boxId);
+ if(!box)return;
+ const pid=pondokId();
+ if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
+ try{
+  const b=await api("/api/pondoks/members/pending?pondok_id="+pid+"&role="+role);
+  const rows=(b.data||[]);
+  box.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">${(v.name||"?").slice(0,1)}</span><div class="grow"><b>${v.name}</b><small class="muted" style="display:block">${v.email} · ${v.phone||"-"}</small></div><button class="btn primary" type="button" data-approve-member="${v.id}">Setujui</button><button class="btn" type="button" data-reject-member="${v.id}">Tolak</button></div>`).join(""):'<small class="muted">Tidak ada pengajuan.</small>';
+  box.querySelectorAll("[data-approve-member]").forEach(btn=>btn.addEventListener("click",async ()=>{
+   const who=btn.closest(".list-item")?.querySelector("b")?.textContent||"pengajuan ini";
+   if(!confirm("Setujui "+who+"?"))return;
+   btn.disabled=true;
+   try{await api("/api/pondoks/members/approve",{method:"POST",body:JSON.stringify({id:Number(btn.dataset.approveMember)})});toast("Pengajuan disetujui.");}
+   catch(err){alert(err?.message||"Gagal menyetujui.");}
+   reload();
+  }));
+  box.querySelectorAll("[data-reject-member]").forEach(btn=>btn.addEventListener("click",async ()=>{
+   if(!confirm("Tolak pengajuan ini?"))return;
+   btn.disabled=true;
+   try{await api("/api/pondoks/members/reject",{method:"POST",body:JSON.stringify({id:Number(btn.dataset.rejectMember)})});toast("Pengajuan ditolak.");}
+   catch(err){alert(err?.message||"Gagal menolak.");}
+   reload();
+  }));
+ }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
+}
 function bindPageActions(){
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
@@ -109,6 +136,7 @@ function bindPageActions(){
     box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.generic?"Link umum":v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
    }
   }catch(e){}
+  loadPendingList("santri","pendingSantriList",()=>{loadSantriList();});
  }
  const inviteSantriModal=()=>document.querySelector("#inviteSantriModal");
  document.querySelector("#inviteSantriBtn")?.addEventListener("click",()=>{
@@ -363,5 +391,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=94890144"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b3af9b05"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

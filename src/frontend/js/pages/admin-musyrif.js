@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=94890144";
+import {getState} from "../store.js?v=b3af9b05";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -9,6 +9,7 @@ export function adminMusyrifPage(){
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
 <button class="btn full" id="addMusyrifBtn" type="button">Form +Musyrif</button>
 <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div>
+<h3 style="margin-top:16px">Menunggu Persetujuan</h3><div class="list" id="pendingMusyrifList"><small class="muted">Memuat...</small></div>
 </div></div>
 <div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div></div>
 </div></div></div>

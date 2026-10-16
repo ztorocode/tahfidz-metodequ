@@ -211,7 +211,9 @@ final class InviteController
 
             Response::json([
                 'success' => true,
-                'message' => 'Undangan diterima. Selamat bergabung!',
+                'message' => ($result['membership_status'] ?? 'active') === 'invited'
+                    ? 'Pendaftaran terkirim. Menunggu persetujuan admin pondok.'
+                    : 'Undangan diterima. Selamat bergabung!',
                 'data' => $session,
             ], 201);
         } catch (RegistrationException $exception) {

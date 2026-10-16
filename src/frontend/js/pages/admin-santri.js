@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=94890144";
+import {getState} from "../store.js?v=b3af9b05";
 
 export function adminSantriPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -9,6 +9,7 @@ export function adminSantriPage(){
 <button class="btn full" id="copySantriLinkBtn" type="button">Salin Link Undangan</button>
 <button class="btn full" id="addSantriBtn" type="button">Form +Santri</button>
 <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="santriInviteList"><small class="muted">Memuat...</small></div>
+<h3 style="margin-top:16px">Menunggu Persetujuan</h3><div class="list" id="pendingSantriList"><small class="muted">Memuat...</small></div>
 </div></div>
 <div class="card"><h3>Daftar Santri</h3><div class="list" id="santriList"><small class="muted">Memuat...</small></div></div>
 </div></div></div>

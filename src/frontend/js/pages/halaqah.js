@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=43bcc1b9";
-import {students} from "../data/dummy-data.js?v=43bcc1b9";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=43bcc1b9";
+import {getState,setState} from "../store.js?v=c67292a4";
+import {students} from "../data/dummy-data.js?v=c67292a4";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=c67292a4";
 
 let selectedHalaqahId=null;
 
@@ -19,6 +19,25 @@ function musyrifOptions(){
  const real=getState().realMusyrifs;
  if(Array.isArray(real)&&real.length)return real.map(m=>({id:"user-"+m.id,name:m.name}));
  return demoMusyrifOptions;
+}
+
+function refreshSantris(){
+ const st=getState();
+ const pid=activePondokId();
+ const token=st.authToken;
+ if(!pid||!token||st.santriSrc===pid)return Promise.resolve();
+ setState({santriSrc:pid});
+ return fetch("/api/pondoks/santris?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
+  .then(r=>r.json().then(b=>({ok:r.ok,b})))
+  .then(({ok,b})=>{
+   if(ok&&Array.isArray(b.data)){setState({realSantris:b.data});window.dispatchEvent(new Event("app:render"));}
+  })
+  .catch(()=>{});
+}
+
+function realSantriList(){
+ const real=getState().realSantris;
+ return Array.isArray(real)?real:[];
 }
 
 function refreshMusyrifs(){
@@ -133,7 +152,15 @@ function detail(item,isAdmin){
    <h1>${escapeHtml(item.name)}</h1>
    <p class="muted">Musyrif: ${escapeHtml(musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
   </div>
-  <button class="btn primary" type="button" data-halaqah-invite="${item.id}">Buat Invite Link</button>
+  <button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
+  <div class="modal-backdrop hidden" id="santriModal">
+   <div class="modal-card">
+    <div class="row between"><div><p class="eyebrow">Halaqah</p><h2>+Santri ke ${escapeHtml(item.name)}</h2></div><button class="btn" type="button" data-santri-close>Tutup</button></div>
+    <div class="stack" id="santriCheckList" style="margin-top:16px"><small class="muted">Memuat santri...</small></div>
+    <small class="muted" id="santriFormMessage"></small>
+    <button class="btn primary full" id="saveSantriBtn" type="button" data-save-santri="${item.id}">Simpan</button>
+   </div>
+  </div>
  </div>
  <div class="grid-4" style="margin-bottom:16px">
   <div class="kpi"><b>${item.students.length}</b><span class="muted">Santri</span></div>
@@ -195,10 +222,45 @@ document.addEventListener("click",event=>{
   return;
  }
 
- const invite=event.target.closest("[data-halaqah-invite]");
- if(invite){
-  const item=halaqahs().find(row=>row.id===invite.dataset.halaqahInvite);
-  toast(`Invite link demo untuk ${item?.name||"halaqah"} siap dibagikan`);
+ const santriBtn=event.target.closest("[data-halaqah-santri]");
+ if(santriBtn){
+  const item=halaqahs().find(row=>row.id===santriBtn.dataset.halaqahSantri);
+  if(!item)return;
+  document.querySelector("#santriModal")?.classList.remove("hidden");
+  const renderList=(list)=>{
+   const box=document.querySelector("#santriCheckList");
+   if(!box)return;
+   const chosen=new Set((item.students||[]).map(x=>x.santriUserId||x.name));
+   box.innerHTML=list.length?list.map(u=>{
+    const key=u.id||u.email;
+    const checked=(item.students||[]).some(x=>x.santriUserId===u.id||x.name===u.name);
+    return `<label class="list-item"><input type="checkbox" data-santri-check="${u.id||""}" data-santri-name="${escapeHtml(u.name)}" data-santri-email="${escapeHtml(u.email||"")}" ${checked?"checked":""}><span class="avatar">${escapeHtml((u.name||"?").slice(0,1))}</span><div class="grow"><b>${escapeHtml(u.name)}</b><small class="muted" style="display:block">${escapeHtml(u.email||"")}</small></div></label>`;
+   }).join(""):'<small class="muted">Belum ada santri di pondok ini. Undang dulu via menu Santri.</small>';
+  };
+  renderList(realSantriList());
+  refreshSantris().then(()=>renderList(realSantriList()));
+  return;
+ }
+
+ if(event.target.closest("[data-santri-close]")){
+  document.querySelector("#santriModal")?.classList.add("hidden");
+  return;
+ }
+
+ const saveBtn=event.target.closest("[data-save-santri]");
+ if(saveBtn){
+  const item=halaqahs().find(row=>row.id===saveBtn.dataset.saveSantri);
+  if(!item)return;
+  const picked=[...document.querySelectorAll("[data-santri-check]")].filter(c=>c.checked).map(c=>({id:c.dataset.santriCheck,name:c.dataset.santriName,email:c.dataset.santriEmail}));
+  const kept={};
+  (item.students||[]).forEach(x=>{kept[x.santriUserId||x.name]=x;});
+  item.students=picked.map(p=>{
+   const old=kept[p.id||p.name]||kept[p.name];
+   return old||{name:p.name,santriUserId:p.id||null,mutqin:0,pending:0,status:"Aktif"};
+  });
+  setState({halaqahs:halaqahs()});
+  document.querySelector("#santriModal")?.classList.add("hidden");
+  window.dispatchEvent(new Event("app:render"));
   return;
  }
 

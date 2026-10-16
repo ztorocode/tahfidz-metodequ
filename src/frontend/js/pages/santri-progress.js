@@ -1,6 +1,6 @@
-import {getState} from "../store.js?v=43bcc1b9";
-import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=43bcc1b9";
-import {badge,statusTone} from "../utils/helpers.js?v=43bcc1b9";
+import {getState} from "../store.js?v=c67292a4";
+import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=c67292a4";
+import {badge,statusTone} from "../utils/helpers.js?v=c67292a4";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));

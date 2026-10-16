@@ -186,7 +186,8 @@ final class InviteService
 
         $statement = $this->pdo->prepare($sql);
         $statement->execute($params);
-        return $statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $statement->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(static fn(array $row) => $row + ['generic' => $row['invited_email'] === null], $rows);
     }
 
     /**

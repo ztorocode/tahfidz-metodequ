@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=8380da72";
-import {getState,setState} from "./store.js?v=8380da72";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=8380da72";
-import {bindLogin} from "./pages/login.js?v=8380da72";
-import {bindInvite} from "./pages/terima-undangan.js?v=8380da72";
-import {toast} from "./utils/helpers.js?v=8380da72";
+import {view,routeName} from "./router.js?v=25bd8658";
+import {getState,setState} from "./store.js?v=25bd8658";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=25bd8658";
+import {bindLogin} from "./pages/login.js?v=25bd8658";
+import {bindInvite} from "./pages/terima-undangan.js?v=25bd8658";
+import {toast} from "./utils/helpers.js?v=25bd8658";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -44,7 +44,7 @@ async function loadMusyrifList(){
    if(box2){
     const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=musyrif");
     const rows=(ib.data||[]);
-    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
+    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.generic?"Link umum":v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
    }
   }catch(e){}
 }
@@ -106,7 +106,7 @@ function bindPageActions(){
    if(box2){
     const ib=await api("/api/pondok-invites?pondok_id="+pid+"&role=santri");
     const rows=(ib.data||[]);
-    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
+    box2.innerHTML=rows.length?rows.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.generic?"Link umum":v.invited_email}</b><small class="muted" style="display:block">${v.status} · s/d ${String(v.expires_at||"").slice(0,10)}</small></div>${v.status==="pending"?`<button class="btn" type="button" data-revoke-invite="${v.id}">Batal</button><button class="btn secondary" type="button" data-regen-invite="${v.id}">Salin</button>`:""}</div>`).join(""):'<small class="muted">Belum ada undangan.</small>';
    }
   }catch(e){}
  }
@@ -329,5 +329,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=8380da72"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=25bd8658"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=0e6404ce";
-import {getState,setState} from "./store.js?v=0e6404ce";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=0e6404ce";
-import {bindLogin} from "./pages/login.js?v=0e6404ce";
-import {bindInvite} from "./pages/terima-undangan.js?v=0e6404ce";
-import {toast} from "./utils/helpers.js?v=0e6404ce";
+import {view,routeName} from "./router.js?v=5e4155c2";
+import {getState,setState} from "./store.js?v=5e4155c2";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=5e4155c2";
+import {bindLogin} from "./pages/login.js?v=5e4155c2";
+import {bindInvite} from "./pages/terima-undangan.js?v=5e4155c2";
+import {toast} from "./utils/helpers.js?v=5e4155c2";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -62,6 +62,11 @@ async function loadInviteBanner(){
  if(box){
   await refreshMyInvites();
   const mine=getState().myInvites||[];
+  const dot=document.querySelector("#notifDot");
+  if(dot){
+   if(mine.length){dot.classList.remove("hidden");dot.textContent=mine.length>9?"9+":String(mine.length);}
+   else{dot.classList.add("hidden");dot.textContent="";}
+  }
   box.innerHTML=mine.length?`<div class="card" style="margin-bottom:16px;border-left:4px solid var(--brand)"><div class="row between"><div><b>Anda punya ${mine.length} undangan pondok</b><small class="muted" style="display:block">${mine.map(v=>v.pondok_name).join(", ")}</small></div><a class="btn primary" href="#notifications">Lihat</a></div></div>`:"";
  }
  document.querySelectorAll("[data-accept-invite]").forEach(btn=>btn.addEventListener("click",async ()=>{
@@ -258,5 +263,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=0e6404ce"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=5e4155c2"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=0e6404ce";
-import {pondokList,canPersonal} from "./context-switcher.js?v=0e6404ce";
+import {getState,setState} from "../store.js?v=5e4155c2";
+import {pondokList,canPersonal} from "./context-switcher.js?v=5e4155c2";
 
 const memberNav=[["dashboard","Dashboard"],["program","Program"],["activity","Aktivitas Hari Ini"],["submission","Setoran"],["murajaah","Muraja'ah"],["notifications","Notifikasi"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -48,7 +48,14 @@ function mobileIcon(route){
 }
 
 function mobileNavItems(){
- return getState().persona==="member"?memberMobileNav:navItems();
+ const items=getState().persona==="member"?memberMobileNav:navItems();
+ return items.filter(([r])=>r!=="notifications");
+}
+
+function notifBell(){
+ const unread=(getState().myInvites||[]).length;
+ const active=(location.hash.replace("#","")||"dashboard")==="notifications";
+ return `<a href="#notifications" class="icon-button ${active?"active":""}" id="notifBell" aria-label="Notifikasi" style="position:relative;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:${active?"var(--brand)":"var(--muted)"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></svg>${unread?`<span id="notifDot" style="position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px">${unread>9?"9+":unread}</span>`:`<span id="notifDot" class="hidden" style="position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px"></span>`}</a>`;
 }
 
 function currentAccount(){
@@ -116,9 +123,9 @@ export function shell(content){
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?pondokName:s.context==="personal"?"Personal":pondokName;
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=0e6404ce">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=5e4155c2">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
- <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row"><button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
+ <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
  <nav class="mobile-nav">${mobileNavItems().map(([r,l])=>`<a href="#${r}" data-mobile-route="${r}" class="${navRoute===r?"active":""}"><span class="mobile-nav-icon">${mobileIcon(r)}</span><span class="mobile-nav-label">${l}</span></a>`).join("")}</nav></main>${profileModal()}</div>`;
 }

@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=6b9531ee";
-import {students} from "../data/dummy-data.js?v=6b9531ee";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=6b9531ee";
+import {getState,setState} from "../store.js?v=f9becf26";
+import {students} from "../data/dummy-data.js?v=f9becf26";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=f9becf26";
 
 let selectedHalaqahId=null;
 
@@ -86,9 +86,13 @@ function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
 
+const dummyHalaqahIds=new Set(["halaqah-abu-bakar","halaqah-umar","halaqah-utsman"]);
+
 function halaqahs(){
  const saved=getState().halaqahs;
- return Array.isArray(saved)?saved:defaultHalaqahs;
+ const list=Array.isArray(saved)?saved:[];
+ // Buang data contoh lama (termasuk yang telanjur tersimpan di HP) — hanya tampilkan halaqah buatan sendiri.
+ return list.filter(item=>item&&!dummyHalaqahIds.has(item.id));
 }
 
 function musyrifName(id){
@@ -108,11 +112,11 @@ function adminList(items){
   <button class="btn primary" type="button" data-halaqah-add>+ Tambah Halaqah</button>
  </div>
  <div class="grid-3">
-  ${items.map(item=>`<div class="card stack">
+  ${items.length?items.map(item=>`<div class="card stack">
    <div class="row between"><div><h3>${escapeHtml(item.name)}</h3><small class="muted">${escapeHtml(musyrifName(item.musyrifId))}</small></div>${badge("Aktif","success")}</div>
    <div class="row between"><span class="muted">Jumlah santri</span><b>${item.students.length}</b></div>
    <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
-  </div>`).join("")}
+  </div>`).join(""):`<div class="card"><p class="muted">Belum ada halaqah. Tekan <b>+ Tambah Halaqah</b> untuk membuat yang pertama.</p></div>`}
  </div>
  <div class="modal-backdrop hidden" id="halaqahModal">
   <div class="modal-card">

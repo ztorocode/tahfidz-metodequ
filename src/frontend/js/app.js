@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=71fc254a";
-import {getState,setState} from "./store.js?v=71fc254a";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=71fc254a";
-import {bindLogin} from "./pages/login.js?v=71fc254a";
-import {bindInvite} from "./pages/terima-undangan.js?v=71fc254a";
-import {toast} from "./utils/helpers.js?v=71fc254a";
+import {view,routeName} from "./router.js?v=8380da72";
+import {getState,setState} from "./store.js?v=8380da72";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=8380da72";
+import {bindLogin} from "./pages/login.js?v=8380da72";
+import {bindInvite} from "./pages/terima-undangan.js?v=8380da72";
+import {toast} from "./utils/helpers.js?v=8380da72";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -224,6 +224,7 @@ function bindPageActions(){
      document.execCommand("copy");ta.remove();
     }
     if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+role+".";msg.style.color="var(--brand)";}
+    toast("Link undangan tersalin ke clipboard.");
    }catch(err){
     if(msg){msg.textContent=err?.message||"Gagal menyalin link.";msg.style.color="var(--danger)";}
    }
@@ -286,6 +287,7 @@ function bindPageActions(){
     // find a nearby message element to show success
     const msg=btn.closest('.list-item')?.querySelector('.muted')||null;
     if(msg){msg.textContent="Link tersalin.";msg.style.color="var(--brand)";}
+    toast("Link undangan tersalin ke clipboard.");
    }catch(err){
     prompt("Salin link berikut:",link);
    }
@@ -304,6 +306,7 @@ function bindPageActions(){
    document.execCommand("copy");ta.remove();
   }
   btn.textContent="Tersalin!";
+  toast("Link undangan tersalin ke clipboard.");
   setTimeout(()=>{btn.disabled=false;btn.textContent=label;},1500);
  }catch(err){
   alert(err?.message||"Gagal menyalin link.");
@@ -326,5 +329,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=71fc254a"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=8380da72"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

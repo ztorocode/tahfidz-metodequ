@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=47e2e145";
+import {getState} from "../store.js?v=71fc254a";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -6,11 +6,21 @@ export function adminMusyrifPage(){
 <div class="grid-2"><div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div>
 <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div></div>
 <div class="card"><h3>Undang Musyrif</h3><div class="stack">
-<div><label class="label">Email</label><input class="input" id="musyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
-<small class="muted" id="musyrifMessage">Ketik email — bila sudah terdaftar akan muncul saran. Nama & WA diisi musyrif saat terima undangan.</small>Undangan berisi link; musyrif membuat password sendiri (berlaku 7 hari).</small>
+<p class="muted" style="margin:0">Undang banyak musyrif sekaligus lewat email & WhatsApp, mereka buat password sendiri.</p>
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
 <button class="btn full" id="addMusyrifBtn" type="button">+Musyrif</button>
+</div></div></div>
+<div class="modal-backdrop hidden" id="inviteMusyrifModal">
+ <div class="modal-card">
+  <div class="row between"><div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div><button class="btn" id="closeInviteMusyrifBtn" type="button">Tutup</button></div>
+  <div class="stack">
+   <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="musyrifEmail" rows="4" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
+   <small class="muted" id="musyrifMessage">Ketik email — bila sudah terdaftar akan muncul saran. Nama & WA diisi musyrif saat terima undangan. Berlaku 7 hari.</small>
+   <button class="btn primary full" id="sendMusyrifInviteBtn" type="button">Kirim</button>
+  </div>
+ </div>
+</div>
 </div></div></div>
 <div class="modal-backdrop hidden" id="musyrifModal">
  <div class="modal-card">

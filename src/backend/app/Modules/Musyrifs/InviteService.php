@@ -125,6 +125,51 @@ final class InviteService
         ];
     }
 
+    /**
+     * Buat banyak undangan sekaligus (maks 20). Per email dicoba satu per satu;
+     * yang gagal tidak membatalkan yang lain.
+     *
+     * @param array{id:int,roles:string[]} $actor
+     * @return array{sent:array<int,array{id:int,email:string}>,failed:array<int,array{email:string,message:string}>}
+     */
+    public function createBulk(array $actor, array $input): array
+    {
+        $raw = $input['emails'] ?? [];
+        if (!is_array($raw)) {
+            $raw = [$raw];
+        }
+        $emails = [];
+        foreach ($raw as $email) {
+            foreach (preg_split('/[\s,;]+/', (string) $email) ?: [] as $part) {
+                $part = strtolower(trim($part));
+                if ($part !== '' && !in_array($part, $emails, true)) {
+                    $emails[] = $part;
+                }
+            }
+        }
+        $emails = array_slice($emails, 0, 20);
+        if ($emails === []) {
+            throw new RegistrationException('Isi minimal satu email.', 422, ['email' => 'Isi minimal satu email.']);
+        }
+
+        $sent = [];
+        $failed = [];
+        foreach ($emails as $email) {
+            try {
+                $invite = $this->create($actor, [
+                    'pondok_id' => $input['pondok_id'] ?? 0,
+                    'role' => $input['role'] ?? 'musyrif',
+                    'email' => $email,
+                ]);
+                $sent[] = ['id' => $invite['id'], 'email' => $email];
+            } catch (RegistrationException $exception) {
+                $failed[] = ['email' => $email, 'message' => $exception->getMessage()];
+            }
+        }
+
+        return ['sent' => $sent, 'failed' => $failed];
+    }
+
     /** @param array{id:int,roles:string[]} $actor */
     public function list(array $actor, int $pondokId, string $role = ''): array
     {

@@ -37,7 +37,23 @@ final class InviteController
     public function store(Request $request): never
     {
         try {
-            $invite = $this->service()->create($this->actor($request), $request->body());
+            $actor = $this->actor($request);
+            $body = $request->body();
+            $emails = $body['emails'] ?? null;
+            if (is_array($emails)) {
+                $result = $this->service()->createBulk($actor, [
+                    'pondok_id' => $body['pondok_id'] ?? 0,
+                    'role' => $body['role'] ?? 'musyrif',
+                    'emails' => $emails,
+                ]);
+                $sent = count($result['sent']);
+                $failed = count($result['failed']);
+                $message = $failed === 0
+                    ? $sent . ' undangan terkirim.'
+                    : $sent . ' terkirim, ' . $failed . ' gagal.';
+                Response::json(['success' => $failed === 0, 'message' => $message, 'data' => $result], $failed === 0 ? 201 : 207);
+            }
+            $invite = $this->service()->create($actor, $body);
             Response::json(['success' => true, 'message' => 'Undangan terkirim.', 'data' => $invite], 201);
         } catch (RegistrationException $exception) {
             Response::json([

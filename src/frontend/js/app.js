@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=47e2e145";
-import {getState,setState} from "./store.js?v=47e2e145";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=47e2e145";
-import {bindLogin} from "./pages/login.js?v=47e2e145";
-import {bindInvite} from "./pages/terima-undangan.js?v=47e2e145";
-import {toast} from "./utils/helpers.js?v=47e2e145";
+import {view,routeName} from "./router.js?v=71fc254a";
+import {getState,setState} from "./store.js?v=71fc254a";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=71fc254a";
+import {bindLogin} from "./pages/login.js?v=71fc254a";
+import {bindInvite} from "./pages/terima-undangan.js?v=71fc254a";
+import {toast} from "./utils/helpers.js?v=71fc254a";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -110,39 +110,40 @@ function bindPageActions(){
    }
   }catch(e){}
  }
- document.querySelector("#inviteSantriBtn")?.addEventListener("click",async e=>{
+ const inviteSantriModal=()=>document.querySelector("#inviteSantriModal");
+ document.querySelector("#inviteSantriBtn")?.addEventListener("click",()=>{
+  const m=inviteSantriModal();if(!m)return;
+  const msg=document.querySelector("#santriMessage");
+  if(msg){msg.textContent="";msg.style.color="";}
+  m.classList.remove("hidden");
+ });
+ document.querySelector("#closeInviteSantriBtn")?.addEventListener("click",()=>inviteSantriModal()?.classList.add("hidden"));
+ inviteSantriModal()?.addEventListener("click",event=>{if(event.target===inviteSantriModal())inviteSantriModal()?.classList.add("hidden");});
+ document.querySelector("#sendSantriInviteBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
   const pid=pondokId();
-  const payload={pondok_id:pid,role:"santri",email:(document.querySelector("#santriEmail")?.value||"").trim()};
-  if(!pid||!payload.email){
-   if(msg){msg.textContent="Email wajib diisi.";msg.style.color="var(--danger)";}
+  const emails=(document.querySelector("#santriEmail")?.value||"").split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!pid||!emails.length){
+   if(msg){msg.textContent="Isi minimal satu email.";msg.style.color="var(--danger)";}
    return;
   }
   btn.disabled=true;btn.textContent="Mengirim...";
   if(msg){msg.textContent="";msg.style.color="";}
   try{
-   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify(payload)});
-   const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
-   if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
-   document.querySelector("#santriEmail").value="";
-   const copyBtn=document.querySelector("#copySantriLinkBtn");
-   if(copyBtn&&b.data.link){
-    copyBtn.dataset.link=b.data.link;
-    copyBtn.classList.remove("hidden");
-    setState({lastSantriInviteLink:b.data.link});
+   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"santri",emails})});
+   const sent=(b.data?.sent||[]).map(x=>x.email);
+   const failed=(b.data?.failed||[]).map(x=>x.email+" ("+x.message+")");
+   if(msg){
+    msg.textContent=(sent.length?sent.length+" undangan terkirim":"")+((sent.length&&failed.length)?"; ":"")+failed.join("; ");
+    msg.style.color=failed.length?"var(--danger)":"var(--brand)";
    }
+   document.querySelector("#santriEmail").value="";
    loadSantriList();
-  // Tampilkan kembali tombol salin bila ada link undangan terakhir (tersimpan di localStorage).
-  const lastSantri=getState().lastSantriInviteLink||"";
-  const restoreSantri=document.querySelector("#copySantriLinkBtn");
-  if(restoreSantri&&lastSantri){restoreSantri.dataset.link=lastSantri;restoreSantri.classList.remove("hidden");}
-  const lastMusyrif=getState().lastMusyrifInviteLink||"";
-  const restoreMusyrif=document.querySelector("#copyMusyrifLinkBtn");
-  if(restoreMusyrif&&lastMusyrif){restoreMusyrif.dataset.link=lastMusyrif;restoreMusyrif.classList.remove("hidden");}
+   if(!failed.length)setTimeout(()=>inviteSantriModal()?.classList.add("hidden"),900);
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
   }
-  btn.disabled=false;btn.textContent="Kirim Undangan";
+  btn.disabled=false;btn.textContent="Kirim";
  });
  loadSantriList();
  let suggestTimer=null;
@@ -155,7 +156,8 @@ function bindPageActions(){
  emailInput?.addEventListener("input",()=>{
   suggestBox.innerHTML="";
   clearTimeout(suggestTimer);
-  const q=emailInput.value.trim();
+  const lines=emailInput.value.split("\n");
+  const q=(lines[lines.length-1]||"").trim();
   if(q.length<2)return;
   suggestTimer=setTimeout(async ()=>{
    try{
@@ -165,38 +167,48 @@ function bindPageActions(){
     const rows=b.data||[];
     suggestBox.innerHTML=rows.map(u=>`<button type="button" class="list-item" data-suggest-email="${u.email}" style="width:100%;text-align:left"><span class="avatar">${(u.name||"?").slice(0,1)}</span><div class="grow"><b>${u.name}</b><small class="muted" style="display:block">${u.email} · ${u.phone}${u.pondok_role?(" · sudah "+u.pondok_role+" di pondok ini"):" · sudah terdaftar"}</small></div></button>`).join("");
     suggestBox.querySelectorAll("[data-suggest-email]").forEach(btn=>btn.addEventListener("click",()=>{
-     document.querySelector("#musyrifEmail").value=btn.dataset.suggestEmail;
+     const parts=document.querySelector("#musyrifEmail").value.split("\n");
+     parts[parts.length-1]=btn.dataset.suggestEmail;
+     document.querySelector("#musyrifEmail").value=parts.join("\n").replace(/\n$/,"")+"\n";
      suggestBox.innerHTML="";
     }));
    }catch(e){}
   },300);
  });
- document.querySelector("#inviteMusyrifBtn")?.addEventListener("click",async e=>{
+ const inviteMusyrifModal=()=>document.querySelector("#inviteMusyrifModal");
+ document.querySelector("#inviteMusyrifBtn")?.addEventListener("click",()=>{
+  const m=inviteMusyrifModal();if(!m)return;
+  const msg=document.querySelector("#musyrifMessage");
+  if(msg){msg.textContent="";msg.style.color="";}
+  m.classList.remove("hidden");
+ });
+ document.querySelector("#closeInviteMusyrifBtn")?.addEventListener("click",()=>inviteMusyrifModal()?.classList.add("hidden"));
+ inviteMusyrifModal()?.addEventListener("click",event=>{if(event.target===inviteMusyrifModal())inviteMusyrifModal()?.classList.add("hidden");});
+ document.querySelector("#sendMusyrifInviteBtn")?.addEventListener("click",async e=>{
   const btn=e.currentTarget,msg=document.querySelector("#musyrifMessage");
   const pid=pondokId();
-  const payload={pondok_id:pid,role:"musyrif",email:(document.querySelector("#musyrifEmail")?.value||"").trim()};
-  if(!pid||!payload.email){
-   if(msg){msg.textContent="Email wajib diisi.";msg.style.color="var(--danger)";}
+  const emails=(document.querySelector("#musyrifEmail")?.value||"").split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  if(!pid||!emails.length){
+   if(msg){msg.textContent="Isi minimal satu email.";msg.style.color="var(--danger)";}
    return;
   }
   btn.disabled=true;btn.textContent="Mengirim...";
   if(msg){msg.textContent="";msg.style.color="";}
   try{
-   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify(payload)});
-   const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
-   if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
-   document.querySelector("#musyrifEmail").value="";
-   const copyBtn=document.querySelector("#copyMusyrifLinkBtn");
-   if(copyBtn&&b.data.link){
-    copyBtn.dataset.link=b.data.link;
-    copyBtn.classList.remove("hidden");
-    setState({lastMusyrifInviteLink:b.data.link});
+   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"musyrif",emails})});
+   const sent=(b.data?.sent||[]).map(x=>x.email);
+   const failed=(b.data?.failed||[]).map(x=>x.email+" ("+x.message+")");
+   if(msg){
+    msg.textContent=(sent.length?sent.length+" undangan terkirim":"")+((sent.length&&failed.length)?"; ":"")+failed.join("; ");
+    msg.style.color=failed.length?"var(--danger)":"var(--brand)";
    }
+   document.querySelector("#musyrifEmail").value="";
    loadMusyrifList();
+   if(!failed.length)setTimeout(()=>inviteMusyrifModal()?.classList.add("hidden"),900);
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
   }
-  btn.disabled=false;btn.textContent="Kirim Undangan";
+  btn.disabled=false;btn.textContent="Kirim";
  });
   async function copyStandingLink(role,msg){
    const pid=pondokId();
@@ -314,5 +326,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=47e2e145"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=71fc254a"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

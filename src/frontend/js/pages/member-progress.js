@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=47e2e145";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=47e2e145";
+import {getState} from "../store.js?v=71fc254a";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=71fc254a";
 
 const weeks=[1,2,3,4,5];
 const days=[

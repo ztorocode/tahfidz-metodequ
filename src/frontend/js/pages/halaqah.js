@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=47e2e145";
-import {students} from "../data/dummy-data.js?v=47e2e145";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=47e2e145";
+import {getState,setState} from "../store.js?v=71fc254a";
+import {students} from "../data/dummy-data.js?v=71fc254a";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=71fc254a";
 
 let selectedHalaqahId=null;
 

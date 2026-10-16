@@ -116,6 +116,7 @@ final class InviteService
 
         return [
             'id' => $inviteId,
+            'link' => $link,
             'pondok' => ['id' => (int) $pondokRow['id'], 'name' => $safePondok],
             'role' => $role,
             'email' => $email,

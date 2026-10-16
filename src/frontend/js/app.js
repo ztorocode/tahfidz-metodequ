@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=c67292a4";
-import {getState,setState} from "./store.js?v=c67292a4";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c67292a4";
-import {bindLogin} from "./pages/login.js?v=c67292a4";
-import {bindInvite} from "./pages/terima-undangan.js?v=c67292a4";
-import {toast} from "./utils/helpers.js?v=c67292a4";
+import {view,routeName} from "./router.js?v=58854a7a";
+import {getState,setState} from "./store.js?v=58854a7a";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=58854a7a";
+import {bindLogin} from "./pages/login.js?v=58854a7a";
+import {bindInvite} from "./pages/terima-undangan.js?v=58854a7a";
+import {toast} from "./utils/helpers.js?v=58854a7a";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -120,6 +120,11 @@ function bindPageActions(){
    const via=[b.data.email_sent?"email":null,b.data.wa_sent?"WA":null].filter(Boolean).join(" & ")||" (tapi pengiriman gagal, cek lagi)";
    if(msg){msg.textContent="Undangan terkirim via "+via+".";msg.style.color="var(--brand)";}
    document.querySelector("#santriEmail").value="";
+   const copyBtn=document.querySelector("#copySantriLinkBtn");
+   if(copyBtn&&b.data.link){
+    copyBtn.dataset.link=b.data.link;
+    copyBtn.classList.remove("hidden");
+   }
    loadSantriList();
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal mengirim.";msg.style.color="var(--danger)";}
@@ -174,6 +179,22 @@ function bindPageActions(){
   }
   btn.disabled=false;btn.textContent="Kirim Undangan";
  });
+ document.querySelector("#copySantriLinkBtn")?.addEventListener("click",async e=>{
+  const btn=e.currentTarget,msg=document.querySelector("#santriMessage");
+  const link=btn.dataset.link||"";
+  if(!link)return;
+  try{
+   if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+   else{
+    const ta=document.createElement("textarea");
+    ta.value=link;document.body.appendChild(ta);ta.select();
+    document.execCommand("copy");ta.remove();
+   }
+   if(msg){msg.textContent="Link tersalin. Bagikan ke calon santri.";msg.style.color="var(--brand)";}
+  }catch(err){
+   prompt("Salin link berikut:",link);
+  }
+ });
  document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener("click",async ()=>{
   if(!confirm("Batalkan undangan ini?"))return;
   try{await api("/api/pondok-invites/revoke",{method:"POST",body:JSON.stringify({id:Number(b.dataset.revokeInvite)})});loadMusyrifList();loadSantriList();}
@@ -190,5 +211,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c67292a4"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=58854a7a"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

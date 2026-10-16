@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=b3af9b05";
-import {students} from "../data/dummy-data.js?v=b3af9b05";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=b3af9b05";
+import {getState,setState} from "../store.js?v=f3ae0417";
+import {students} from "../data/dummy-data.js?v=f3ae0417";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=f3ae0417";
 
 let selectedHalaqahId=null;
 
@@ -40,16 +40,16 @@ function realSantriList(){
  return Array.isArray(real)?real:[];
 }
 
-function refreshMusyrifs(){
+function refreshMusyrifs(force,silent){
  const st=getState();
  const pid=activePondokId();
  const token=st.authToken;
- if(!pid||!token||st.musyrifSrc===pid)return;
+ if(!pid||!token||(!force&&st.musyrifSrc===pid))return Promise.resolve();
  setState({musyrifSrc:pid});
- fetch("/api/pondoks/musyrifs?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
+ return fetch("/api/pondoks/musyrifs?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
   .then(r=>r.json().then(b=>({ok:r.ok,b})))
   .then(({ok,b})=>{
-   if(ok&&Array.isArray(b.data)){setState({realMusyrifs:b.data});window.dispatchEvent(new Event("app:render"));}
+   if(ok&&Array.isArray(b.data)){setState({realMusyrifs:b.data});if(!silent)window.dispatchEvent(new Event("app:render"));}
   })
   .catch(()=>{});
 }
@@ -218,6 +218,10 @@ document.addEventListener("click",event=>{
   if(getState().persona!=="admin"||getState().context!=="pondok")return;
   document.querySelector("#halaqahModal")?.classList.remove("hidden");
   document.querySelector("#halaqahName")?.focus();
+  refreshMusyrifs(true,true).then(()=>{
+   const sel=document.querySelector("#halaqahMusyrif");
+   if(sel)sel.innerHTML=musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join("");
+  });
   return;
  }
 

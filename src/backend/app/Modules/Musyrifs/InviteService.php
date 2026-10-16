@@ -144,9 +144,48 @@ final class InviteService
         return $statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /** @param array{id:int,roles:string[]} $actor */
-    public function revoke(array $actor, int $inviteId): bool
+    /**
+     * Buat link baru untuk undangan pending (link lama ikut mati, masa berlaku 7 hari lagi).
+     * Dipakai tombol "Salin" di daftar undangan tanpa harus kirim ulang.
+     *
+     * @param array{id:int,roles:string[]} $actor
+     * @return array{id:int,link:string,email:string,role:string,expires_at:string}
+     */
+    public function regenerateLink(array $actor, int $inviteId): array
     {
+        $statement = $this->pdo->prepare(
+            'SELECT id, pondok_id, role, invited_email, status FROM pondok_invites WHERE id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $inviteId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row) || $row['status'] !== 'pending') {
+            throw new RegistrationException('Undangan tidak ditemukan atau sudah tidak berlaku.', 404);
+        }
+
+        PondokAccess::assertPondokAdmin($this->pdo, $actor, (int) $row['pondok_id']);
+
+        $token = bin2hex(random_bytes(32));
+        $this->pdo->prepare(
+            'UPDATE pondok_invites SET token_hash = :token_hash, expires_at = DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY)
+             WHERE id = :id AND status = \'pending\''
+        )->execute(['token_hash' => hash('sha256', $token), 'id' => (int) $row['id']]);
+
+        $baseUrl = rtrim((string) (getenv('APP_URL') ?: ''), '/');
+        $expires = (string) $this->pdo->query(
+            'SELECT expires_at FROM pondok_invites WHERE id = ' . (int) $row['id']
+        )->fetchColumn();
+
+        return [
+            'id' => (int) $row['id'],
+            'link' => $baseUrl . '/#terima-undangan?token=' . urlencode($token),
+            'email' => (string) $row['invited_email'],
+            'role' => (string) $row['role'],
+            'expires_at' => $expires,
+        ];
+    }
+
+    /** @param array{id:int,roles:string[]} $actor */
+    public function revoke(array $actor, int $inviteId): bool    {
         $statement = $this->pdo->prepare(
             'SELECT pondok_id FROM pondok_invites WHERE id = :id AND status = \'pending\' LIMIT 1'
         );

@@ -83,6 +83,20 @@ final class InviteController
         }
     }
 
+    public function regenerate(Request $request): never
+    {
+        try {
+            $invite = $this->service()->regenerateLink($this->actor($request), (int) ($request->body()['id'] ?? 0));
+            Response::json(['success' => true, 'message' => 'Link undangan baru dibuat.', 'data' => $invite]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     public function mine(Request $request): never
     {
         $me = $this->actor($request);

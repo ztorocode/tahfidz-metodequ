@@ -63,16 +63,16 @@ final class WaGateway
     }
 
     /** Status koneksi perangkat (GET /app/status). */
-    public function status(): array
+    public function status(?string $deviceId = null): array
     {
-        $data = $this->call('/app/status');
+        $data = $this->call('/app/status', $deviceId);
         if (($data['code'] ?? '') !== 'SUCCESS') {
             throw new \RuntimeException($this->errorOf($data, 'Gagal membaca status WhatsApp.'));
         }
 
         $results = is_array($data['results'] ?? null) ? $data['results'] : [];
         return [
-            'device_id' => (string) ($results['device_id'] ?? $this->deviceId),
+            'device_id' => (string) ($results['device_id'] ?? $this->deviceOf($deviceId)),
             'is_connected' => (bool) ($results['is_connected'] ?? false),
             'is_logged_in' => (bool) ($results['is_logged_in'] ?? false),
             'jid' => (string) ($results['jid'] ?? ''),
@@ -80,9 +80,9 @@ final class WaGateway
     }
 
     /** Minta QR pairing baru (GET /app/login) dan ambil gambarnya. */
-    public function qr(): array
+    public function qr(?string $deviceId = null): array
     {
-        $data = $this->call('/app/login');
+        $data = $this->call('/app/login', $deviceId);
         $code = (string) ($data['code'] ?? '');
         if ($code === 'ALREADY_LOGGED_IN') {
             throw new \RuntimeException('Perangkat sudah terhubung ke WhatsApp. Tidak perlu memindai QR.');
@@ -95,7 +95,7 @@ final class WaGateway
         $link = (string) ($results['qr_link'] ?? '');
 
         return [
-            'device_id' => (string) ($results['device_id'] ?? $this->deviceId),
+            'device_id' => (string) ($results['device_id'] ?? $this->deviceOf($deviceId)),
             'qr_duration' => (int) ($results['qr_duration'] ?? 30),
             'qr_image' => $this->qrImage($link), // data URI bila berhasil diambil, else null
             'qr_link' => $link,                  // cadangan bila gambar tidak bisa diambil
@@ -103,9 +103,9 @@ final class WaGateway
     }
 
     /** Putuskan sesi aktif tanpa menghapus slot device (GET /app/logout). */
-    public function logout(): array
+    public function logout(?string $deviceId = null): array
     {
-        $data = $this->call('/app/logout');
+        $data = $this->call('/app/logout', $deviceId);
         if (($data['code'] ?? '') !== 'SUCCESS') {
             throw new \RuntimeException($this->errorOf($data, 'Gagal memutus koneksi.'));
         }
@@ -114,9 +114,9 @@ final class WaGateway
     }
 
     /** Sambungkan ulang koneksi yang terputus (GET /app/reconnect). */
-    public function reconnect(): array
+    public function reconnect(?string $deviceId = null): array
     {
-        $data = $this->call('/app/reconnect');
+        $data = $this->call('/app/reconnect', $deviceId);
         if (($data['code'] ?? '') !== 'SUCCESS') {
             throw new \RuntimeException($this->errorOf($data, 'Gagal menyambungkan ulang.'));
         }
@@ -124,8 +124,25 @@ final class WaGateway
         return ['message' => (string) ($data['message'] ?? 'Reconnect requested.')];
     }
 
+    /** Buat slot device baru di gateway (POST /devices). */
+    public function createDevice(string $deviceId): array
+    {
+        $data = $this->postJson('/devices', ['device_id' => $deviceId], $deviceId);
+        if (($data['code'] ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException($this->errorOf($data, 'Gagal membuat device di gateway.'));
+        }
+
+        return is_array($data['results'] ?? null) ? $data['results'] : ['device_id' => $deviceId];
+    }
+
+    private function deviceOf(?string $deviceId): string
+    {
+        $value = trim((string) ($deviceId ?? ''));
+        return $value !== '' ? $value : $this->deviceId;
+    }
+
     /** @return array<string, mixed> */
-    private function call(string $path): array
+    private function call(string $path, ?string $deviceId = null): array
     {
         if ($this->baseUrl === '' || $this->username === '' || $this->password === '') {
             throw new \RuntimeException('Konfigurasi gateway WhatsApp belum lengkap.');
@@ -137,7 +154,7 @@ final class WaGateway
             CURLOPT_USERPWD => $this->username . ':' . $this->password,
             CURLOPT_HTTPHEADER => [
                 'Accept: application/json',
-                'X-Device-Id: ' . $this->deviceId,
+                'X-Device-Id: ' . $this->deviceOf($deviceId),
             ],
             CURLOPT_TIMEOUT => 25,
         ]);
@@ -153,6 +170,47 @@ final class WaGateway
         $decoded = json_decode((string) $body, true);
         if (!is_array($decoded)) {
             throw new \RuntimeException('Gateway WhatsApp merespons tidak valid (' . $httpCode . ').');
+        }
+
+        return $decoded;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function postJson(string $path, array $payload, ?string $deviceId = null): array
+    {
+        if ($this->baseUrl === '' || $this->username === '' || $this->password === '') {
+            throw new \RuntimeException('Konfigurasi gateway WhatsApp belum lengkap.');
+        }
+
+        $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        if ($encoded === false) {
+            throw new \RuntimeException('Gagal menyusun permintaan device.');
+        }
+
+        $ch = curl_init($this->baseUrl . $path);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_USERPWD => $this->username . ':' . $this->password,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'Content-Type: application/json',
+                'X-Device-Id: ' . $this->deviceOf($deviceId),
+            ],
+            CURLOPT_POSTFIELDS => $encoded,
+            CURLOPT_TIMEOUT => 25,
+        ]);
+        $body = curl_exec($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false) {
+            throw new \RuntimeException('Gateway WhatsApp tidak merespons: ' . $error);
+        }
+
+        $decoded = json_decode((string) $body, true);
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('Gateway WhatsApp merespons tidak valid.');
         }
 
         return $decoded;

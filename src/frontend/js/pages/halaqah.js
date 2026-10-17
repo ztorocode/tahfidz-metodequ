@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=91f0394e";
-import {students} from "../data/dummy-data.js?v=91f0394e";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=91f0394e";
+import {getState,setState} from "../store.js?v=61418616";
+import {students} from "../data/dummy-data.js?v=61418616";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=61418616";
 
 let selectedHalaqahId=null;
 
@@ -163,10 +163,13 @@ function detail(item,isAdmin){
   <button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
   <div class="modal-backdrop hidden" id="santriModal">
    <div class="modal-card">
-    <div class="row between"><div><p class="eyebrow">Halaqah</p><h2>+Santri ke ${escapeHtml(item.name)}</h2></div><button class="btn" type="button" data-santri-close>Tutup</button></div>
+    <div><p class="eyebrow">Halaqah</p><h2>+Santri ke ${escapeHtml(item.name)}</h2></div>
     <div class="stack" id="santriCheckList" style="margin-top:16px"><small class="muted">Memuat santri...</small></div>
     <small class="muted" id="santriFormMessage"></small>
-    <button class="btn primary full" id="saveSantriBtn" type="button" data-save-santri="${item.id}">Simpan</button>
+    <div class="btn-joined">
+     <button class="btn" type="button" data-santri-close>Tutup</button>
+     <button class="btn primary" id="saveSantriBtn" type="button" data-save-santri="${item.id}">Simpan</button>
+    </div>
    </div>
   </div>
  </div>

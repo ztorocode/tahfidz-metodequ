@@ -6,6 +6,7 @@ namespace App\Modules\Musyrifs;
 
 use App\Core\SmtpMailer;
 use App\Core\WaGateway;
+use App\Core\WaSender;
 use App\Modules\Auth\RegisterRepository;
 use App\Modules\Auth\RegistrationException;
 use PDO;
@@ -111,7 +112,8 @@ final class InviteService
         $waSent = $phone !== null ? $this->tryWa(
             $phone,
             "Assalamu'alaikum {$name}, Anda diundang menjadi " . ($role === 'musyrif' ? 'Musyrif' : 'Santri')
-            . " di {$safePondok} (MetodeQu). Terima di sini (7 hari): {$link}"
+            . " di {$safePondok} (MetodeQu). Terima di sini (7 hari): {$link}",
+            (int) $pondokRow['id']
         ) : false;
 
         return [
@@ -678,11 +680,16 @@ final class InviteService
         }
     }
 
-    private function tryWa(string $phone, string $message): bool
+    private function tryWa(string $phone, string $message, ?int $pondokId = null): bool
     {
         try {
-            WaGateway::fromEnv()->sendText($phone, $message);
-            return true;
+            $result = (new WaSender($this->pdo, WaGateway::fromEnv()))->send([
+                'type' => 'invite',
+                'phone' => $phone,
+                'message' => $message,
+                'pondok_id' => $pondokId,
+            ]);
+            return $result['status'] === 'sent';
         } catch (\Throwable $exception) {
             error_log('MetodeQu invite WA gagal: ' . $exception->getMessage());
             return false;

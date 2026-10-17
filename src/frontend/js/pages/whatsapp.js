@@ -1,6 +1,5 @@
-import {whatsappHistory} from "../data/dummy-data.js?v=578e63ba";
-import {badge,toast} from "../utils/helpers.js?v=578e63ba";
-import {getState} from "../store.js?v=578e63ba";
+import {badge,toast} from "../utils/helpers.js?v=b2714244";
+import {getState} from "../store.js?v=b2714244";
 
 const TABS=[["device","Device"],["template","Template Pesan"],["history","Riwayat Pengiriman"]];
 const HEADLINE={
@@ -18,6 +17,8 @@ const VARS=["{nama}","{halaqah}","{musyrif}","{pondok}"];
 let tplItems=null;
 let tplPid=null;
 let editingCode=null;
+let histRows=null;
+let histPid=null;
 let currentTab="history";
 let pollTimer=null;
 let countTimer=null;
@@ -43,6 +44,15 @@ function deviceSection(){
    <div class="btn-joined" style="margin-top:16px">
     <button class="btn" id="waLogoutBtn" type="button">Putuskan</button>
     <button class="btn primary" id="waScanBtn" type="button">Tampilkan QR</button>
+   </div>
+  </div>
+  <div class="card">
+   <h3>Kirim Test</h3>
+   <p class="muted" style="margin:4px 0 10px">Kirim 1 pesan beneran dari device pondok untuk menguji koneksi.</p>
+   <div class="stack">
+    <div><label class="label">Nomor WhatsApp</label><input class="input" id="waTestPhone" inputmode="tel" autocomplete="off" placeholder="+628 ..."></div>
+    <div><label class="label">Pesan</label><textarea class="input" id="waTestMsg" rows="3">Test dari MetodeQu — pesan otomatis, abaikan.</textarea></div>
+    <button class="btn primary full" id="waTestBtn" type="button">Kirim Test</button>
    </div>
   </div>
   <div class="card">
@@ -91,9 +101,37 @@ function tplModal(){
  </div>`;
 }
 
+function fmtTime(value){
+ if(!value)return "–";
+ const raw=String(value).replace(" ","T");
+ const d=new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(raw)?raw:raw+"Z");
+ if(isNaN(d.getTime()))return String(value);
+ return d.toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+
+function histBadge(status){
+ if(status==="sent")return badge("SENT","success");
+ if(status==="failed")return badge("FAILED","danger");
+ return badge(String(status||"").toUpperCase(),"warning");
+}
+
 function historySection(){
+ const pid=String(pondokId()??"");
+ const rows=histPid===pid&&Array.isArray(histRows)?histRows:null;
+ const inner=rows===null
+  ? '<small class="muted">Memuat riwayat…</small>'
+  : rows.length
+   ? `<div class="table-wrap"><table class="table"><thead><tr><th>Waktu</th><th>Tipe pesan</th><th>Penerima</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${rows.map(x=>`<tr>
+       <td>${fmtTime(x.time)}</td>
+       <td><b>${escapeText(x.type)}</b></td>
+       <td>${escapeText(x.recipient)}<br><small class="muted">${escapeText(x.phone)}</small></td>
+       <td title="${escapeText(x.error||"")}">${histBadge(x.status)}${x.error?`<br><small class="muted" style="font-size:11px">${escapeText(String(x.error).slice(0,60))}</small>`:""}</td>
+       <td>${x.status==="failed"?`<button class="btn soft" type="button" data-wa-resend="${x.id}">Kirim ulang</button>`:""}</td>
+      </tr>`).join("")}</tbody></table></div>`
+   : '<small class="muted">Belum ada pengiriman. Coba tab <b>Device</b> lalu kirim pesan test.</small>';
  return `<div id="waTab-history" class="stack${currentTab==="history"?"":" hidden"}">
-  <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Waktu</th><th>Tipe pesan</th><th>Penerima</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${whatsappHistory.map(x=>`<tr><td>${x.time}</td><td><b>${x.type}</b></td><td>${x.to}</td><td>${badge(x.status,x.status==="SENT"?"success":"danger")}</td><td>${x.status==="FAILED"?'<button class="btn soft" data-resend>Resend</button>':""}</td></tr>`).join("")}</tbody></table></div></div>
+  <div class="card"><div class="row between" style="gap:10px"><h3 style="margin:0">Riwayat Pengiriman</h3><button class="btn" type="button" data-wa-hist-refresh style="padding:6px 10px">Muat ulang</button></div>
+  <div style="margin-top:12px">${inner}</div></div>
  </div>`;
 }
 
@@ -318,12 +356,32 @@ function bindTplModal(){
  });
 }
 
+async function loadHistory(force){
+ const pid=pondokId();
+ if(!pid)return;
+ if(!force&&histPid===String(pid)&&Array.isArray(histRows))return;
+ try{
+  const b=await waApi("/api/wa/history?pondok_id="+pid+"&t="+Date.now());
+  const items=Array.isArray(b.data?.items)?b.data.items:[];
+  const changed=JSON.stringify(items)!==JSON.stringify(histRows);
+  histRows=items;
+  histPid=String(pid);
+  if(currentTab==="history"&&changed)window.dispatchEvent(new Event("app:render"));
+ }catch(err){
+  console.warn("history:",err?.message);
+  histRows=histRows??[];
+  histPid=String(pid);
+  if(currentTab==="history")window.dispatchEvent(new Event("app:render"));
+ }
+}
+
 export function bindWaPage(){
  const scan=document.querySelector("#waScanBtn");
  clearTimers();
  if(!scan)return;
 
  loadTemplates();
+ loadHistory();
  bindTplModal();
 
  if(!pondokId()){
@@ -342,6 +400,40 @@ export function bindWaPage(){
  }));
 
  document.querySelector("#waCreateBtn")?.addEventListener("click",createDevice);
+
+ document.querySelector("#waTestBtn")?.addEventListener("click",async ()=>{
+  const phone=document.querySelector("#waTestPhone")?.value||"";
+  const message=document.querySelector("#waTestMsg")?.value||"";
+  if(!/^\+?\d[\d\s-]{7,}$/.test(phone.trim())){alert("Isi nomor WhatsApp dulu, contoh +628123456789.");return;}
+  const btn=document.querySelector("#waTestBtn");
+  if(btn){btn.disabled=true;btn.textContent="Mengirim…";}
+  try{
+   const b=await waApi("/api/wa/test-send",{method:"POST",body:JSON.stringify({pondok_id:Number(pondokId()),phone:phone.trim(),message:message.trim()})});
+   toast(b.message||"Pesan test terkirim.");
+   histRows=null;
+   await loadHistory(true);
+   refreshWaStatus();
+  }catch(err){alert(err?.message||"Gagal mengirim pesan test.");}
+  if(btn){btn.disabled=false;btn.textContent="Kirim Test";}
+ });
+
+ document.querySelectorAll("[data-wa-resend]").forEach(btn=>btn.addEventListener("click",async ()=>{
+  if(!confirm("Kirim ulang pesan ini?"))return;
+  btn.disabled=true;
+  try{
+   const b=await waApi("/api/wa/resend",{method:"POST",body:JSON.stringify({pondok_id:Number(pondokId()),id:Number(btn.dataset.waResend)})});
+   toast(b.message||"Pesan dikirim ulang.");
+   histRows=null;
+   await loadHistory(true);
+  }catch(err){alert(err?.message||"Gagal mengirim ulang.");}
+  btn.disabled=false;
+ }));
+
+ document.querySelector("[data-wa-hist-refresh]")?.addEventListener("click",async ()=>{
+  histRows=null;
+  await loadHistory(true);
+  toast("Riwayat dimuat ulang.");
+ });
 
  scan.addEventListener("click",async ()=>{
   scan.disabled=true;

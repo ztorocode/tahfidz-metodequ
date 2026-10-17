@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Auth;
 
 use App\Core\WaGateway;
+use App\Core\WaSender;
 use PDO;
 
 final class OtpService
@@ -57,13 +58,13 @@ final class OtpService
             'otp_hash' => $hash,
         ]);
 
-        try {
-            $this->gateway->sendText(
-                $phone,
-                'Kode OTP MetodeQu Anda: ' . $code . ' (berlaku 5 menit). Jangan bagikan ke siapa pun.'
-            );
-        } catch (\Throwable $exception) {
-            error_log('MetodeQu OTP WA gagal: ' . $exception->getMessage());
+        $result = (new WaSender($this->pdo, $this->gateway))->send([
+            'type' => 'otp',
+            'phone' => $phone,
+            'message' => 'Kode OTP MetodeQu Anda: ' . $code . ' (berlaku 5 menit). Jangan bagikan ke siapa pun.',
+            'user_id' => $userId === false ? null : (int) $userId,
+        ]);
+        if ($result['status'] !== 'sent') {
             throw new RegistrationException('Gagal mengirim kode via WhatsApp. Coba lagi.', 502);
         }
 

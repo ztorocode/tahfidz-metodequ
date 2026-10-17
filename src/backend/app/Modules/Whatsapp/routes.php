@@ -18,4 +18,8 @@ return static function (Router $router): void {
 
     $router->get('/api/wa/templates', [$templates, 'index']);
     $router->post('/api/wa/templates', [$templates, 'save']);
+
+    $router->get('/api/wa/history', [$controller, 'history']);
+    $router->post('/api/wa/resend', [$controller, 'resend']);
+    $router->post('/api/wa/test-send', [$controller, 'testSend']);
 };

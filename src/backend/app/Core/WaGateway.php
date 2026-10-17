@@ -24,14 +24,14 @@ final class WaGateway
     ) {
     }
 
-    public function sendText(string $phoneE164, string $message): void
+    public function sendText(string $phoneE164, string $message, ?string $deviceId = null): void
     {
         if ($this->baseUrl === '' || $this->username === '' || $this->password === '') {
             throw new \RuntimeException('Konfigurasi gateway WhatsApp belum lengkap.');
         }
 
         $digits = ltrim(preg_replace('/\D+/', '', $phoneE164) ?? '', '+');
-        $url = $this->baseUrl . '/send/message?device_id=' . urlencode($this->deviceId);
+        $url = $this->baseUrl . '/send/message?device_id=' . urlencode($this->deviceOf($deviceId));
 
         $payload = json_encode(['phone' => $digits, 'message' => $message], JSON_UNESCAPED_UNICODE);
         if ($payload === false) {

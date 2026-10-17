@@ -8,6 +8,7 @@ use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\WaGateway;
+use App\Core\WaSender;
 use App\Modules\Auth\LoginValidator;
 use App\Modules\Auth\RegistrationException;
 use App\Modules\Auth\SessionService;
@@ -203,6 +204,153 @@ final class WaController
             ], $exception->statusCode);
         } catch (\RuntimeException $exception) {
             Response::json(['success' => false, 'message' => $exception->getMessage()], 400);
+        }
+    }
+
+    public function history(Request $request): never
+    {
+        try {
+            $context = $this->context($request, fromQuery: true);
+
+            $statement = Database::connection()->prepare(
+                'SELECT o.id, o.type, o.recipient_phone_e164, o.status, o.last_error, o.created_at, o.sent_at,
+                        u.name AS recipient_name
+                 FROM whatsapp_outbox o
+                 LEFT JOIN users u ON u.id = o.user_id
+                 WHERE o.pondok_id = :pondok_id
+                 ORDER BY o.id DESC
+                 LIMIT 50'
+            );
+            $statement->execute(['pondok_id' => $context['pondok_id']]);
+
+            $items = array_map(static function (array $row): array {
+                $phone = (string) $row['recipient_phone_e164'];
+                return [
+                    'id' => (int) $row['id'],
+                    'type' => (string) $row['type'],
+                    'recipient' => $row['recipient_name'] !== null && $row['recipient_name'] !== ''
+                        ? (string) $row['recipient_name']
+                        : $phone,
+                    'phone' => $phone,
+                    'status' => (string) $row['status'],
+                    'error' => $row['last_error'] !== null ? (string) $row['last_error'] : null,
+                    'time' => (string) $row['created_at'],
+                    'sent_at' => $row['sent_at'] !== null ? (string) $row['sent_at'] : null,
+                ];
+            }, $statement->fetchAll(PDO::FETCH_ASSOC));
+
+            Response::json(['success' => true, 'data' => [
+                'items' => $items,
+                'device_id' => $context['device_id'],
+                'has_device' => $context['device_id'] !== null,
+            ]]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
+    /** Kirim 1 pesan beneran dari device pondok (uji koneksi). */
+    public function testSend(Request $request): never
+    {
+        try {
+            $body = $request->body();
+            $context = $this->context($request, fromQuery: false);
+            if ($context['device_id'] === null) {
+                throw new RegistrationException('Buat device pondok dulu.', 422, ['device' => 'Buat device dulu.']);
+            }
+
+            $phone = '+' . ltrim(preg_replace('/\D+/', '', (string) ($body['phone'] ?? '')) ?? '', '+');
+            if (strlen(preg_replace('/\D+/', '', $phone) ?? '') < 8) {
+                throw new RegistrationException('Nomor WhatsApp tidak valid.', 422, ['phone' => 'Nomor WhatsApp tidak valid.']);
+            }
+
+            $message = trim((string) ($body['message'] ?? ''));
+            if ($message === '') {
+                $message = 'Test dari ' . $context['pondok_name'] . ' (MetodeQu) — pesan otomatis, abaikan.';
+            }
+
+            $result = (new WaSender(Database::connection(), $this->gateway))->send([
+                'type' => 'test_send',
+                'phone' => $phone,
+                'message' => $message,
+                'pondok_id' => $context['pondok_id'],
+                'device_id' => $context['device_id'],
+            ]);
+
+            if ($result['status'] !== 'sent') {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Gagal mengirim: ' . ($result['error'] ?? 'gateway tidak merespons'),
+                    'data' => $result,
+                ], 400);
+            }
+
+            Response::json(['success' => true, 'message' => 'Pesan test terkirim ke ' . $phone . '.', 'data' => $result]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
+    /** Kirim ulang pesan yang gagal. */
+    public function resend(Request $request): never
+    {
+        try {
+            $context = $this->context($request, fromQuery: false);
+            if ($context['device_id'] === null) {
+                throw new RegistrationException('Buat device pondok dulu.', 422, ['device' => 'Buat device dulu.']);
+            }
+
+            $id = (int) ($request->body()['id'] ?? 0);
+            $statement = Database::connection()->prepare(
+                'SELECT id, type, status, recipient_phone_e164, payload
+                 FROM whatsapp_outbox
+                 WHERE id = :id AND pondok_id = :pondok_id
+                 LIMIT 1'
+            );
+            $statement->execute(['id' => $id, 'pondok_id' => $context['pondok_id']]);
+            $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+            if (!is_array($row)) {
+                throw new RegistrationException('Pesan tidak ditemukan.', 404, ['id' => 'Pesan tidak ditemukan.']);
+            }
+            if ($row['status'] === 'sent') {
+                throw new RegistrationException('Pesan sudah terkirim.', 422, ['id' => 'Pesan sudah terkirim.']);
+            }
+
+            $payload = json_decode((string) $row['payload'], true);
+            $message = is_array($payload) ? (string) ($payload['message'] ?? '') : '';
+
+            $result = (new WaSender(Database::connection(), $this->gateway))->send([
+                'type' => (string) $row['type'],
+                'phone' => (string) $row['recipient_phone_e164'],
+                'message' => $message,
+                'pondok_id' => $context['pondok_id'],
+                'device_id' => $context['device_id'],
+            ]);
+
+            if ($result['status'] !== 'sent') {
+                Response::json([
+                    'success' => false,
+                    'message' => 'Gagal mengirim ulang: ' . ($result['error'] ?? 'gateway tidak merespons'),
+                    'data' => $result,
+                ], 400);
+            }
+
+            Response::json(['success' => true, 'message' => 'Pesan dikirim ulang.', 'data' => $result]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
         }
     }
 

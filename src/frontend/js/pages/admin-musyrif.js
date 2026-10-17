@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=1da882d6";
+import {getState} from "../store.js?v=6498b713";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -15,11 +15,14 @@ export function adminMusyrifPage(){
 </div></div></div>
 <div class="modal-backdrop hidden" id="inviteMusyrifModal">
  <div class="modal-card">
-  <div class="row between"><div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div><button class="btn" id="closeInviteMusyrifBtn" type="button">Tutup</button></div>
+  <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
   <div class="stack">
    <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="musyrifEmail" rows="4" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
    <small class="muted" id="musyrifMessage">Ketik email — bila sudah terdaftar akan muncul saran. Nama & WA diisi musyrif saat terima undangan. Berlaku 7 hari.</small>
-   <button class="btn primary full" id="sendMusyrifInviteBtn" type="button">Kirim</button>
+   <div class="btn-joined">
+    <button class="btn" id="closeInviteMusyrifBtn" type="button">Tutup</button>
+    <button class="btn primary" id="sendMusyrifInviteBtn" type="button">Kirim</button>
+   </div>
   </div>
  </div>
 </div>

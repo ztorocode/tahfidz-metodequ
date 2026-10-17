@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=1da882d6";
+import {getState} from "../store.js?v=6498b713";
 
 export function adminSantriPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -15,11 +15,14 @@ export function adminSantriPage(){
 </div></div></div>
 <div class="modal-backdrop hidden" id="inviteSantriModal">
  <div class="modal-card">
-  <div class="row between"><div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div><button class="btn" id="closeInviteSantriBtn" type="button">Tutup</button></div>
+  <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
   <div class="stack">
    <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="santriEmail" rows="4" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
    <small class="muted" id="santriMessage">Nama & WA diisi santri saat terima undangan. Berlaku 7 hari.</small>
-   <button class="btn primary full" id="sendSantriInviteBtn" type="button">Kirim</button>
+   <div class="btn-joined">
+    <button class="btn" id="closeInviteSantriBtn" type="button">Tutup</button>
+    <button class="btn primary" id="sendSantriInviteBtn" type="button">Kirim</button>
+   </div>
   </div>
  </div>
 </div>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Musyrifs;
 
+use App\Core\PondokDashboard;
 use App\Modules\Auth\RegisterRepository;
 use App\Modules\Auth\RegistrationException;
 use PDO;
@@ -75,6 +76,8 @@ final class SantriService
             if ($ownsTransaction) {
                 $this->pdo->commit();
             }
+
+            PondokDashboard::refreshQuietly($this->pdo, (int) $pondokRow['id']);
 
             return [
                 'id' => $userId,

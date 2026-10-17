@@ -19,4 +19,7 @@ return static function (Router $router): void {
 
     $registerWa = require dirname(__DIR__) . '/app/Modules/Whatsapp/routes.php';
     $registerWa($router);
+
+    $registerPondoks = require dirname(__DIR__) . '/app/Modules/Pondoks/routes.php';
+    $registerPondoks($router);
 };

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Musyrifs;
 
+use App\Core\PondokDashboard;
 use App\Modules\Auth\RegistrationException;
 use PDO;
 
@@ -64,6 +65,8 @@ final class PondokMemberService
                 'pondok_id2' => (int) $row['pondok_id'],
             ]);
         }
+
+        PondokDashboard::refreshQuietly($this->pdo, (int) $row['pondok_id']);
 
         return ['id' => $membershipId, 'name' => (string) $row['name']];
     }

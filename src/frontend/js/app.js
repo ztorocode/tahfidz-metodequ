@@ -1,10 +1,11 @@
-import {view,routeName} from "./router.js?v=b2714244";
-import {getState,setState} from "./store.js?v=b2714244";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b2714244";
-import {bindLogin} from "./pages/login.js?v=b2714244";
-import {bindInvite} from "./pages/terima-undangan.js?v=b2714244";
-import {toast} from "./utils/helpers.js?v=b2714244";
-import {bindWaPage} from "./pages/whatsapp.js?v=b2714244";
+import {view,routeName} from "./router.js?v=6f85b9bf";
+import {getState,setState} from "./store.js?v=6f85b9bf";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=6f85b9bf";
+import {bindLogin} from "./pages/login.js?v=6f85b9bf";
+import {bindInvite} from "./pages/terima-undangan.js?v=6f85b9bf";
+import {toast} from "./utils/helpers.js?v=6f85b9bf";
+import {bindWaPage} from "./pages/whatsapp.js?v=6f85b9bf";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=6f85b9bf";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -385,6 +386,7 @@ document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener(
  document.querySelector("#submitDemo")?.addEventListener("click",()=>toast("Setoran demo dikirim ke musyrif"));
  document.querySelectorAll("[data-resend]").forEach(b=>b.addEventListener("click",()=>toast("Pesan dimasukkan kembali ke queue")));
  bindWaPage();
+ bindAdminDashboard();
 }
 function renderInstall(){
  const slot=document.querySelector("#installSlot");if(!slot||!deferredPrompt)return;
@@ -393,5 +395,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b2714244"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=6f85b9bf"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

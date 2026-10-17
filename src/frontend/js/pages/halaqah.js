@@ -1,14 +1,9 @@
-import {getState,setState} from "../store.js?v=6f85b9bf";
-import {students} from "../data/dummy-data.js?v=6f85b9bf";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=6f85b9bf";
+import {getState,setState} from "../store.js?v=578e63ba";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=578e63ba";
 
 let selectedHalaqahId=null;
 
-const demoMusyrifOptions=[
- {id:"musyrif-rahmat",name:"Ust. Rahmat Hidayat"},
- {id:"musyrif-abdullah",name:"Ust. Abdullah Karim"},
- {id:"musyrif-yusuf",name:"Ust. Yusuf Maulana"}
-];
+const demoMusyrifOptions=[];
 
 function activePondokId(){
  const st=getState();
@@ -19,6 +14,14 @@ function musyrifOptions(){
  const real=getState().realMusyrifs;
  if(Array.isArray(real)&&real.length)return real.map(m=>({id:"user-"+m.id,name:m.name}));
  return demoMusyrifOptions;
+}
+
+async function halaqApi(path,options={}){
+ const token=getState().authToken;
+ const r=await fetch(path,{...options,headers:{Accept:"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(options.body?{"Content-Type":"application/json"}:{})}});
+ let b={};try{b=await r.json()}catch{}
+ if(!r.ok)throw new Error(b?.message||"Server tidak merespons.");
+ return b;
 }
 
 function refreshSantris(force,silent){
@@ -54,48 +57,93 @@ function refreshMusyrifs(force,silent){
   .catch(()=>{});
 }
 
-const defaultHalaqahs=[
- {
-  id:"halaqah-abu-bakar",
-  name:"Halaqah Abu Bakar",
-  musyrifId:"musyrif-rahmat",
-  students:students.map(s=>({...s}))
- },
- {
-  id:"halaqah-umar",
-  name:"Halaqah Umar",
-  musyrifId:"musyrif-rahmat",
-  students:[
-   {name:"Faris Ramadhan",mutqin:8,pending:0,status:"Aktif"},
-   {name:"Muhammad Zaid",mutqin:12,pending:1,status:"Aktif"},
-   {name:"Abdurrahman",mutqin:6,pending:2,status:"Perlu review"}
-  ]
- },
- {
-  id:"halaqah-utsman",
-  name:"Halaqah Utsman",
-  musyrifId:"musyrif-abdullah",
-  students:[
-   {name:"Ali Akbar",mutqin:10,pending:0,status:"Aktif"},
-   {name:"Hasan Basri",mutqin:9,pending:1,status:"Penguatan"}
-  ]
+/* ====================== Halaqah (server) ====================== */
+
+function mapServer(h){
+ return {
+  id:"srv-"+h.id,
+  numericId:Number(h.id),
+  name:h.name,
+  musyrifId:h.musyrif_user_id?("user-"+h.musyrif_user_id):null,
+  musyrifName:h.musyrif_name||null,
+  students:(h.students||[]).map(s=>({
+   name:s.name,
+   santriUserId:String(s.id),
+   mutqin:Number(s.mutqin)||0,
+   pending:Number(s.pending)||0,
+   status:s.status||"Aktif"
+  }))
+ };
+}
+
+function refreshHalaqahs(force,silent){
+ const st=getState();
+ const pid=activePondokId();
+ if(!pid||!st.authToken||(!force&&st.halaqahSrc===String(pid)))return Promise.resolve();
+ setState({halaqahSrc:String(pid)});
+ return halaqApi("/api/pondoks/halaqahs?pondok_id="+pid+"&t="+Date.now())
+  .then(b=>{
+   const mapped=Array.isArray(b.data)?b.data.map(mapServer):[];
+   const changed=JSON.stringify(mapped)!==JSON.stringify(getState().realHalaqahs);
+   setState({realHalaqahs:mapped});
+   if(!silent&&changed)window.dispatchEvent(new Event("app:render"));
+   return importLocalOnce(pid,mapped);
+  })
+  .catch(err=>{console.warn("halaqah:",err?.message);});
+}
+
+/** Satu kali: bila server masih kosong, pindahkan halaqah lama (tersimpan lokal di HP) ke server. */
+async function importLocalOnce(pid,serverList){
+ const st=getState();
+ if(st.halaqahImported===String(pid)||serverList.length)return;
+ setState({halaqahImported:String(pid)});
+ const local=localList();
+ if(!local.length)return;
+ for(const item of local){
+  try{
+   const created=await halaqApi("/api/pondoks/halaqahs",{method:"POST",body:JSON.stringify({
+    pondok_id:Number(pid),
+    name:item.name,
+    musyrif_user_id:parseUserId(item.musyrifId)
+   })});
+   const hid=Number(created?.data?.id||0);
+   const ids=(item.students||[]).map(s=>realSantriList().find(u=>u.name===s.name)?.id).filter(Boolean).map(Number);
+   if(hid&&ids.length){
+    await halaqApi("/api/pondoks/halaqahs/members",{method:"POST",body:JSON.stringify({pondok_id:Number(pid),halaqah_id:hid,user_ids:ids})});
+   }
+  }catch(err){console.warn("impor halaqah lokal:",err?.message);}
  }
-];
+ await refreshHalaqahs(true,true);
+ window.dispatchEvent(new Event("app:render"));
+}
+
+function parseUserId(id){
+ const match=/^user-(\d+)$/.exec(String(id||""));
+ return match?Number(match[1]):null;
+}
+
+const dummyHalaqahIds=new Set(["halaqah-abu-bakar","halaqah-umar","halaqah-utsman"]);
+
+/** Halaqah lama yang tersimpan lokal di browser (sebelum pindah ke server). */
+function localList(){
+ const saved=getState().halaqahs;
+ const list=Array.isArray(saved)?saved:[];
+ return list.filter(item=>item&&!dummyHalaqahIds.has(item.id));
+}
+
+function halaqahs(){
+ const st=getState();
+ const pid=activePondokId();
+ if(st.halaqahSrc===String(pid)&&Array.isArray(st.realHalaqahs))return st.realHalaqahs;
+ return localList();
+}
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
 
-const dummyHalaqahIds=new Set(["halaqah-abu-bakar","halaqah-umar","halaqah-utsman"]);
-
-function halaqahs(){
- const saved=getState().halaqahs;
- const list=Array.isArray(saved)?saved:[];
- // Buang data contoh lama (termasuk yang telanjur tersimpan di HP) — hanya tampilkan halaqah buatan sendiri.
- return list.filter(item=>item&&!dummyHalaqahIds.has(item.id));
-}
-
 function musyrifName(id){
+ if(!id)return "Belum ditentukan";
  return musyrifOptions().find(item=>item.id===id)?.name||"Belum ditentukan";
 }
 
@@ -116,7 +164,7 @@ function adminList(items){
    <div class="row" style="gap:12px">
     <div class="grow" style="min-width:0">
      <div class="row between" style="gap:8px"><b>${escapeHtml(item.name)}</b>${badge("Aktif","success")}</div>
-     <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Musyrif ${escapeHtml(musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
+     <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Musyrif ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
     </div>
     <button class="btn" type="button" data-halaqah-view="${item.id}" aria-label="Lihat detail" style="font-size:22px;padding:6px 14px">›</button>
    </div>
@@ -127,8 +175,8 @@ function adminList(items){
    <div><p class="eyebrow">Pondok</p><h2>Tambah Halaqah</h2></div>
    <form class="stack" id="halaqahForm" style="margin-top:16px">
     <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahName" placeholder="Contoh: Halaqah Ali" required></div>
-    <div><label class="label">Musyrif</label><select class="input" id="halaqahMusyrif" required>
-     ${musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join("")}
+    <div><label class="label">Musyrif</label><select class="input" id="halaqahMusyrif">
+     ${musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada musyrif, bisa dipilih nanti —</option>'}
     </select></div>
     <small class="muted">Satu halaqah memiliki satu musyrif. Santri dapat ditambahkan setelah halaqah dibuat.</small>
     <small class="muted" id="halaqahFormMessage"></small>
@@ -161,7 +209,7 @@ function detail(item,isAdmin){
    <button class="btn" type="button" data-halaqah-back style="margin-bottom:12px">← Kembali ke daftar</button>
    <p class="eyebrow">Pondok / Halaqah</p>
    <h1>${escapeHtml(item.name)}</h1>
-   <p class="muted">Musyrif: ${escapeHtml(musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
+   <p class="muted">Musyrif: ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
   </div>
   <button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
   <div class="modal-backdrop hidden" id="santriModal">
@@ -197,14 +245,15 @@ export function halaqahPage(){
  }
 
  refreshMusyrifs();
+ refreshHalaqahs();
  const items=halaqahs();
  const selected=items.find(item=>item.id===selectedHalaqahId);
  if(selected)return detail(selected,state.persona==="admin");
 
  if(state.persona==="admin")return adminList(items);
  if(state.persona==="musyrif"){
-  const myId=state.authUser?("user-"+state.authUser.id):"musyrif-rahmat";
-  return musyrifList(items.filter(item=>item.musyrifId===myId));
+  const myId=state.authUser?("user-"+state.authUser.id):null;
+  return musyrifList(myId?items.filter(item=>item.musyrifId===myId):[]);
  }
 
  return `<div class="card"><h2>Halaqah</h2><p class="muted">Akun ini tidak memiliki akses pengelolaan halaqah.</p></div>`;
@@ -230,7 +279,7 @@ document.addEventListener("click",event=>{
   document.querySelector("#halaqahName")?.focus();
   refreshMusyrifs(true,true).then(()=>{
    const sel=document.querySelector("#halaqahMusyrif");
-   if(sel)sel.innerHTML=musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join("");
+   if(sel)sel.innerHTML=musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada musyrif, bisa dipilih nanti —</option>';
   });
   return;
  }
@@ -248,10 +297,8 @@ document.addEventListener("click",event=>{
   const renderList=(list)=>{
    const box=document.querySelector("#santriCheckList");
    if(!box)return;
-   const chosen=new Set((item.students||[]).map(x=>x.santriUserId||x.name));
    box.innerHTML=list.length?`<div class="check-group">`+list.map(u=>{
-    const key=u.id||u.email;
-    const checked=(item.students||[]).some(x=>x.santriUserId===u.id||x.name===u.name);
+    const checked=(item.students||[]).some(x=>String(x.santriUserId)===String(u.id));
     return `<label class="check-row"><input type="checkbox" data-santri-check="${u.id||""}" data-santri-name="${escapeHtml(u.name)}" data-santri-email="${escapeHtml(u.email||"")}" ${checked?"checked":""}><span class="avatar">${escapeHtml((u.name||"?").slice(0,1))}</span><div class="grow"><b>${escapeHtml(u.name)}</b><small class="muted" style="display:block">${escapeHtml(u.email||"")}</small></div></label>`;
    }).join("")+`</div>`:'<small class="muted">Belum ada santri di pondok ini. Undang dulu via menu Santri.</small>';
   };
@@ -269,16 +316,19 @@ document.addEventListener("click",event=>{
  if(saveBtn){
   const item=halaqahs().find(row=>row.id===saveBtn.dataset.saveSantri);
   if(!item)return;
-  const picked=[...document.querySelectorAll("[data-santri-check]")].filter(c=>c.checked).map(c=>({id:c.dataset.santriCheck,name:c.dataset.santriName,email:c.dataset.santriEmail}));
-  const kept={};
-  (item.students||[]).forEach(x=>{kept[x.santriUserId||x.name]=x;});
-  item.students=picked.map(p=>{
-   const old=kept[p.id||p.name]||kept[p.name];
-   return old||{name:p.name,santriUserId:p.id||null,mutqin:0,pending:0,status:"Aktif"};
-  });
-  setState({halaqahs:halaqahs()});
-  document.querySelector("#santriModal")?.classList.add("hidden");
-  window.dispatchEvent(new Event("app:render"));
+  const picked=[...document.querySelectorAll("[data-santri-check]")].filter(c=>c.checked).map(c=>Number(c.dataset.santriCheck)).filter(n=>n>0);
+  const original=saveBtn.textContent;
+  saveBtn.disabled=true;
+  saveBtn.textContent="Menyimpan…";
+  halaqApi("/api/pondoks/halaqahs/members",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId()),
+   halaqah_id:Number(item.numericId||0),
+   user_ids:picked
+  })})
+   .then(()=>{document.querySelector("#santriModal")?.classList.add("hidden");return refreshHalaqahs(true,true);})
+   .then(()=>{window.dispatchEvent(new Event("app:render"));})
+   .catch(err=>{alert(err?.message||"Gagal menyimpan santri.");})
+   .finally(()=>{saveBtn.disabled=false;saveBtn.textContent=original;});
   return;
  }
 
@@ -291,7 +341,7 @@ document.addEventListener("click",event=>{
    student:{...student},
    halaqahId:item.id,
    halaqahName:item.name,
-   musyrifName:musyrifName(item.musyrifId)
+   musyrifName:item.musyrifName||musyrifName(item.musyrifId)
   }});
   location.hash="santri-progress";
  }
@@ -303,16 +353,33 @@ document.addEventListener("submit",event=>{
  if(getState().persona!=="admin"||getState().context!=="pondok")return;
 
  const name=document.querySelector("#halaqahName")?.value.trim()||"";
- const musyrifId=document.querySelector("#halaqahMusyrif")?.value||"";
+ const musyrifUserId=parseUserId(document.querySelector("#halaqahMusyrif")?.value||"");
  const message=document.querySelector("#halaqahFormMessage");
 
- if(!name||!musyrifId){
-  if(message){message.textContent="Nama halaqah dan Musyrif wajib dipilih.";message.style.color="var(--danger)";}
+ if(!name){
+  if(message){message.textContent="Nama halaqah wajib diisi.";message.style.color="var(--danger)";}
   return;
  }
 
- const item={id:`halaqah-${Date.now().toString(36)}`,name,musyrifId,students:[]};
- setState({halaqahs:[...halaqahs(),item]});
- selectedHalaqahId=item.id;
- window.dispatchEvent(new Event("app:render"));
+ const submit=event.target.querySelector('button[type="submit"]');
+ if(submit){submit.disabled=true;submit.textContent="Menyimpan…";}
+
+ halaqApi("/api/pondoks/halaqahs",{method:"POST",body:JSON.stringify({
+  pondok_id:Number(activePondokId()),
+  name,
+  musyrif_user_id:musyrifUserId
+ })})
+  .then(()=>{
+   document.querySelector("#halaqahForm")?.reset();
+   document.querySelector("#halaqahModal")?.classList.add("hidden");
+   toast("Halaqah dibuat.");
+   return refreshHalaqahs(true,true);
+  })
+  .then(()=>{window.dispatchEvent(new Event("app:render"));})
+  .catch(err=>{
+   if(message){message.textContent=err?.message||"Gagal menyimpan halaqah.";message.style.color="var(--danger)";}
+  })
+  .finally(()=>{
+   if(submit){submit.disabled=false;submit.textContent="Simpan Halaqah";}
+  });
 });

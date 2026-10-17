@@ -22,4 +22,7 @@ return static function (Router $router): void {
 
     $registerPondoks = require dirname(__DIR__) . '/app/Modules/Pondoks/routes.php';
     $registerPondoks($router);
+
+    $registerHalaqah = require dirname(__DIR__) . '/app/Modules/Halaqah/routes.php';
+    $registerHalaqah($router);
 };

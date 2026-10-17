@@ -1,6 +1,6 @@
-import {getState,setState} from "../store.js?v=3c5d30e1";
-import {students} from "../data/dummy-data.js?v=3c5d30e1";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=3c5d30e1";
+import {getState,setState} from "../store.js?v=1da882d6";
+import {students} from "../data/dummy-data.js?v=1da882d6";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=1da882d6";
 
 let selectedHalaqahId=null;
 
@@ -124,7 +124,7 @@ function adminList(items){
  </div>
  <div class="modal-backdrop hidden" id="halaqahModal">
   <div class="modal-card">
-   <div class="row between"><div><p class="eyebrow">Pondok</p><h2>Tambah Halaqah</h2></div><button class="btn" type="button" data-halaqah-close>Tutup</button></div>
+   <div><p class="eyebrow">Pondok</p><h2>Tambah Halaqah</h2></div>
    <form class="stack" id="halaqahForm" style="margin-top:16px">
     <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahName" placeholder="Contoh: Halaqah Ali" required></div>
     <div><label class="label">Musyrif</label><select class="input" id="halaqahMusyrif" required>
@@ -132,7 +132,10 @@ function adminList(items){
     </select></div>
     <small class="muted">Satu halaqah memiliki satu musyrif. Santri dapat ditambahkan setelah halaqah dibuat.</small>
     <small class="muted" id="halaqahFormMessage"></small>
-    <button class="btn primary full" type="submit">Simpan Halaqah</button>
+    <div class="btn-joined">
+     <button class="btn" type="button" data-halaqah-close>Tutup</button>
+     <button class="btn primary" type="submit">Simpan Halaqah</button>
+    </div>
    </form>
   </div>
  </div>`;

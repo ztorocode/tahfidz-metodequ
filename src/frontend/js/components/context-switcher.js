@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=61418616";
+import {getState,setState} from "../store.js?v=3c5d30e1";
 
 export function pondokList(){
  const s=getState();

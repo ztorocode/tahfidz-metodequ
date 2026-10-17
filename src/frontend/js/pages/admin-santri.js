@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=6498b713";
+import {getState} from "../store.js?v=32dfbc16";
 
 export function adminSantriPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -28,14 +28,17 @@ export function adminSantriPage(){
 </div>
 <div class="modal-backdrop hidden" id="santriModal">
  <div class="modal-card">
-  <div class="row between"><div><p class="eyebrow">Santri</p><h2>Tambah Santri</h2></div><button class="btn" id="closeSantriBtn" type="button">Tutup</button></div>
+  <div><p class="eyebrow">Santri</p><h2>Tambah Santri</h2></div>
   <div class="stack">
    <div><label class="label">Nama lengkap</label><input class="input" id="newSantriName" autocomplete="off" placeholder="Nama lengkap"></div>
    <div><label class="label">Email</label><input class="input" id="newSantriEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
    <div><label class="label">Nomor WhatsApp</label><input class="input" id="newSantriPhone" inputmode="tel" placeholder="+62 ..."></div>
    <div><label class="label">Password awal</label><input class="input" id="newSantriPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
    <small class="muted" id="newSantriMessage"></small>
-   <button class="btn primary full" id="saveSantriBtn" type="button">Simpan Santri</button>
+   <div class="btn-joined">
+    <button class="btn" id="closeSantriBtn" type="button">Tutup</button>
+    <button class="btn primary" id="saveSantriBtn" type="button">Simpan Santri</button>
+   </div>
   </div>
  </div>
 </div>`;

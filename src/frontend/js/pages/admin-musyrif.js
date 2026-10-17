@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=6498b713";
+import {getState} from "../store.js?v=32dfbc16";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -29,14 +29,17 @@ export function adminMusyrifPage(){
 </div></div></div>
 <div class="modal-backdrop hidden" id="musyrifModal">
  <div class="modal-card">
-  <div class="row between"><div><p class="eyebrow">Musyrif</p><h2>Tambah Musyrif</h2></div><button class="btn" id="closeMusyrifBtn" type="button">Tutup</button></div>
+  <div><p class="eyebrow">Musyrif</p><h2>Tambah Musyrif</h2></div>
   <div class="stack">
    <div><label class="label">Nama lengkap</label><input class="input" id="newMusyrifName" autocomplete="off" placeholder="Nama lengkap"></div>
    <div><label class="label">Email</label><input class="input" id="newMusyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
    <div><label class="label">Nomor WhatsApp</label><input class="input" id="newMusyrifPhone" inputmode="tel" placeholder="+62 ..."></div>
    <div><label class="label">Password awal</label><input class="input" id="newMusyrifPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
    <small class="muted" id="newMusyrifMessage"></small>
-   <button class="btn primary full" id="saveMusyrifBtn" type="button">Simpan Musyrif</button>
+   <div class="btn-joined">
+    <button class="btn" id="closeMusyrifBtn" type="button">Tutup</button>
+    <button class="btn primary" id="saveMusyrifBtn" type="button">Simpan Musyrif</button>
+   </div>
   </div>
  </div>
 </div>`;

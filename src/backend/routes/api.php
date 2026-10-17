@@ -16,4 +16,7 @@ return static function (Router $router): void {
 
     $registerUsers = require dirname(__DIR__) . '/app/Modules/Users/routes.php';
     $registerUsers($router);
+
+    $registerWa = require dirname(__DIR__) . '/app/Modules/Whatsapp/routes.php';
+    $registerWa($router);
 };

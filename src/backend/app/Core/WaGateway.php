@@ -61,4 +61,147 @@ final class WaGateway
             throw new \RuntimeException('Gagal mengirim WhatsApp: ' . substr((string) $body, 0, 200));
         }
     }
+
+    /** Status koneksi perangkat (GET /app/status). */
+    public function status(): array
+    {
+        $data = $this->call('/app/status');
+        if (($data['code'] ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException($this->errorOf($data, 'Gagal membaca status WhatsApp.'));
+        }
+
+        $results = is_array($data['results'] ?? null) ? $data['results'] : [];
+        return [
+            'device_id' => (string) ($results['device_id'] ?? $this->deviceId),
+            'is_connected' => (bool) ($results['is_connected'] ?? false),
+            'is_logged_in' => (bool) ($results['is_logged_in'] ?? false),
+            'jid' => (string) ($results['jid'] ?? ''),
+        ];
+    }
+
+    /** Minta QR pairing baru (GET /app/login) dan ambil gambarnya. */
+    public function qr(): array
+    {
+        $data = $this->call('/app/login');
+        $code = (string) ($data['code'] ?? '');
+        if ($code === 'ALREADY_LOGGED_IN') {
+            throw new \RuntimeException('Perangkat sudah terhubung ke WhatsApp. Tidak perlu memindai QR.');
+        }
+        if ($code !== 'SUCCESS') {
+            throw new \RuntimeException($this->errorOf($data, 'Gagal membuat QR.'));
+        }
+
+        $results = is_array($data['results'] ?? null) ? $data['results'] : [];
+        $link = (string) ($results['qr_link'] ?? '');
+
+        return [
+            'device_id' => (string) ($results['device_id'] ?? $this->deviceId),
+            'qr_duration' => (int) ($results['qr_duration'] ?? 30),
+            'qr_image' => $this->qrImage($link), // data URI bila berhasil diambil, else null
+            'qr_link' => $link,                  // cadangan bila gambar tidak bisa diambil
+        ];
+    }
+
+    /** Putuskan sesi aktif tanpa menghapus slot device (GET /app/logout). */
+    public function logout(): array
+    {
+        $data = $this->call('/app/logout');
+        if (($data['code'] ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException($this->errorOf($data, 'Gagal memutus koneksi.'));
+        }
+
+        return ['message' => (string) ($data['message'] ?? 'Device logged out.')];
+    }
+
+    /** Sambungkan ulang koneksi yang terputus (GET /app/reconnect). */
+    public function reconnect(): array
+    {
+        $data = $this->call('/app/reconnect');
+        if (($data['code'] ?? '') !== 'SUCCESS') {
+            throw new \RuntimeException($this->errorOf($data, 'Gagal menyambungkan ulang.'));
+        }
+
+        return ['message' => (string) ($data['message'] ?? 'Reconnect requested.')];
+    }
+
+    /** @return array<string, mixed> */
+    private function call(string $path): array
+    {
+        if ($this->baseUrl === '' || $this->username === '' || $this->password === '') {
+            throw new \RuntimeException('Konfigurasi gateway WhatsApp belum lengkap.');
+        }
+
+        $ch = curl_init($this->baseUrl . $path);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD => $this->username . ':' . $this->password,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+                'X-Device-Id: ' . $this->deviceId,
+            ],
+            CURLOPT_TIMEOUT => 25,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($body === false) {
+            throw new \RuntimeException('Gateway WhatsApp tidak merespons: ' . $error);
+        }
+
+        $decoded = json_decode((string) $body, true);
+        if (!is_array($decoded)) {
+            throw new \RuntimeException('Gateway WhatsApp merespons tidak valid (' . $httpCode . ').');
+        }
+
+        return $decoded;
+    }
+
+    /** Ambil gambar QR lalu kembalikan sebagai data URI. */
+    private function qrImage(string $link): ?string
+    {
+        if ($link === '') {
+            return null;
+        }
+
+        // qr_link dari GOWA bisa memakai host internal (localhost); ambil path-nya saja
+        // lalu tuju ke base URL gateway agar bisa diambil dari luar.
+        $parsed = parse_url($link);
+        $path = (string) ($parsed['path'] ?? '');
+        if ($path === '') {
+            return null;
+        }
+        if (isset($parsed['query'])) {
+            $path .= '?' . $parsed['query'];
+        }
+
+        $ch = curl_init($this->baseUrl . $path);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_USERPWD => $this->username . ':' . $this->password,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $mime = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        curl_close($ch);
+
+        if ($body === false || $httpCode < 200 || $httpCode >= 300 || $body === '') {
+            return null;
+        }
+
+        if ($mime === '' || !str_starts_with($mime, 'image/')) {
+            $mime = 'image/png';
+        }
+
+        return 'data:' . $mime . ';base64,' . base64_encode((string) $body);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function errorOf(array $data, string $fallback): string
+    {
+        $message = (string) ($data['message'] ?? '');
+        return $message !== '' ? $message : $fallback;
+    }
 }

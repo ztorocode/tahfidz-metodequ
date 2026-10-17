@@ -1,18 +1,18 @@
-const CACHE='metodequ-c0fb8dd3';
+const CACHE='metodequ-0ae8419e';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './assets/css/variables.css?v=c0fb8dd3','./assets/css/base.css?v=c0fb8dd3','./assets/css/layout.css?v=c0fb8dd3',
-  './assets/css/components.css?v=c0fb8dd3','./assets/css/responsive.css?v=c0fb8dd3',
-  './assets/images/icon.svg?v=c0fb8dd3',
-  './js/app.js?v=c0fb8dd3','./js/router.js?v=c0fb8dd3','./js/store.js?v=c0fb8dd3',
-  './js/data/dummy-data.js?v=c0fb8dd3','./js/components/app-shell.js?v=c0fb8dd3',
-  './js/components/context-switcher.js?v=c0fb8dd3','./js/layouts/app-layout.js?v=c0fb8dd3',
-  './js/utils/helpers.js?v=c0fb8dd3','./js/utils/progress-context.js?v=c0fb8dd3',
-  './js/pages/login.js?v=c0fb8dd3','./js/pages/member-progress.js?v=c0fb8dd3','./js/pages/member-dashboard.js?v=c0fb8dd3','./js/pages/program.js?v=c0fb8dd3',
-  './js/pages/activity.js?v=c0fb8dd3','./js/pages/submission.js?v=c0fb8dd3','./js/pages/murajaah.js?v=c0fb8dd3',
-  './js/pages/notifications.js?v=c0fb8dd3','./js/pages/musyrif-dashboard.js?v=c0fb8dd3',
-  './js/pages/review.js?v=c0fb8dd3','./js/pages/admin-dashboard.js?v=c0fb8dd3','./js/pages/halaqah.js?v=c0fb8dd3','./js/pages/santri-progress.js?v=c0fb8dd3','./js/pages/tabel-progress.js?v=c0fb8dd3',
-  './js/pages/whatsapp.js?v=c0fb8dd3','./js/pages/super-admin.js?v=c0fb8dd3'
+  './assets/css/variables.css?v=0ae8419e','./assets/css/base.css?v=0ae8419e','./assets/css/layout.css?v=0ae8419e',
+  './assets/css/components.css?v=0ae8419e','./assets/css/responsive.css?v=0ae8419e',
+  './assets/images/icon.svg?v=0ae8419e',
+  './js/app.js?v=0ae8419e','./js/router.js?v=0ae8419e','./js/store.js?v=0ae8419e',
+  './js/data/dummy-data.js?v=0ae8419e','./js/components/app-shell.js?v=0ae8419e',
+  './js/components/context-switcher.js?v=0ae8419e','./js/layouts/app-layout.js?v=0ae8419e',
+  './js/utils/helpers.js?v=0ae8419e','./js/utils/progress-context.js?v=0ae8419e',
+  './js/pages/login.js?v=0ae8419e','./js/pages/member-progress.js?v=0ae8419e','./js/pages/member-dashboard.js?v=0ae8419e','./js/pages/program.js?v=0ae8419e',
+  './js/pages/activity.js?v=0ae8419e','./js/pages/submission.js?v=0ae8419e','./js/pages/murajaah.js?v=0ae8419e',
+  './js/pages/notifications.js?v=0ae8419e','./js/pages/musyrif-dashboard.js?v=0ae8419e',
+  './js/pages/review.js?v=0ae8419e','./js/pages/admin-dashboard.js?v=0ae8419e','./js/pages/halaqah.js?v=0ae8419e','./js/pages/santri-progress.js?v=0ae8419e','./js/pages/tabel-progress.js?v=0ae8419e',
+  './js/pages/whatsapp.js?v=0ae8419e','./js/pages/super-admin.js?v=0ae8419e'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

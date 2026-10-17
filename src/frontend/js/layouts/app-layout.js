@@ -1,3 +1,3 @@
-import {shell,bindShell} from "../components/app-shell.js?v=c0fb8dd3";
+import {shell,bindShell} from "../components/app-shell.js?v=0ae8419e";
 export function renderLayout(html){return shell(html)}
 export function bindLayout(){bindShell()}

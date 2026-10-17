@@ -1,6 +1,6 @@
-import {whatsappHistory} from "../data/dummy-data.js?v=a2664119";
-import {badge,toast} from "../utils/helpers.js?v=a2664119";
-import {getState} from "../store.js?v=a2664119";
+import {whatsappHistory} from "../data/dummy-data.js?v=578e63ba";
+import {badge,toast} from "../utils/helpers.js?v=578e63ba";
+import {getState} from "../store.js?v=578e63ba";
 
 const TABS=[["device","Device"],["template","Template Pesan"],["history","Riwayat Pengiriman"]];
 const HEADLINE={
@@ -8,12 +8,16 @@ const HEADLINE={
  template:["Template Pesan","Isi pesan otomatis yang dikirim ke santri & musyrif."],
  history:["Riwayat Pengiriman","Log pengiriman pesan WhatsApp dari pondok Anda."]
 };
-const TEMPLATES=[
- ["Reminder Hafalan","Assalamualaikum, jangan lupa setoran hafalan hari ini ya."],
- ["Reminder Muraja'ah","Pengingat muraja'ah pukul 16.00. Siapkan halaman yang akan dibaca."],
- ["Hasil Setoran","Hasil setoran hafalan hari ini sudah tersimpan. Cek di aplikasi."],
- ["Motivasi Harian","Semangat menghafal! Konsisten sedikit setiap hari lebih baik daripada sesekali."],
+const DEFAULT_TPLS=[
+ {code:"reminder_hafalan",name:"Reminder Hafalan",body:"Assalamualaikum, jangan lupa setoran hafalan hari ini ya."},
+ {code:"reminder_murajaah",name:"Reminder Muraja'ah",body:"Pengingat muraja'ah pukul 16.00. Siapkan halaman yang akan dibaca."},
+ {code:"hasil_setoran",name:"Hasil Setoran",body:"Hasil setoran hafalan hari ini sudah tersimpan. Cek di aplikasi."},
+ {code:"motivasi_harian",name:"Motivasi Harian",body:"Semangat menghafal! Konsisten sedikit setiap hari lebih baik daripada sesekali."}
 ];
+const VARS=["{nama}","{halaqah}","{musyrif}","{pondok}"];
+let tplItems=null;
+let tplPid=null;
+let editingCode=null;
 let currentTab="history";
 let pollTimer=null;
 let countTimer=null;
@@ -48,11 +52,41 @@ function deviceSection(){
  </div>`;
 }
 
+function tplList(){
+ const pid=String(pondokId()??"");
+ return tplPid===pid&&Array.isArray(tplItems)?tplItems:DEFAULT_TPLS;
+}
+
 function templateSection(){
+ const items=tplList();
  return `<div id="waTab-template" class="stack${currentTab==="template"?"":" hidden"}">
   <div class="card">
    <h3>Template Pesan</h3>
-   <div class="list" style="margin-top:10px">${TEMPLATES.map(([name,preview])=>`<div class="list-item"><span class="avatar">✎</span><div class="grow"><b>${escapeText(name)}</b><small class="muted" style="display:block">${escapeText(preview)}</small></div></div>`).join("")}</div>
+   <p class="muted" style="margin:4px 0 10px">Ketik ikon pensil untuk mengedit isi pesan.</p>
+   <div class="list" style="margin-top:6px">${items.map(t=>`<div class="list-item">
+     <button class="avatar" type="button" data-wa-edit="${t.code}" aria-label="Edit ${escapeText(t.name)}" style="border:0;cursor:pointer">✎</button>
+     <div class="grow" style="min-width:0"><b>${escapeText(t.name)}</b><small class="muted" style="display:block">${escapeText(t.body)}</small></div>
+     <button class="btn" type="button" data-wa-edit="${t.code}">Edit</button>
+   </div>`).join("")}</div>
+  </div>
+ </div>`;
+}
+
+function tplModal(){
+ return `<div class="modal-backdrop hidden" id="tplModal">
+  <div class="modal-card">
+   <div><p class="eyebrow">Template</p><h2 id="tplModalTitle">Edit Template</h2></div>
+   <div class="stack" style="margin-top:16px">
+    <div><label class="label">Isi pesan</label><textarea class="input" id="tplBody" rows="5"></textarea></div>
+    <div><label class="label">Variabel — klik untuk sisipkan</label>
+     <div class="row" style="flex-wrap:wrap;gap:6px">${VARS.map(v=>`<button class="btn" type="button" data-tpl-var="${v}" style="padding:6px 10px;font-size:13px">${v}</button>`).join("")}</div>
+    </div>
+    <small class="muted">Variabel diganti otomatis saat pesan dikirim: nama penerima, halaqah, musyrif, dan nama pondok.</small>
+    <div class="btn-joined">
+     <button class="btn" id="tplCloseBtn" type="button">Tutup</button>
+     <button class="btn primary" id="tplSaveBtn" type="button">Simpan</button>
+    </div>
+   </div>
   </div>
  </div>`;
 }
@@ -76,7 +110,8 @@ export function whatsappPage(){
 ${tabsBar()}
 ${deviceSection()}
 ${templateSection()}
-${historySection()}`;
+${historySection()}
+${tplModal()}`;
 }
 
 async function waApi(path,options={}){
@@ -213,10 +248,83 @@ async function createDevice(){
  if(btn){btn.disabled=false;btn.textContent="+ Device";}
 }
 
+async function loadTemplates(){
+ const pid=pondokId();
+ if(!pid||tplPid===String(pid))return;
+ try{
+  const b=await waApi("/api/wa/templates?pondok_id="+pid+"&t="+Date.now());
+  const items=Array.isArray(b.data?.items)?b.data.items:null;
+  if(items){
+   tplItems=items;
+   tplPid=String(pid);
+   if(currentTab==="template")window.dispatchEvent(new Event("app:render"));
+  }
+ }catch(err){console.warn("templates:",err?.message);}
+}
+
+function openTplModal(code){
+ const item=tplList().find(t=>t.code===code);
+ if(!item)return;
+ editingCode=code;
+ const title=document.querySelector("#tplModalTitle");
+ if(title)title.textContent="Edit: "+item.name;
+ const area=document.querySelector("#tplBody");
+ if(area)area.value=item.body;
+ document.querySelector("#tplModal")?.classList.remove("hidden");
+ area?.focus();
+}
+
+function closeTplModal(){
+ editingCode=null;
+ document.querySelector("#tplModal")?.classList.add("hidden");
+}
+
+async function saveTplModal(){
+ const area=document.querySelector("#tplBody");
+ const pid=pondokId();
+ if(!editingCode||!area||!pid)return;
+ const text=area.value.trim();
+ if(!text){alert("Isi template tidak boleh kosong.");return;}
+ const btn=document.querySelector("#tplSaveBtn");
+ if(btn){btn.disabled=true;btn.textContent="Menyimpan…";}
+ try{
+  const b=await waApi("/api/wa/templates",{method:"POST",body:JSON.stringify({pondok_id:Number(pid),code:editingCode,body:text})});
+  const saved=b.data||{};
+  tplItems=tplList().map(t=>t.code===saved.code?{...t,body:saved.body}:t);
+  tplPid=String(pid);
+  closeTplModal();
+  toast("Template disimpan.");
+  window.dispatchEvent(new Event("app:render"));
+ }catch(err){alert(err?.message||"Gagal menyimpan template.");}
+ if(btn){btn.disabled=false;btn.textContent="Simpan";}
+}
+
+function bindTplModal(){
+ document.querySelectorAll("[data-wa-edit]").forEach(btn=>btn.addEventListener("click",()=>openTplModal(btn.dataset.waEdit)));
+ document.querySelector("#tplCloseBtn")?.addEventListener("click",closeTplModal);
+ document.querySelector("#tplSaveBtn")?.addEventListener("click",saveTplModal);
+ document.querySelectorAll("[data-tpl-var]").forEach(chip=>chip.addEventListener("click",()=>{
+  const area=document.querySelector("#tplBody");
+  if(!area)return;
+  const value=chip.dataset.tplVar;
+  const start=area.selectionStart??area.value.length;
+  const end=area.selectionEnd??start;
+  area.value=area.value.slice(0,start)+value+area.value.slice(end);
+  area.focus();
+  area.selectionStart=area.selectionEnd=start+value.length;
+ }));
+ document.querySelector("#tplModal")?.addEventListener("click",e=>{
+  if(e.target?.id==="tplModal")closeTplModal();
+ });
+}
+
 export function bindWaPage(){
  const scan=document.querySelector("#waScanBtn");
  clearTimers();
  if(!scan)return;
+
+ loadTemplates();
+ bindTplModal();
 
  if(!pondokId()){
   setBadge(document.querySelector("#waStatusBadge"),"Pondok tidak diketahui","danger");

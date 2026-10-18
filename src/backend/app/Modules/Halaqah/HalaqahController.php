@@ -50,6 +50,25 @@ final class HalaqahController
         }
     }
 
+    /** Halaqah milik login ini (santri binaan / musyrif pengampu). */
+    public function mine(Request $request): never
+    {
+        try {
+            $pondokId = (int) ($request->query['pondok_id'] ?? 0);
+            if ($pondokId < 1) {
+                throw new RegistrationException('Pondok wajib dipilih.', 422, ['pondok_id' => 'Pondok wajib dipilih.']);
+            }
+            $data = $this->service()->mine($this->actor($request), $pondokId);
+            Response::json(['success' => true, 'data' => $data]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     public function store(Request $request): never
     {
         try {

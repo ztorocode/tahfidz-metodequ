@@ -81,6 +81,47 @@ final class HalaqahService
         }, $halaqahs);
     }
 
+    /** Halaqah milik aktor (sebagai santri binaan atau musyrif pengampu). */
+    public function mine(array $actor, int $pondokId): ?array
+    {
+        $this->assertPondokMember($actor, $pondokId);
+
+        $statement = $this->pdo->prepare(
+            "SELECT h.id, h.name, mu.name AS musyrif_name, 'santri' AS role
+             FROM halaqah_memberships hm
+             JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+             LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+             LEFT JOIN users mu ON mu.id = mp.user_id
+             WHERE hm.user_id = :user_id AND hm.status = 'active'
+               AND h.pondok_id = :pondok_id AND h.status = 'active'
+             UNION
+             SELECT h.id, h.name, mu.name AS musyrif_name, 'musyrif' AS role
+             FROM halaqahs h
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+             JOIN users mu ON mu.id = mp.user_id
+             WHERE mp.user_id = :user_id2 AND h.pondok_id = :pondok_id2
+               AND h.status = 'active' AND h.deleted_at IS NULL
+             LIMIT 1"
+        );
+        $statement->execute([
+            'user_id' => (int) $actor['id'],
+            'pondok_id' => $pondokId,
+            'user_id2' => (int) $actor['id'],
+            'pondok_id2' => $pondokId,
+        ]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($row)) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $row['id'],
+            'name' => (string) $row['name'],
+            'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
+            'role' => (string) $row['role'],
+        ];
+    }
+
     /** @param array{id:int,roles:string[]} $actor @return array<string,mixed> */
     public function create(array $actor, array $input): array
     {

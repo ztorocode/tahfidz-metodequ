@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=4e246321";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=4e246321";
+import {getState} from "../store.js?v=fa7eb85d";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fa7eb85d";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -89,10 +89,48 @@ function dayCard(data,week,item,index){
  '</article>';
 }
 
+let myHalaqah=null;
+let myHalaqahPid=null;
+let myHalaqahLoading=false;
+
+function activePondokId(){
+ const st=getState();
+ return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
+}
+
+function loadMyHalaqah(){
+ const st=getState();
+ const pid=activePondokId();
+ if(!pid||!st.authToken||myHalaqahLoading)return;
+ if(myHalaqahPid===String(pid)&&myHalaqah)return;
+ myHalaqahLoading=true;
+ fetch("/api/pondoks/halaqahs/mine?pondok_id="+pid+"&t="+Date.now(),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}})
+  .then(r=>r.json().then(b=>({ok:r.ok,b})))
+  .then(({ok,b})=>{
+   if(ok){myHalaqah=b.data??null;myHalaqahPid=String(pid);window.dispatchEvent(new Event("app:render"));}
+  })
+  .catch(()=>{})
+  .finally(()=>{myHalaqahLoading=false;});
+}
+
+function halaqahInfoCard(){
+ const pid=String(activePondokId()?? "");
+ if(myHalaqahPid!==pid)return "";
+ if(myHalaqahLoading&&!myHalaqah)return '<div class="card" style="margin-bottom:14px"><small class="muted">Memuat info halaqah…</small></div>';
+ if(!myHalaqah)return '<div class="card" style="margin-bottom:14px;border-color:var(--warning)"><b>Anda belum terdaftar di halaqah mana pun.</b><br><small class="muted">Hubungi admin pondok agar dimasukkan ke halaqah.</small></div>';
+ const isMusyrif=myHalaqah.role==="musyrif";
+ return '<div class="card" style="margin-bottom:14px"><p class="eyebrow">'+(isMusyrif?"Halaqah yang Anda bina":"Halaqah Anda")+'</p>'
+  +'<div class="row between" style="gap:10px;align-items:center"><div><b style="font-size:16px">'+escapeHtml(myHalaqah.name)+'</b>'
+  +(myHalaqah.musyrif_name?'<br><small class="muted">Musyrif: '+escapeHtml(myHalaqah.musyrif_name)+'</small>':"")
+  +'</div><span class="badge success">'+(isMusyrif?"Musyrif":"Santri")+'</span></div></div>';
+}
+
 export function memberProgressPage(){
  const data=getProgressContext(getState());
  const week=stateWeek(data);
+ loadMyHalaqah();
  return '<section class="member-progress-page">'+
+  halaqahInfoCard()+
   '<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'+
    weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")+
   '</div>'+

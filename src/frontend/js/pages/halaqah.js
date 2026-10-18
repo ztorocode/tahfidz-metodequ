@@ -64,6 +64,7 @@ function mapServer(h){
   id:"srv-"+h.id,
   numericId:Number(h.id),
   name:h.name,
+  startDate:h.program_start_date||null,
   musyrifId:h.musyrif_user_id?("user-"+h.musyrif_user_id):null,
   musyrifName:h.musyrif_name||null,
   students:(h.students||[]).map(s=>({
@@ -74,6 +75,28 @@ function mapServer(h){
    status:s.status||"Aktif"
   }))
  };
+}
+
+const DAY_MS=86400000;
+const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"];
+
+function fmtDate(d){
+ return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}):"";
+}
+
+function todayInfo(startDate){
+ if(!startDate)return null;
+ const start=new Date(startDate+"T00:00:00");
+ const now=new Date();
+ const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ if(isNaN(start.getTime())||today.getTime()<start.getTime())return null;
+ let n=1;
+ const cur=new Date(start.getTime());
+ while(cur.getTime()<today.getTime()){
+  cur.setTime(cur.getTime()+DAY_MS);
+  if(cur.getDay()!==5)n++;
+ }
+ return {dayNumber:n,weekday:WEEKDAY[today.getDay()],date:fmtDate(today)};
 }
 
 function refreshHalaqahs(force,silent){
@@ -203,6 +226,24 @@ function musyrifList(items){
  </div>`;
 }
 
+function programCard(item,isAdmin){
+ const info=todayInfo(item.startDate);
+ return `<div class="card" style="margin-bottom:16px">
+  <h3>Program Tahfidz</h3>
+  <p class="muted" style="margin:4px 0 10px">Tentukan kapan <b>Hari ke-1</b> program halaqah ini. Jum'at otomatis libur dan tidak dihitung.</p>
+  <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+   <div style="flex:1;min-width:170px"><label class="label">Tanggal Mulai Program</label>
+    <input class="input" type="date" id="halaqahStartInput" value="${item.startDate||""}"></div>
+   <button class="btn primary" type="button" data-start-save="${item.id}" ${isAdmin?"":" "}>Simpan</button>
+   ${item.startDate?'<button class="btn danger" type="button" data-start-clear="'+item.id+'">Hapus</button>':""}
+  </div>
+  ${info
+   ?`<p class="muted" style="margin:10px 0 0">Hari ini <b>${info.weekday}, ${info.date}</b> → <b style="color:var(--text)">Hari ke-${info.dayNumber}</b></p>`
+   :`<p class="muted" style="margin:10px 0 0">${item.startDate?"Tanggal mulai masih di masa depan.":"Belum diatur → diasumsikan Pekan 1 dimulai Sabtu."}</p>`}
+  <p class="muted" id="startFormMessage" style="margin:6px 0 0"></p>
+ </div>`;
+}
+
 function detail(item,isAdmin){
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
   <div>
@@ -230,6 +271,7 @@ function detail(item,isAdmin){
   <div class="kpi"><b>${item.students.reduce((sum,s)=>sum+(Number(s.pending)||0),0)}</b><span class="muted">Setoran Pending</span></div>
  </div>
  <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Musyrif"}</b><span class="muted">Akses aktif</span></div>
+ ${programCard(item,isAdmin)}
  <div class="card">
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>
   ${item.students.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Setoran pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
@@ -329,6 +371,45 @@ document.addEventListener("click",event=>{
    .then(()=>{window.dispatchEvent(new Event("app:render"));})
    .catch(err=>{alert(err?.message||"Gagal menyimpan santri.");})
    .finally(()=>{saveBtn.disabled=false;saveBtn.textContent=original;});
+  return;
+ }
+
+ const startDateBtn=event.target.closest("[data-start-save]");
+ if(startDateBtn){
+  const item=halaqahs().find(row=>row.id===startDateBtn.dataset.startSave);
+  if(!item)return;
+  const value=document.querySelector("#halaqahStartInput")?.value||"";
+  const msg=document.querySelector("#startFormMessage");
+  if(!value){if(msg){msg.textContent="Pilih tanggal mulai dulu.";msg.style.color="var(--danger)";}return;}
+  startDateBtn.disabled=true;
+  halaqApi("/api/pondoks/halaqahs/start-date",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId()),
+   halaqah_id:Number(item.numericId||0),
+   program_start_date:value
+  })})
+   .then(()=>{toast("Tanggal mulai program disimpan.");return refreshHalaqahs(true,true);})
+   .then(()=>{window.dispatchEvent(new Event("app:render"));})
+   .catch(err=>{
+    if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
+    startDateBtn.disabled=false;
+   });
+  return;
+ }
+
+ const startDateClear=event.target.closest("[data-start-clear]");
+ if(startDateClear){
+  const item=halaqahs().find(row=>row.id===startDateClear.dataset.startClear);
+  if(!item)return;
+  if(!confirm("Hapus tanggal mulai? Hari ke-1 kembali ke asumsi Pekan 1 (Sabtu)."))return;
+  startDateClear.disabled=true;
+  halaqApi("/api/pondoks/halaqahs/start-date",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId()),
+   halaqah_id:Number(item.numericId||0),
+   program_start_date:""
+  })})
+   .then(()=>{toast("Tanggal mulai dihapus.");return refreshHalaqahs(true,true);})
+   .then(()=>{window.dispatchEvent(new Event("app:render"));})
+   .catch(err=>{alert(err?.message||"Gagal menghapus.");startDateClear.disabled=false;});
   return;
  }
 

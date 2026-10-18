@@ -69,6 +69,27 @@ final class HalaqahController
         }
     }
 
+    /** Atur tanggal mulai program halaqah (Hari ke-1). */
+    public function startDate(Request $request): never
+    {
+        try {
+            $result = $this->service()->setStartDate($this->actor($request), $request->body());
+            Response::json([
+                'success' => true,
+                'message' => $result['program_start_date'] !== null
+                    ? 'Tanggal mulai program disimpan.'
+                    : 'Tanggal mulai program dihapus.',
+                'data' => $result,
+            ]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     public function store(Request $request): never
     {
         try {

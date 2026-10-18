@@ -20,7 +20,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            'SELECT h.id, h.name, u.id AS musyrif_user_id, u.name AS musyrif_name
+            'SELECT h.id, h.name, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -74,6 +74,7 @@ final class HalaqahService
             return [
                 'id' => $id,
                 'name' => (string) $row['name'],
+                'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $byHalaqah[$id] ?? [],
@@ -87,7 +88,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, mu.name AS musyrif_name, 'santri' AS role
+            "SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'santri' AS role
              FROM halaqah_memberships hm
              JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
@@ -95,7 +96,7 @@ final class HalaqahService
              WHERE hm.user_id = :user_id AND hm.status = 'active'
                AND h.pondok_id = :pondok_id AND h.status = 'active'
              UNION
-             SELECT h.id, h.name, mu.name AS musyrif_name, 'musyrif' AS role
+             SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'musyrif' AS role
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              JOIN users mu ON mu.id = mp.user_id
@@ -117,9 +118,75 @@ final class HalaqahService
         return [
             'id' => (int) $row['id'],
             'name' => (string) $row['name'],
+            'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
             'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
             'role' => (string) $row['role'],
         ];
+    }
+
+    /** Atur tanggal mulai program (Hari ke-1) — admin pondok atau musyrif halaqah itu. */
+    public function setStartDate(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        $halaqah = $this->halaqahRow($halaqahId, $pondokId);
+        if ($halaqah === null) {
+            throw new RegistrationException('Halaqah tidak ditemukan.', 404, ['halaqah_id' => 'Halaqah tidak ditemukan.']);
+        }
+
+        $this->assertCanManage($actor, $pondokId, $halaqahId);
+
+        $date = trim((string) ($input['program_start_date'] ?? ''));
+        if ($date === '') {
+            // Kosongkan = hapus pengaturan, kembali ke asumsi Pekan 1 Sabtu.
+            $update = $this->pdo->prepare(
+                'UPDATE halaqahs SET program_start_date = NULL WHERE id = :id'
+            );
+            $update->execute(['id' => $halaqahId]);
+            return ['halaqah_id' => $halaqahId, 'program_start_date' => null];
+        }
+
+        $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+            throw new RegistrationException('Tanggal tidak valid.', 422, ['program_start_date' => 'Tanggal tidak valid.']);
+        }
+
+        $update = $this->pdo->prepare(
+            'UPDATE halaqahs SET program_start_date = :date WHERE id = :id'
+        );
+        $update->execute(['date' => $date, 'id' => $halaqahId]);
+
+        return ['halaqah_id' => $halaqahId, 'program_start_date' => $date];
+    }
+
+    /** Admin pondok, atau musyrif yang mengampu halaqah itu. */
+    private function assertCanManage(array $actor, int $pondokId, int $halaqahId): void
+    {
+        if (in_array('super_admin', $actor['roles'] ?? [], true)) {
+            return;
+        }
+
+        $admin = $this->pdo->prepare(
+            "SELECT 1 FROM pondok_memberships
+             WHERE pondok_id = :pondok_id AND user_id = :user_id
+               AND role = 'admin' AND status = 'active' LIMIT 1"
+        );
+        $admin->execute(['pondok_id' => $pondokId, 'user_id' => (int) $actor['id']]);
+        if ($admin->fetchColumn() !== false) {
+            return;
+        }
+
+        $musyrif = $this->pdo->prepare(
+            'SELECT 1 FROM halaqahs h
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+             WHERE h.id = :halaqah_id AND mp.user_id = :user_id LIMIT 1'
+        );
+        $musyrif->execute(['halaqah_id' => $halaqahId, 'user_id' => (int) $actor['id']]);
+        if ($musyrif->fetchColumn() !== false) {
+            return;
+        }
+
+        throw new RegistrationException('Hanya admin pondok atau musyrif halaqah ini yang boleh mengatur tanggal mulai.', 403);
     }
 
     /** @param array{id:int,roles:string[]} $actor @return array<string,mixed> */

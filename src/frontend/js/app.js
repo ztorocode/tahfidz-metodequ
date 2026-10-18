@@ -1,11 +1,11 @@
-import {view,routeName} from "./router.js?v=fa7eb85d";
-import {getState,setState} from "./store.js?v=fa7eb85d";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=fa7eb85d";
-import {bindLogin} from "./pages/login.js?v=fa7eb85d";
-import {bindInvite} from "./pages/terima-undangan.js?v=fa7eb85d";
-import {toast} from "./utils/helpers.js?v=fa7eb85d";
-import {bindWaPage} from "./pages/whatsapp.js?v=fa7eb85d";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=fa7eb85d";
+import {view,routeName} from "./router.js?v=97b0aff1";
+import {getState,setState} from "./store.js?v=97b0aff1";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=97b0aff1";
+import {bindLogin} from "./pages/login.js?v=97b0aff1";
+import {bindInvite} from "./pages/terima-undangan.js?v=97b0aff1";
+import {toast} from "./utils/helpers.js?v=97b0aff1";
+import {bindWaPage} from "./pages/whatsapp.js?v=97b0aff1";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=97b0aff1";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -395,5 +395,5 @@ function renderInstall(){
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=fa7eb85d"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=97b0aff1"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

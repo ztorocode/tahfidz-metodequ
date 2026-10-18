@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=fa7eb85d";
+import {getState} from "../store.js?v=97b0aff1";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");

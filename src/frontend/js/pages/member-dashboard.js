@@ -1,10 +1,12 @@
-import {member} from "../data/dummy-data.js?v=2d8fa471";
-import {getState} from "../store.js?v=2d8fa471";
-import {getProgressContext} from "../utils/progress-context.js?v=2d8fa471";
-import {badge} from "../utils/helpers.js?v=2d8fa471";
+import {member} from "../data/dummy-data.js?v=6b3a0f52";
+import {getState} from "../store.js?v=6b3a0f52";
+import {getProgressContext} from "../utils/progress-context.js?v=6b3a0f52";
+import {badge} from "../utils/helpers.js?v=6b3a0f52";
+import {loadWeek} from "../utils/progress-sync.js?v=6b3a0f52";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=6b3a0f52";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
-const weekdayIds=["ahad","senin","selasa","rabu","kamis","jumat","sabtu"];
+const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};
 const fieldIds=["target","murajaah","rabth-awal","rabth-akhir"];
 const stepIds=[
  ...Array.from({length:5},(_,i)=>"kemarin-"+(i+1)),
@@ -42,17 +44,47 @@ function countSteps(data,week,day,prefix,total){
  return count;
 }
 
+function dayNameOf(key){
+ return DAY_NAME[key]||"Hari ini";
+}
+
 function statusBadge(label,done,total){
  if(done>=total)return badge(label,"success");
  if(done>0)return badge(label,"warning");
  return badge(label,"");
 }
 
+/** Tarik pekan berjalan dari server (sekali per pondok+pekan; gagal → coba lagi). */
+let pulledKey=null;
+let retryTimer=null;
+function pullMyWeek(state,week){
+ const pid=activePondokId();
+ if(!pid||!state.authToken||state.context!=="pondok")return;
+ loadMyHalaqah();
+ const key=String(pid)+":"+week;
+ if(pulledKey===key)return;
+ pulledKey=key;
+ const retry=()=>{clearTimeout(retryTimer);retryTimer=setTimeout(()=>{pulledKey=null;},15000);};
+ loadWeek(week)
+  .then(ok=>{if(ok)window.dispatchEvent(new Event("app:render"));else retry();})
+  .catch(retry);
+}
+
 export function memberDashboard(){
  const state=getState();
+ const isPondok=state.context==="pondok";
  const data=getProgressContext(state);
- const week=Math.min(5,Math.max(1,Number(data.week)||1));
- const contextLabel=state.context==="pondok"?(state.pondokProfile?.name||member.pondok):"Personal";
+
+ const name=state.profileOverrides?.member?.name||state.authUser?.name||member.name;
+ const contextLabel=isPondok?ownPondokName(state):"Personal";
+
+ // Hari ini diturunkan dari tanggal mulai program (bukan nama hari kalender).
+ const start=isPondok?myProgramStart():null;
+ const today=todayProgramDay(start);
+
+ const week=today.week||Math.min(5,Math.max(1,Number(data.week)||1));
+ const halaqah=isPondok?myHalaqah():null;
+ pullMyWeek(state,week);
 
  const stats=days.map(day=>dayStats(data,week,day));
  const totalDone=stats.reduce((sum,item)=>sum+item.done,0);
@@ -63,21 +95,26 @@ export function memberDashboard(){
  const recordedDays=days.filter(day=>step(data,week,day,"merekam")).length;
  const tikrarWeek=days.reduce((sum,day)=>sum+countSteps(data,week,day,"tikrar",25),0);
 
- const today=weekdayIds[new Date().getDay()];
- const isFriday=today==="jumat";
- const target=isFriday?"":field(data,week,today,"target");
- const murajaahValue=isFriday?"":field(data,week,today,"murajaah");
- const rabthStart=isFriday?"":field(data,week,today,"rabth-awal");
- const rabthEnd=isFriday?"":field(data,week,today,"rabth-akhir");
- const kemarinDone=isFriday?0:countSteps(data,week,today,"kemarin",5);
- const istimaDone=isFriday?0:countSteps(data,week,today,"istima",3);
- const tikrarDone=isFriday?0:countSteps(data,week,today,"tikrar",25);
- const menghafalDone=!isFriday&&step(data,week,today,"menghafal");
- const merekamDone=!isFriday&&step(data,week,today,"merekam");
+ const isFriday=today.isFriday;
+ const tKey=today.key;
+ const idle=!tKey; // Jum'at libur, program belum mulai, atau sudah lewat Pekan 5
+ const notice=isFriday?"Jum'at"
+  :today.status==="not-started"?("Program mulai "+fmtLong(new Date(start+"T00:00:00")))
+  :today.status==="past-end"?"Lewat dari Pekan 5"
+  :"";
+ const target=idle?"":field(data,week,tKey,"target");
+ const murajaahValue=idle?"":field(data,week,tKey,"murajaah");
+ const rabthStart=idle?"":field(data,week,tKey,"rabth-awal");
+ const rabthEnd=idle?"":field(data,week,tKey,"rabth-akhir");
+ const kemarinDone=idle?0:countSteps(data,week,tKey,"kemarin",5);
+ const istimaDone=idle?0:countSteps(data,week,tKey,"istima",3);
+ const tikrarDone=idle?0:countSteps(data,week,tKey,"tikrar",25);
+ const menghafalDone=!idle&&step(data,week,tKey,"menghafal");
+ const merekamDone=!idle&&step(data,week,tKey,"merekam");
  const rabthDone=Number(Boolean(rabthStart))+Number(Boolean(rabthEnd));
 
- const activities=isFriday?[
-  {name:"Jum'at",detail:"Libur hafalan",status:"Libur",tone:""}
+ const activities=idle?[
+  {name:isFriday?"Jum'at":"Program",detail:notice||"Tidak ada isian hari ini",status:isFriday?"Libur":"Menunggu",tone:""}
  ]:[
   {name:"Muraja'ah",detail:murajaahValue?"Juz "+murajaahValue:"Belum diisi",status:murajaahValue?"Selesai":"Belum",tone:murajaahValue?"success":""},
   {name:"Rabth",detail:rabthStart||rabthEnd?((rabthStart||"-")+" → "+(rabthEnd||"-")):"Belum diisi",status:rabthDone===2?"Selesai":rabthDone?"Sebagian":"Belum",tone:rabthDone===2?"success":rabthDone?"warning":""},
@@ -88,13 +125,27 @@ export function memberDashboard(){
   {name:"Tikrar",detail:tikrarDone+"/25 pengulangan",status:tikrarDone+"/25",tone:tikrarDone===25?"success":tikrarDone?"warning":""}
  ];
 
- const targetText=isFriday?"Libur hafalan":target?escapeHtml(target)+" halaman":"Belum diisi";
+ const dayLabel=isFriday?"Jum'at":(today.dayName||(tKey?dayNameOf(tKey):"Hari ini"));
+ const targetText=idle?(notice||"Libur hafalan"):target?escapeHtml(target)+" halaman":"Belum diisi";
+ const startLine=start?("Mulai "+fmtLong(new Date(start+"T00:00:00"))+(today.dayNum?" · hari ini Hari ke-"+today.dayNum:"")):null;
+ const programTitle=isPondok?(halaqah?.name||"Belum ada halaqah"):"Hafalan pribadi";
+
 
  return `
-<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${escapeHtml(member.name)}</h1><p class="muted">Konteks aktif: <b>${escapeHtml(contextLabel)}</b> · Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
+<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${escapeHtml(name)}</h1><p class="muted">Konteks aktif: <b>${escapeHtml(contextLabel)}</b> · Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
 
 <div id="inviteBanner"></div>
-<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(member.personalProgram)}</h2><b>Target hari ini: ${targetText}</b></div><a class="btn" href="#progress" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
+<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(programTitle)}</h2><b>Target hari ini: ${targetText}</b>${startLine?`<small style="display:block;margin-top:6px;opacity:.85">${escapeHtml(startLine)}</small>`:""}</div><a class="btn" href="#progress" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
+
+${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Halaqah Anda</h3><small class="muted">Dari data pondok, bukan dari isian.</small></div></div>
+<div class="list" style="margin-top:12px">
+ <div class="list-item"><div class="grow"><b>Nama halaqah</b><small class="muted" style="display:block">${escapeHtml(halaqah?.name||"Belum terdaftar di halaqah mana pun.")}</small></div></div>
+ <div class="list-item"><div class="grow"><b>Musyrif</b><small class="muted" style="display:block">${escapeHtml(halaqah?.musyrif_name||"-")}</small></div></div>
+ <div class="list-item"><div class="grow"><b>Tanggal mulai</b><small class="muted" style="display:block">${start?escapeHtml(fmtLong(new Date(start+"T00:00:00"))):"Belum diatur"}</small></div></div>
+ <div class="list-item"><div class="grow"><b>Hari ini</b><small class="muted" style="display:block">${today.dayNum?("Hari ke-"+today.dayNum+" · "+(isFriday?"Jum'at":dayLabel)):(idle?(notice||"-"):(dayLabel))}</small></div></div>
+ <div class="list-item"><div class="grow"><b>Sinkron</b><small class="muted" style="display:block">Isian tersimpan di perangkat lalu dikirim ke server.</small></div></div>
+</div>
+</div>`:""}
 
 <div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Progress Pekan ${week}</h3><small class="muted">Dihitung langsung dari form Progress konteks ${escapeHtml(contextLabel)}.</small></div><a href="#progress" class="muted">Lihat detail</a></div><div class="progress" style="--value:${weekPct}%;margin-top:14px"><span></span></div>
 <div class="grid-4" style="margin-top:16px">
@@ -106,17 +157,17 @@ export function memberDashboard(){
 
 <div class="grid-3">
  <div class="card">
-  <div class="row between"><div><h3>Aktivitas Hari Ini</h3><small class="muted">${isFriday?"Jum'at":"Pekan "+week+" · "+today}</small></div><a href="#progress" class="muted">Buka</a></div>
+  <div class="row between"><div><h3>Aktivitas Hari Ini</h3><small class="muted">${idle?(notice||"Tidak ada isian"):"Pekan "+week+" · "+dayLabel}</small></div><a href="#progress" class="muted">Buka</a></div>
   <div class="list" style="margin-top:12px">${activities.map(item=>`<div class="list-item"><span class="check ${item.tone==="success"?"done":""}">${item.tone==="success"?"✓":""}</span><div class="grow"><b>${escapeHtml(item.name)}</b><small class="muted" style="display:block">${escapeHtml(item.detail)}</small></div>${badge(item.status,item.tone)}</div>`).join("")}</div>
  </div>
 
  <div class="card">
   <div class="row between"><div><h3>Data Hari Ini</h3><small class="muted">Dari form Progress</small></div><a href="#report" class="muted">Report</a></div>
   <div class="list" style="margin-top:12px">
-   <div class="list-item"><div class="grow"><b>Target hal/hari</b><small class="muted" style="display:block">${isFriday?"Libur hafalan":target?escapeHtml(target):"Belum diisi"}</small></div></div>
-   <div class="list-item"><div class="grow"><b>Muraja'ah</b><small class="muted" style="display:block">${murajaahValue?"Juz "+escapeHtml(murajaahValue):"Belum diisi"}</small></div></div>
-   <div class="list-item"><div class="grow"><b>Rabth</b><small class="muted" style="display:block">${rabthStart||rabthEnd?escapeHtml(rabthStart||"-")+" → "+escapeHtml(rabthEnd||"-"):"Belum diisi"}</small></div>${statusBadge(rabthDone===2?"2/2":rabthDone+"/2",rabthDone,2)}</div>
-   <div class="list-item"><div class="grow"><b>Tikrar</b><small class="muted" style="display:block">${tikrarDone}/25 pengulangan</small></div>${statusBadge(tikrarDone+"/25",tikrarDone,25)}</div>
+   <div class="list-item"><div class="grow"><b>Target hal/hari</b><small class="muted" style="display:block">${idle?(notice||"Libur hafalan"):target?escapeHtml(target):"Belum diisi"}</small></div></div>
+   <div class="list-item"><div class="grow"><b>Muraja'ah</b><small class="muted" style="display:block">${!idle&&murajaahValue?"Juz "+escapeHtml(murajaahValue):(idle?"-":"Belum diisi")}</small></div></div>
+   <div class="list-item"><div class="grow"><b>Rabth</b><small class="muted" style="display:block">${!idle&&(rabthStart||rabthEnd)?escapeHtml(rabthStart||"-")+" → "+escapeHtml(rabthEnd||"-"):(idle?"-":"Belum diisi")}</small></div>${idle?"":statusBadge(rabthDone===2?"2/2":rabthDone+"/2",rabthDone,2)}</div>
+   <div class="list-item"><div class="grow"><b>Tikrar</b><small class="muted" style="display:block">${idle?"-":tikrarDone+"/25 pengulangan"}</small></div>${idle?"":statusBadge(tikrarDone+"/25",tikrarDone,25)}</div>
   </div>
  </div>
 

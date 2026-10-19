@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=2d8fa471";
+import {getState} from "../store.js?v=6b3a0f52";
 
 /**
  * Sumber tunggal info halaqah milik login ini + perhitungan tanggal program.
@@ -87,12 +87,55 @@ export function fridayOf(startDate,week){
  return null;
 }
 
+/** Nama pondok aktif milik login ini (bukan nama pondok dummy). */
+export function ownPondokName(state){
+ const st=state||getState();
+ if(st.context!=="pondok")return "Hafalan pribadi";
+ const pid=activePondokId();
+ const list=st.myPondoks||st.authUser?.pondoks||[];
+ return list.find(p=>Number(p.id)===Number(pid))?.name||"Pondok";
+}
+
 export function fmtShort(d){
  return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"short"}):"";
 }
 
 export function fmtLong(d){
  return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"}):"";
+}
+
+/**
+ * Posisi hari ini dalam program.
+ * Kunci form (sabtu..kamis) = posisi Hari ke-N dalam pekan; nama hari diturunkan
+ * dari tanggal riil program, bukan dari nama hari kalender.
+ */
+export function todayProgramDay(startDate){
+ const now=new Date();
+ const isFriday=now.getDay()===5;
+ const calendarKey=["sabtu","ahad","senin","selasa","rabu","kamis"][(now.getDay()+1)%7]||null;
+ const KEYS=["sabtu","ahad","senin","selasa","rabu","kamis"];
+
+ if(!startDate){
+  // Tanpa tanggal mulai → asumsi lama: Pekan 1 dimulai Sabtu, sejajar kalender.
+  return {status:isFriday?"friday":"ok",key:isFriday?null:calendarKey,dayName:isFriday?"Jum'at":WEEKDAY[now.getDay()],week:null,dayNum:null,isFriday};
+ }
+
+ const dayNum=todayDayNumber(startDate);
+ if(dayNum===null){
+  // Hari ini masih sebelum tanggal mulai program.
+  return {status:"not-started",key:null,dayName:null,week:null,dayNum:null,isFriday,start:startDate};
+ }
+ const week=Math.ceil(dayNum/6);
+ if(week>5)return {status:"past-end",key:null,dayName:null,week:null,dayNum,isFriday};
+ const date=programDayDate(startDate,dayNum);
+ return {
+  status:isFriday?"friday":"ok",
+  key:isFriday?null:KEYS[(dayNum-1)%6],
+  dayName:date?WEEKDAY[date.getDay()]:null,
+  week:Math.max(1,week),
+  dayNum,
+  isFriday
+ };
 }
 
 /** Stempel DB (UTC) → tampilan WIB. */

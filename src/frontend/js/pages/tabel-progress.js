@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=2d8fa471";
-import {member,progress} from "../data/dummy-data.js?v=2d8fa471";
-import {getProgressContext} from "../utils/progress-context.js?v=2d8fa471";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=2d8fa471";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=2d8fa471";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=2d8fa471";
+import {getState} from "../store.js?v=6b3a0f52";
+import {member,progress} from "../data/dummy-data.js?v=6b3a0f52";
+import {getProgressContext} from "../utils/progress-context.js?v=6b3a0f52";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=6b3a0f52";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=6b3a0f52";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=6b3a0f52";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -102,13 +102,6 @@ function memberSelection(state){
   halaqahName:info?.name||(personal?"Hafalan pribadi":member.halaqah),
   musyrifName:info?.musyrif_name||(personal?"-":member.musyrif)
  };
-}
-
-function ownPondokName(state){
- if(state.context!=="pondok")return "Hafalan pribadi";
- const pid=activePondokId();
- const list=state.myPondoks||state.authUser?.pondoks||[];
- return list.find(p=>Number(p.id)===Number(pid))?.name||member.pondok;
 }
 
 /** Tarik 5 pekan milik sendiri dari server (sekali per pondok; gagal → coba lagi). */

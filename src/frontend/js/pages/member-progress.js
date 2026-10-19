@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=3f850102";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=3f850102";
+import {getState} from "../store.js?v=9dcced49";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=9dcced49";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -76,6 +76,22 @@ function dayBody(data,week,day){
  '</div>';
 }
 
+const DAY_MS=86400000;
+const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"];
+
+/** Jum'at yang jatuh di rentang pekan tsb (libur, tidak dihitung sebagai hari ke-N). */
+function fridayOf(startDate,week){
+ if(!startDate)return null;
+ const first=programDayDate(startDate,(week-1)*6+1);
+ if(!first)return null;
+ const d=new Date(first.getTime());
+ for(let i=0;i<7;i++){
+  if(d.getDay()===5)return d;
+  d.setTime(d.getTime()+DAY_MS);
+ }
+ return null;
+}
+
 function dayCard(data,week,item,index){
  const open=data.openDay===item.id;
  const dayNumber=((week-1)*6)+index+1;
@@ -83,12 +99,14 @@ function dayCard(data,week,item,index){
  const start=myHalaqahPid===String(activePondokId()??"")?(myHalaqah?.program_start_date||null):null;
  const date=programDayDate(start,dayNumber);
  const isToday=date&&todayDayNumber(start)===dayNumber;
+ // Nama hari diturunkan dari tanggal asli program; tanpa tanggal mulai, pakai nama bawaan.
+ const dayName=date?WEEKDAY[date.getDay()]:item.name;
  const label=date
   ?'<span>Hari ke-'+dayNumber+' · '+fmtShort(date)+(isToday?' · <b style="color:var(--brand)">hari ini</b>':"")+'</span>'
   :'<span>Hari ke-'+dayNumber+'</span>';
  return '<article class="member-progress-day'+(open?" open":"")+'">'+
   '<button type="button" class="member-progress-day-head" data-progress-day-toggle="'+item.id+'" aria-expanded="'+String(open)+'">'+
-   '<span class="member-progress-day-title"><b>'+item.name+'</b>'+label+'</span>'+
+   '<span class="member-progress-day-title"><b>'+dayName+'</b>'+label+'</span>'+
    '<strong data-progress-percent="'+item.id+'">'+pct+'%</strong>'+
   '</button>'+
   (open?dayBody(data,week,item.id):"")+
@@ -118,9 +136,6 @@ function loadMyHalaqah(){
   .catch(()=>{})
   .finally(()=>{myHalaqahLoading=false;});
 }
-
-const DAY_MS=86400000;
-const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"];
 
 /** Tanggal Hari ke-N sejak tanggal mulai (Jum'at libur, tidak dihitung). */
 function programDayDate(startDate,n){
@@ -192,6 +207,7 @@ export function memberProgressPage(){
  const week=stateWeek(data);
  loadMyHalaqah();
  const start=myHalaqahPid===String(activePondokId()??"")?(myHalaqah?.program_start_date||null):null;
+ const fridayDate=start?fridayOf(start,week):null;
  return '<section class="member-progress-page">'+
   myHalaqahCard()+
   '<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'+
@@ -199,7 +215,7 @@ export function memberProgressPage(){
   '</div>'+
   '<div class="member-progress-days">'+
    days.map((item,index)=>dayCard(data,week,item,index)).join("")+
-   '<div class="member-progress-friday"><b>Jum\'at</b><span>· libur hafalan</span></div>'+
+   '<div class="member-progress-friday"><b>Jum\'at</b><span>· libur hafalan'+(fridayDate?' · '+fmtShort(fridayDate):'')+'</span></div>'+
   '</div>'+
  '</section>';
 }

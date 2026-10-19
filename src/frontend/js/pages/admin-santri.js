@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=3f850102";
+import {getState} from "../store.js?v=9dcced49";
 
 export function adminSantriPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");

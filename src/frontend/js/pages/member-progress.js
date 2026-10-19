@@ -1,7 +1,7 @@
-import {getState} from "../store.js?v=6b3a0f52";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=6b3a0f52";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=6b3a0f52";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort} from "../utils/program-context.js?v=6b3a0f52";
+import {getState} from "../store.js?v=91c5d7ea";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=91c5d7ea";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=91c5d7ea";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort} from "../utils/program-context.js?v=91c5d7ea";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -228,6 +228,7 @@ document.addEventListener("click",event=>{
     document.querySelector("#startModal")?.classList.add("hidden");
     clearMyHalaqah();
     loadMyHalaqah();
+    window.dispatchEvent(new Event("app:halaqah-changed"));
    })
    .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}})
    .finally(()=>{btn.disabled=false;});

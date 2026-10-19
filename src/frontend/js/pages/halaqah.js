@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=6b3a0f52";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=6b3a0f52";
+import {getState,setState} from "../store.js?v=91c5d7ea";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=91c5d7ea";
 
 let selectedHalaqahId=null;
 
@@ -99,21 +99,35 @@ function todayInfo(startDate){
  return {dayNumber:n,weekday:WEEKDAY[today.getDay()],date:fmtDate(today)};
 }
 
+/** Daftar di localStorage basi bila sudah lebih lama dari TTL ini. */
+const HALAQAH_TTL=20000;
+let halaqahFetching=0; // jumlah request aktif
+
 function refreshHalaqahs(force,silent){
  const st=getState();
  const pid=activePondokId();
- if(!pid||!st.authToken||(!force&&st.halaqahSrc===String(pid)))return Promise.resolve();
+ if(!pid||!st.authToken)return Promise.resolve();
+ const fresh=st.halaqahSrc===String(pid)
+  &&Array.isArray(st.realHalaqahs)
+  &&(Number(st.halaqahFetchedAt)||0)>(Date.now()-HALAQAH_TTL);
+ if(!force&&fresh)return Promise.resolve();
+ if(!force&&halaqahFetching)return Promise.resolve();
+ halaqahFetching++;
  setState({halaqahSrc:String(pid)});
  return halaqApi("/api/pondoks/halaqahs?pondok_id="+pid+"&t="+Date.now())
   .then(b=>{
    const mapped=Array.isArray(b.data)?b.data.map(mapServer):[];
    const changed=JSON.stringify(mapped)!==JSON.stringify(getState().realHalaqahs);
-   setState({realHalaqahs:mapped});
+   setState({realHalaqahs:mapped,halaqahFetchedAt:Date.now()});
    if(!silent&&changed)window.dispatchEvent(new Event("app:render"));
    return importLocalOnce(pid,mapped);
   })
-  .catch(err=>{console.warn("halaqah:",err?.message);});
+  .catch(err=>{console.warn("halaqah:",err?.message);})
+  .finally(()=>{halaqahFetching=Math.max(0,halaqahFetching-1);});
 }
+
+// Halaman lain (mis. Progress) menyimpan tanggal mulai → tarik ulang daftar halaqah.
+window.addEventListener("app:halaqah-changed",()=>{refreshHalaqahs(true,true);});
 
 /** Satu kali: bila server masih kosong, pindahkan halaqah lama (tersimpan lokal di HP) ke server. */
 async function importLocalOnce(pid,serverList){
@@ -387,7 +401,7 @@ document.addEventListener("click",event=>{
    halaqah_id:Number(item.numericId||0),
    program_start_date:value
   })})
-   .then(()=>{toast("Tanggal mulai program disimpan.");return refreshHalaqahs(true,true);})
+   .then(()=>{toast("Tanggal mulai program disimpan.");window.dispatchEvent(new Event("app:my-halaqah-changed"));return refreshHalaqahs(true,true);})
    .then(()=>{window.dispatchEvent(new Event("app:render"));})
    .catch(err=>{
     if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
@@ -407,7 +421,7 @@ document.addEventListener("click",event=>{
    halaqah_id:Number(item.numericId||0),
    program_start_date:""
   })})
-   .then(()=>{toast("Tanggal mulai dihapus.");return refreshHalaqahs(true,true);})
+   .then(()=>{toast("Tanggal mulai dihapus.");window.dispatchEvent(new Event("app:my-halaqah-changed"));return refreshHalaqahs(true,true);})
    .then(()=>{window.dispatchEvent(new Event("app:render"));})
    .catch(err=>{alert(err?.message||"Gagal menghapus.");startDateClear.disabled=false;});
   return;

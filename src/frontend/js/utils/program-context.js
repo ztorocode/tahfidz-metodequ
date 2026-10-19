@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=6b3a0f52";
+import {getState} from "../store.js?v=91c5d7ea";
 
 /**
  * Sumber tunggal info halaqah milik login ini + perhitungan tanggal program.
@@ -23,6 +23,9 @@ export function myHalaqah(){return info}
 export function myHalaqahPid(){return infoPid}
 export function myHalaqahLoading(){return loading}
 export function clearMyHalaqah(){info=null;infoPid=null;loading=false}
+
+// Halaman lain mengubah tanggal mulai program → cache ikut dibersihkan.
+window.addEventListener("app:my-halaqah-changed",()=>{clearMyHalaqah();loadMyHalaqah();});
 
 /** Tanggal mulai program milik login ini (null kalau belum diatur/beda pondok). */
 export function myProgramStart(){

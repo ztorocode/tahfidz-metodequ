@@ -1,5 +1,6 @@
-import {getState} from "../store.js?v=4613fdf3";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=4613fdf3";
+import {getState} from "../store.js?v=578e63ba";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=578e63ba";
+import {scheduleSave,loadWeek,initProgressSync} from "../utils/progress-sync.js?v=578e63ba";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -235,10 +236,18 @@ function weekDaysHtml(data,week,start,fridayDate){
  return out;
 }
 
+let syncedWeek=null;
+function syncWeek(week){
+ if(syncedWeek===week)return;
+ syncedWeek=week;
+ loadWeek(week).then(changed=>{if(changed&&syncedWeek===week)window.dispatchEvent(new Event("app:render"));}).catch(()=>{});
+}
+
 export function memberProgressPage(){
  const data=getProgressContext(getState());
  const week=stateWeek(data);
  loadMyHalaqah();
+ syncWeek(week);
  const start=myHalaqahPid===String(activePondokId()??"")?(myHalaqah?.program_start_date||null):null;
  const fridayDate=start?fridayOf(start,week):null;
  return '<section class="member-progress-page">'+
@@ -324,6 +333,7 @@ document.addEventListener("click",event=>{
   step.classList.toggle("active",active);
   step.setAttribute("aria-pressed",String(active));
   updatePercent(day);
+  scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
  }
 });
 
@@ -338,4 +348,5 @@ document.addEventListener("input",event=>{
  const next={...(data.fields||{}),[key]:input.value};
  setProgressContextPatch({fields:next});
  updatePercent(day);
+ scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
 });

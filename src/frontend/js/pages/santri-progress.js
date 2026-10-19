@@ -1,6 +1,9 @@
-import {getState} from "../store.js?v=4613fdf3";
-import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=4613fdf3";
-import {badge,statusTone} from "../utils/helpers.js?v=4613fdf3";
+import {getState} from "../store.js?v=578e63ba";
+import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=578e63ba";
+import {badge,statusTone} from "../utils/helpers.js?v=578e63ba";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=578e63ba";
+
+const PROGRESS_DAYS=["sabtu","ahad","senin","selasa","rabu","kamis"];
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -11,6 +14,28 @@ const setoranHistory=[
  {date:"05 Okt 2026",ref:"Juz 30 Hal. 11",status:"Cukup Stabil",note:"Perkuat sambungan antar ayat."},
  {date:"03 Okt 2026",ref:"Juz 30 Hal. 10",status:"Perlu Penguatan",note:"Ulangi ayat 15-20 sebelum setoran berikutnya."}
 ];
+
+function dailyProgressCard(userId){
+ const id=Number(userId||0);
+ if(!id)return "";
+ let data=cachedStudentProgress(id);
+ if(!data){
+  loadStudentProgress(id).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+  return `<div class="card" style="margin-bottom:16px"><h3>Isian Progress Harian</h3><p class="muted" style="margin-top:8px">${isStudentProgressLoading(id)?"Memuat isian dari server…":"Belum ada isian dari santri ini."}</p></div>`;
+ }
+ const week=1;
+ const rows=PROGRESS_DAYS.map(day=>{
+  const pct=studentPercent(data,week,day);
+  return `<div class="list-item"><div class="grow"><b>${day.charAt(0).toUpperCase()+day.slice(1)}</b><small class="muted" style="display:block">Pekan ${week}</small></div><span class="badge ${pct>=60?"success":pct>0?"warning":""}">${pct}%</span></div>`;
+ }).join("");
+ const filled=Object.keys(data.checks||{}).length+Object.keys(data.fields||{}).length;
+ const updated=data.updatedAt?new Date(String(data.updatedAt).replace(" ","T")+"Z").toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"-";
+ return `<div class="card" style="margin-bottom:16px">
+  <div class="row between" style="gap:12px;flex-wrap:wrap"><div><h3>Isian Progress Harian</h3><p class="muted">Data asli yang disimpan santri dari perangkatnya.</p></div><a class="btn" href="#tabel-progress">Buka Tabel Progress</a></div>
+  <div class="list" style="margin-top:12px">${rows}</div>
+  <p class="muted" style="margin-top:10px;font-size:13px">${filled} isian tersinkron · terakhir diperbarui ${escapeHtml(updated)} WIB</p>
+ </div>`;
+}
 
 export function studentProgressPage(){
  const state=getState();
@@ -61,6 +86,8 @@ export function studentProgressPage(){
   <div class="kpi"><b>${mutqin}</b><span class="muted">Mutqin</span></div>
   <div class="kpi"><b>${pending}</b><span class="muted">Setoran pending</span></div>
  </div>
+
+ ${isMember?"":dailyProgressCard(selected.student?.userId)}
 
  <div class="grid-2" style="margin-bottom:16px">
   <div class="card">

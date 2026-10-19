@@ -25,4 +25,7 @@ return static function (Router $router): void {
 
     $registerHalaqah = require dirname(__DIR__) . '/app/Modules/Halaqah/routes.php';
     $registerHalaqah($router);
+
+    $registerProgress = require dirname(__DIR__) . '/app/Modules/Progress/routes.php';
+    $registerProgress($router);
 };

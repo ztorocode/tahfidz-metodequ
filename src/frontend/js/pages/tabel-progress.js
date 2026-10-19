@@ -1,9 +1,16 @@
-import {getState} from "../store.js?v=4613fdf3";
-import {member,progress} from "../data/dummy-data.js?v=4613fdf3";
-import {getProgressContext} from "../utils/progress-context.js?v=4613fdf3";
+import {getState} from "../store.js?v=578e63ba";
+import {member,progress} from "../data/dummy-data.js?v=578e63ba";
+import {getProgressContext} from "../utils/progress-context.js?v=578e63ba";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=578e63ba";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+
+function fmtWib(value){
+ if(!value)return "-";
+ const date=new Date(String(value).replace(" ","T")+"Z");
+ return isNaN(date.getTime())?"-":date.toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
 }
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
@@ -17,8 +24,7 @@ function memberStep(data,week,day,id){
  return Boolean(data.checks?.[week+":"+day+":"+id]);
 }
 
-function valueCell(value){
- const text=String(value??"").trim();
+function valueCell(value){ const text=String(value??"").trim();
  return `<td>${text?escapeHtml(text):""}</td>`;
 }
 
@@ -49,10 +55,10 @@ function memberReportCells(data,week,day){
  return html.join("");
 }
 
-function weekRows(data,isMember){
+function weekRows(data,showCells){
  return Array.from({length:5},(_,index)=>{
   const week=index+1;
-  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${isMember?memberReportCells(data,week,day):blankCells(40)}</tr>`).join("");
+  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${showCells?memberReportCells(data,week,day):blankCells(40)}</tr>`).join("");
   return rows+'<tr class="progress-friday"><td colspan="41">jum\'at</td></tr>';
  }).join("");
 }
@@ -60,8 +66,6 @@ function weekRows(data,isMember){
 export function progressTablePage(){
  const state=getState();
  const isMember=state.persona==="member";
- const progressData=isMember?getProgressContext(state):null;
- const isReport=location.hash.replace(/^#/,"")==="report";
  const selected=isMember?{
   student:{name:member.name,mutqin:progress.mutqin,pending:1,status:"Aktif"},
   halaqahName:state.context==="pondok"?member.halaqah:"Personal",
@@ -77,8 +81,29 @@ export function progressTablePage(){
  }
 
  const student=selected.student;
+ const isReport=location.hash.replace(/^#/,"")==="report";
  const pondok=isMember?(state.context==="pondok"?member.pondok:"Hafalan pribadi"):(state.pondokProfile?.name||"Pondok Al-Furqan");
  const pageTitle=isReport?"Report":"Tabel Progress";
+
+ // Musyrif/admin: isi tabel diambil dari server (isian asli santri).
+ let progressData=isMember?getProgressContext(state):null;
+ let loadingServer=false;
+ if(!isMember){
+  const userId=Number(student.userId||0);
+  if(userId){
+   progressData=cachedStudentProgress(userId);
+   if(!progressData){
+    loadingServer=true;
+    loadStudentProgress(userId).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+   }
+  }
+ }
+ const showCells=Boolean(progressData);
+
+ const syncNote=!isMember?`<div class="quote" style="margin-bottom:12px">${
+  loadingServer?"Memuat isian progress dari server…":
+  showCells?("Isian asli santri · terakhir diperbarui "+fmtWib(progressData?.updatedAt)):"Belum ada isian progress dari santri ini."
+ }</div>`:"";
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
@@ -90,6 +115,7 @@ export function progressTablePage(){
   <span class="badge success">Program Juz 30</span>
  </div>
 
+ ${syncNote}
  <div class="quote" style="margin-bottom:12px">Geser tabel ke kanan untuk melihat seluruh kolom pada layar mobile.</div>
 
  <div class="card progress-sheet-card">
@@ -133,7 +159,7 @@ export function progressTablePage(){
       ${Array.from({length:25},(_,i)=>`<th>${i+1}x</th>`).join("")}
      </tr>
     </thead>
-    <tbody>${weekRows(progressData,isMember)}</tbody>
+    <tbody>${weekRows(progressData,showCells)}</tbody>
    </table>
   </div>
  </div>`;

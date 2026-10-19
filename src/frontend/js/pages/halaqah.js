@@ -419,7 +419,7 @@ document.addEventListener("click",event=>{
   const student=item?.students.find(row=>row.name===progress.dataset.studentProgress);
   if(!item||!student)return;
   setState({selectedStudentProgress:{
-   student:{...student},
+   student:{...student,userId:Number(student.santriUserId)||null},
    halaqahId:item.id,
    halaqahName:item.name,
    musyrifName:item.musyrifName||musyrifName(item.musyrifId)

@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=9dcced49";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=9dcced49";
+import {getState} from "../store.js?v=4613fdf3";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=4613fdf3";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -202,6 +202,39 @@ function startPopup(){
   +'</div></div></div>';
 }
 
+function fridayCard(date){
+ return '<div class="member-progress-friday"><b>Jum\'at</b><span>· libur hafalan'+(date?' · '+fmtShort(date):'')+'</span></div>';
+}
+
+/** Susun hari-hari pekan + kartu Jum'at libur sesuai urutan tanggal. */
+function weekDaysHtml(data,week,start,fridayDate){
+ const cards=days.map((item,index)=>dayCard(data,week,item,index));
+ if(!start||!fridayDate){
+  // Tanpa tanggal mulai program → perilaku lama: Jum'at di akhir daftar.
+  cards.push(fridayCard(null));
+  return cards;
+ }
+ const firstDay=(week-1)*6+1;
+ const out=[];
+ let placed=false;
+ for(let index=0;index<cards.length;index++){
+  const cur=programDayDate(start,firstDay+index);
+  const next=index<cards.length-1?programDayDate(start,firstDay+index+1):null;
+  out.push(cards[index]);
+  // Sisipkan kartu Jum'at bila jatuh di sela hari ini dan hari berikutnya.
+  if(!placed&&cur&&next&&cur.getTime()<fridayDate.getTime()&&fridayDate.getTime()<next.getTime()){
+   out.push(fridayCard(fridayDate));
+   placed=true;
+  }
+ }
+ if(!placed){
+  const first=programDayDate(start,firstDay);
+  if(first&&fridayDate.getTime()<first.getTime())out.unshift(fridayCard(fridayDate));
+  else out.push(fridayCard(fridayDate));
+ }
+ return out;
+}
+
 export function memberProgressPage(){
  const data=getProgressContext(getState());
  const week=stateWeek(data);
@@ -214,8 +247,7 @@ export function memberProgressPage(){
    weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")+
   '</div>'+
   '<div class="member-progress-days">'+
-   days.map((item,index)=>dayCard(data,week,item,index)).join("")+
-   '<div class="member-progress-friday"><b>Jum\'at</b><span>· libur hafalan'+(fridayDate?' · '+fmtShort(fridayDate):'')+'</span></div>'+
+   weekDaysHtml(data,week,start,fridayDate).join("")+
   '</div>'+
  '</section>';
 }

@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=578e63ba";
-import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=578e63ba";
+import {getState} from "../store.js?v=2d8fa471";
+import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=2d8fa471";
 
 /**
  * Sinkronisasi isian progress ke server.
@@ -16,6 +16,10 @@ const DEBOUNCE_MS=1200;
 let timers={};
 let flushing=false;
 let listening=false;
+let lastSyncAtValue=null;
+
+/** Stempel terakhir isian milik sendiri berhasil ditarik/dikirim (format UTC ala DB). */
+export function lastSyncAt(){return lastSyncAtValue}
 
 function readJson(key,fallback){
  try{const raw=localStorage.getItem(key);return raw?JSON.parse(raw):fallback}catch{return fallback}
@@ -119,6 +123,7 @@ export async function flush(){
    };
    saveVersions(meta);
    removeFromQueue(entry);
+   lastSyncAtValue=body.data?.updated_at||nowStamp();
   }
  }finally{flushing=false}
 }
@@ -140,6 +145,7 @@ export async function loadWeek(week){
  const fields={...(ctx.fields||{})};
  const checks={...(ctx.checks||{})};
  const meta=versions();
+ let latest="";
 
  const clearDay=(prefix)=>{
   Object.keys(fields).forEach(k=>{if(k.startsWith(prefix))delete fields[k]});
@@ -152,6 +158,7 @@ export async function loadWeek(week){
   Object.entries(row.fields||{}).forEach(([id,value])=>{fields[prefix+id]=value});
   Object.entries(row.checks||{}).forEach(([id,value])=>{checks[prefix+id]=value});
   meta[versionKey(pid,week,day)]={version:Number(row.version)||0,client_updated_at:row.client_updated_at||null};
+  if(String(row.updated_at||"")>latest)latest=String(row.updated_at||"");
  });
 
  // Edit lokal yang belum terkirim harus tetap menang atas data server.
@@ -164,6 +171,7 @@ export async function loadWeek(week){
 
  saveVersions(meta);
  setProgressContextPatch({fields,checks});
+ if(latest)lastSyncAtValue=latest;
  return true;
 }
 

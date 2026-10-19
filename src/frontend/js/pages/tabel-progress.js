@@ -1,16 +1,12 @@
-import {getState} from "../store.js?v=578e63ba";
-import {member,progress} from "../data/dummy-data.js?v=578e63ba";
-import {getProgressContext} from "../utils/progress-context.js?v=578e63ba";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=578e63ba";
+import {getState} from "../store.js?v=2d8fa471";
+import {member,progress} from "../data/dummy-data.js?v=2d8fa471";
+import {getProgressContext} from "../utils/progress-context.js?v=2d8fa471";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=2d8fa471";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=2d8fa471";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=2d8fa471";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-}
-
-function fmtWib(value){
- if(!value)return "-";
- const date=new Date(String(value).replace(" ","T")+"Z");
- return isNaN(date.getTime())?"-":date.toLocaleString("id-ID",{timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
 }
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
@@ -32,9 +28,17 @@ function checkCell(done){
  return `<td>${done?"✓":""}</td>`;
 }
 
-function memberReportCells(data,week,day){
+/** Tanggal riil satu baris: Hari ke-N sejak tanggal mulai program. */
+function dayDate(start,week,day){
+ const index=days.indexOf(day);
+ if(!start||index<0)return null;
+ return programDayDate(start,(week-1)*6+index+1);
+}
+
+function memberReportCells(data,week,day,start){
+ const date=dayDate(start,week,day);
  const cells=[
-  "",
+  date?fmtShort(date):"",
   memberField(data,week,day,"target"),
   memberField(data,week,day,"murajaah"),
   memberField(data,week,day,"rabth-awal"),
@@ -55,22 +59,84 @@ function memberReportCells(data,week,day){
  return html.join("");
 }
 
-function weekRows(data,showCells){
+function weekRows(data,showCells,start){
  return Array.from({length:5},(_,index)=>{
   const week=index+1;
-  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${showCells?memberReportCells(data,week,day):blankCells(40)}</tr>`).join("");
-  return rows+'<tr class="progress-friday"><td colspan="41">jum\'at</td></tr>';
+  const rows=days.map(day=>`<tr><td class="progress-day">${day}</td>${showCells?memberReportCells(data,week,day,start):blankCells(40)}</tr>`).join("");
+  const friday=fridayOf(start,week);
+  const fridayText=friday?`jum'at · ${fmtShort(friday)}`:"jum'at";
+  return rows+`<tr class="progress-friday"><td colspan="41">${fridayText}</td></tr>`;
  }).join("");
+}
+
+/** Kartu meta report: semua nilai diturunkan dari tanggal mulai program + isian asli. */
+function reportMeta(start,halaqahName,data){
+ const item=(label,value)=>`<div class="progress-meta-item"><b>${label}</b><span>${escapeHtml(String(value))}</span></div>`;
+ const finish=start?programDayDate(start,30):null; // Hari ke-30 = akhir Pekan 5
+ const todayNum=todayDayNumber(start);
+ let targetToday="";
+ if(start&&todayNum){
+  const week=Math.min(5,Math.floor((todayNum-1)/6)+1);
+  const day=days[(todayNum-1)%6];
+  targetToday=memberField(data||{},week,day,"target");
+ }
+ return [
+  item("Halaqah",halaqahName||"-"),
+  item("Mulai program",start?fmtLong(new Date(start+"T00:00:00")):"Belum diatur"),
+  item("Hari ini",todayNum?("Hari ke-"+todayNum):"-"),
+  item("Akhir pekan 5",finish?fmtShort(finish):"-"),
+  item("Target hari ini",targetToday||"-"),
+  item("Pekan ditampilkan","1 - 5")
+ ].join("");
+}
+
+/** Data diri sendiri: nama login asli + halaqah asli dari server. */
+function memberSelection(state){
+ const personal=state.context!=="pondok";
+ if(!personal)loadMyHalaqah();
+ const me=state.authUser||{};
+ const info=personal?null:myHalaqah();
+ const name=state.profileOverrides?.member?.name||me.name||member.name;
+ return {
+  student:{name,userId:Number(me.id)||null,mutqin:progress.mutqin,pending:1,status:"Aktif"},
+  halaqahName:info?.name||(personal?"Hafalan pribadi":member.halaqah),
+  musyrifName:info?.musyrif_name||(personal?"-":member.musyrif)
+ };
+}
+
+function ownPondokName(state){
+ if(state.context!=="pondok")return "Hafalan pribadi";
+ const pid=activePondokId();
+ const list=state.myPondoks||state.authUser?.pondoks||[];
+ return list.find(p=>Number(p.id)===Number(pid))?.name||member.pondok;
+}
+
+/** Tarik 5 pekan milik sendiri dari server (sekali per pondok; gagal → coba lagi). */
+let pulledPid=null;
+let retryTimer=null;
+function pullMyWeeks(state){
+ const pid=activePondokId();
+ if(!pid||!state.authToken)return;
+ loadMyHalaqah();
+ if(pulledPid===String(pid))return;
+ pulledPid=String(pid);
+ const retry=()=>{
+  clearTimeout(retryTimer);
+  retryTimer=setTimeout(()=>{pulledPid=null;window.dispatchEvent(new Event("app:render"));},15000);
+ };
+ Promise.all([1,2,3,4,5].map(week=>loadWeek(week)))
+  .then(results=>{
+   if(results.every(Boolean))window.dispatchEvent(new Event("app:render"));
+   else retry();
+  })
+  .catch(retry);
 }
 
 export function progressTablePage(){
  const state=getState();
  const isMember=state.persona==="member";
- const selected=isMember?{
-  student:{name:member.name,mutqin:progress.mutqin,pending:1,status:"Aktif"},
-  halaqahName:state.context==="pondok"?member.halaqah:"Personal",
-  musyrifName:state.context==="pondok"?member.musyrif:"-"
- }:state.selectedStudentProgress;
+ if(isMember&&state.context==="pondok")pullMyWeeks(state);
+ const selected=isMember?memberSelection(state):state.selectedStudentProgress;
 
  if(!isMember&&state.context!=="pondok"){
   return `<div class="card"><p class="eyebrow">Tabel Progress</p><h2>Aktifkan konteks Pondok</h2><p class="muted">Tabel progress santri hanya tersedia pada konteks Pondok.</p><a class="btn" href="#halaqah">Kembali ke Halaqah</a></div>`;
@@ -82,10 +148,11 @@ export function progressTablePage(){
 
  const student=selected.student;
  const isReport=location.hash.replace(/^#/,"")==="report";
- const pondok=isMember?(state.context==="pondok"?member.pondok:"Hafalan pribadi"):(state.pondokProfile?.name||"Pondok Al-Furqan");
+ const pondok=ownPondokName(state)||(!isMember?(state.pondokProfile?.name||"Pondok Al-Furqan"):"Hafalan pribadi");
  const pageTitle=isReport?"Report":"Tabel Progress";
+ const start=isMember?(state.context==="pondok"?myProgramStart():null):(selected.startDate||null);
 
- // Musyrif/admin: isi tabel diambil dari server (isian asli santri).
+ // Isian: milik sendiri → context (ditarik dari server), santri binaan → server.
  let progressData=isMember?getProgressContext(state):null;
  let loadingServer=false;
  if(!isMember){
@@ -99,20 +166,26 @@ export function progressTablePage(){
   }
  }
  const showCells=Boolean(progressData);
+ const lastUpdated=isMember?lastSyncAt():(progressData?.updatedAt||null);
 
- const syncNote=!isMember?`<div class="quote" style="margin-bottom:12px">${
+ const personalMember=isMember&&state.context!=="pondok";
+ const syncNote=`<div class="quote" style="margin-bottom:12px">${
   loadingServer?"Memuat isian progress dari server…":
-  showCells?("Isian asli santri · terakhir diperbarui "+fmtWib(progressData?.updatedAt)):"Belum ada isian progress dari santri ini."
- }</div>`:"";
+  personalMember?"Konteks Personal · isian tersimpan di perangkat ini." :
+  isMember?(lastUpdated?("Isian tersinkron · terakhir diperbarui "+fmtWib(lastUpdated)+" WIB"):"Isian diambil dari server begitu tersedia.") :
+  showCells?("Isian asli santri · terakhir diperbarui "+fmtWib(lastUpdated)+" WIB"):"Belum ada isian progress dari santri ini."
+ }</div>`;
+
+ const metaItems=reportMeta(start,selected.halaqahName,progressData);
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
    <a class="btn" href="${isMember?"#progress":"#santri-progress"}" style="display:inline-flex;margin-bottom:12px">← Kembali ke ${isMember?"Progress":"Progress Santri"}</a>
    <p class="eyebrow">${isMember?"Santri / Report":"Pondok / Halaqah / Tabel Progress"}</p>
    <h1>${pageTitle}</h1>
-   <p class="muted">${escapeHtml(student.name)} · ${escapeHtml(selected.halaqahName)} · ${escapeHtml(pondok)}</p>
+   <p class="muted">${escapeHtml(student.name)} · ${escapeHtml(selected.halaqahName)}${personalMember?"":" · "+escapeHtml(pondok)}</p>
   </div>
-  <span class="badge success">Program Juz 30</span>
+  <span class="badge success">${personalMember?"Hafalan pribadi":(start?"Program berjalan":"Program belum dimulai")}</span>
  </div>
 
  ${syncNote}
@@ -120,14 +193,7 @@ export function progressTablePage(){
 
  <div class="card progress-sheet-card">
   <div class="progress-sheet-scroll">
-   <div class="progress-meta">
-    <div class="progress-meta-item"><b>Program Hafalan</b><span>Juz 30</span></div>
-    <div class="progress-meta-item"><b>Dari juz</b><span>30</span></div>
-    <div class="progress-meta-item"><b>s/d</b><span>30</span></div>
-    <div class="progress-meta-item"><b>Target waktu menghafal</b><span>-</span></div>
-    <div class="progress-meta-item"><b>Start</b><span>-</span></div>
-    <div class="progress-meta-item"><b>Finish</b><span>-</span></div>
-   </div>
+   <div class="progress-meta">${metaItems}</div>
 
    <div class="progress-student-row"><b>Nama</b><span>${escapeHtml(student.name)}</span><b>Musyrif</b><span>${escapeHtml(selected.musyrifName)}</span></div>
 
@@ -159,7 +225,7 @@ export function progressTablePage(){
       ${Array.from({length:25},(_,i)=>`<th>${i+1}x</th>`).join("")}
      </tr>
     </thead>
-    <tbody>${weekRows(progressData,showCells)}</tbody>
+    <tbody>${weekRows(progressData,showCells,start)}</tbody>
    </table>
   </div>
  </div>`;

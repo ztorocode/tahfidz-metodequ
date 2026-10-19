@@ -1,6 +1,7 @@
-import {getState} from "../store.js?v=578e63ba";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=578e63ba";
-import {scheduleSave,loadWeek,initProgressSync} from "../utils/progress-sync.js?v=578e63ba";
+import {getState} from "../store.js?v=2d8fa471";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=2d8fa471";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=2d8fa471";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort} from "../utils/program-context.js?v=2d8fa471";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -77,27 +78,11 @@ function dayBody(data,week,day){
  '</div>';
 }
 
-const DAY_MS=86400000;
-const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"];
-
-/** Jum'at yang jatuh di rentang pekan tsb (libur, tidak dihitung sebagai hari ke-N). */
-function fridayOf(startDate,week){
- if(!startDate)return null;
- const first=programDayDate(startDate,(week-1)*6+1);
- if(!first)return null;
- const d=new Date(first.getTime());
- for(let i=0;i<7;i++){
-  if(d.getDay()===5)return d;
-  d.setTime(d.getTime()+DAY_MS);
- }
- return null;
-}
-
 function dayCard(data,week,item,index){
  const open=data.openDay===item.id;
  const dayNumber=((week-1)*6)+index+1;
  const pct=dayProgress(data,week,item.id);
- const start=myHalaqahPid===String(activePondokId()??"")?(myHalaqah?.program_start_date||null):null;
+ const start=myProgramStart();
  const date=programDayDate(start,dayNumber);
  const isToday=date&&todayDayNumber(start)===dayNumber;
  // Nama hari diturunkan dari tanggal asli program; tanpa tanggal mulai, pakai nama bawaan.
@@ -114,76 +99,20 @@ function dayCard(data,week,item,index){
  '</article>';
 }
 
-let myHalaqah=null;
-let myHalaqahPid=null;
-let myHalaqahLoading=false;
-
-function activePondokId(){
- const st=getState();
- return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
-}
-
-function loadMyHalaqah(){
- const st=getState();
- const pid=activePondokId();
- if(!pid||!st.authToken||myHalaqahLoading)return;
- if(myHalaqahPid===String(pid)&&myHalaqah)return;
- myHalaqahLoading=true;
- fetch("/api/pondoks/halaqahs/mine?pondok_id="+pid+"&t="+Date.now(),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}})
-  .then(r=>r.json().then(b=>({ok:r.ok,b})))
-  .then(({ok,b})=>{
-   if(ok){myHalaqah=b.data??null;myHalaqahPid=String(pid);window.dispatchEvent(new Event("app:render"));}
-  })
-  .catch(()=>{})
-  .finally(()=>{myHalaqahLoading=false;});
-}
-
-/** Tanggal Hari ke-N sejak tanggal mulai (Jum'at libur, tidak dihitung). */
-function programDayDate(startDate,n){
- if(!startDate||n<1)return null;
- const d=new Date(startDate+"T00:00:00");
- if(isNaN(d.getTime()))return null;
- let count=1;
- while(count<n){
-  d.setTime(d.getTime()+DAY_MS);
-  if(d.getDay()!==5)count++;
- }
- return d;
-}
-
-function fmtShort(d){
- return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"short"}):"";
-}
-
-function todayDayNumber(startDate){
- if(!startDate)return null;
- const start=new Date(startDate+"T00:00:00");
- const now=new Date();
- const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
- if(isNaN(start.getTime())||today.getTime()<start.getTime())return null;
- let n=1;
- const cur=new Date(start.getTime());
- while(cur.getTime()<today.getTime()){
-  cur.setTime(cur.getTime()+DAY_MS);
-  if(cur.getDay()!==5)n++;
- }
- return n;
-}
-
 function myHalaqahCard(){
  const pid=String(activePondokId()??"");
- if(myHalaqahPid!==pid)return "";
- if(myHalaqahLoading&&!myHalaqah)return '<div class="card" style="margin-bottom:14px"><small class="muted">Memuat info halaqah…</small></div>';
- if(!myHalaqah)return '<div class="card" style="margin-bottom:14px;border-color:var(--warning)"><b>Anda belum terdaftar di halaqah mana pun.</b><br><small class="muted">Hubungi admin pondok agar dimasukkan ke halaqah.</small></div>';
- const isMusyrif=myHalaqah.role==="musyrif";
- const start=myHalaqah.program_start_date||null;
+ if(myHalaqahPid()!==pid)return "";
+ if(myHalaqahLoading()&&!myHalaqah())return '<div class="card" style="margin-bottom:14px"><small class="muted">Memuat info halaqah…</small></div>';
+ if(!myHalaqah())return '<div class="card" style="margin-bottom:14px;border-color:var(--warning)"><b>Anda belum terdaftar di halaqah mana pun.</b><br><small class="muted">Hubungi admin pondok agar dimasukkan ke halaqah.</small></div>';
+ const isMusyrif=myHalaqah().role==="musyrif";
+ const start=myHalaqah().program_start_date||null;
  const todayNum=todayDayNumber(start);
  const startLine=start
   ?'<small class="muted">Mulai program: <b style="color:var(--text)">'+new Date(start+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})+'</b>'+(todayNum?' · hari ini <b style="color:var(--text)">Hari ke-'+todayNum+'</b>':"")+'</small>'
   :'<small class="muted">Tanggal mulai belum diatur → diasumsikan Pekan 1 dimulai Sabtu.</small>';
  return '<div class="card" style="margin-bottom:14px"><p class="eyebrow">'+(isMusyrif?"Halaqah yang Anda bina":"Halaqah Anda")+'</p>'
-  +'<div class="row between" style="gap:10px;align-items:center"><div><b style="font-size:16px">'+escapeHtml(myHalaqah.name)+'</b>'
-  +(myHalaqah.musyrif_name?'<br><small class="muted">Musyrif: '+escapeHtml(myHalaqah.musyrif_name)+'</small>':"")
+  +'<div class="row between" style="gap:10px;align-items:center"><div><b style="font-size:16px">'+escapeHtml(myHalaqah().name)+'</b>'
+  +(myHalaqah().musyrif_name?'<br><small class="muted">Musyrif: '+escapeHtml(myHalaqah().musyrif_name)+'</small>':"")
   +'</div><span class="badge success">'+(isMusyrif?"Musyrif":"Santri")+'</span></div>'
   +'<div style="margin-top:8px">'+startLine+'</div>'
   +(isMusyrif?'<div style="margin-top:10px"><button class="btn soft" type="button" data-start-open>'+(start?"Ubah Tanggal Mulai":"Atur Tanggal Mulai")+'</button></div>':"")
@@ -193,9 +122,9 @@ function myHalaqahCard(){
 
 function startPopup(){
  return '<div class="modal-backdrop hidden" id="startModal"><div class="modal-card">'
-  +'<div><p class="eyebrow">Program Tahfidz</p><h2>Tanggal Mulai '+escapeHtml(myHalaqah?.name||"Halaqah")+'</h2></div>'
+  +'<div><p class="eyebrow">Program Tahfidz</p><h2>Tanggal Mulai '+escapeHtml(myHalaqah()?.name||"Halaqah")+'</h2></div>'
   +'<p class="muted" style="margin:12px 0">Hari ke-1 dihitung sejak tanggal ini. Jum\'at libur, tidak dihitung.</p>'
-  +'<input class="input" type="date" id="startModalInput" value="'+(myHalaqah?.program_start_date||"")+'">'
+  +'<input class="input" type="date" id="startModalInput" value="'+(myHalaqah()?.program_start_date||"")+'">'
   +'<small class="muted" id="startModalMessage" style="display:block;margin-top:8px"></small>'
   +'<div class="btn-joined" style="margin-top:16px">'
   +'<button class="btn" type="button" data-start-close>Tutup</button>'
@@ -248,7 +177,7 @@ export function memberProgressPage(){
  const week=stateWeek(data);
  loadMyHalaqah();
  syncWeek(week);
- const start=myHalaqahPid===String(activePondokId()??"")?(myHalaqah?.program_start_date||null):null;
+ const start=myProgramStart();
  const fridayDate=start?fridayOf(start,week):null;
  return '<section class="member-progress-page">'+
   myHalaqahCard()+
@@ -290,14 +219,14 @@ document.addEventListener("click",event=>{
   btn.disabled=true;
   fetch("/api/pondoks/halaqahs/start-date",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+(getState().authToken||"")},body:JSON.stringify({
    pondok_id:Number(activePondokId()),
-   halaqah_id:Number(myHalaqah?.id||0),
+   halaqah_id:Number(myHalaqah()?.id||0),
    program_start_date:value
   })})
    .then(r=>r.json().then(b=>({ok:r.ok,b})))
    .then(({ok,b})=>{
     if(!ok)throw new Error(b?.message||"Gagal menyimpan.");
     document.querySelector("#startModal")?.classList.add("hidden");
-    myHalaqah=null;
+    clearMyHalaqah();
     loadMyHalaqah();
    })
    .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}})

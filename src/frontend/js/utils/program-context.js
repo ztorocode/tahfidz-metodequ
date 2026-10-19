@@ -1,0 +1,108 @@
+import {getState} from "../store.js?v=2d8fa471";
+
+/**
+ * Sumber tunggal info halaqah milik login ini + perhitungan tanggal program.
+ * Dipakai halaman Progress (santri) dan Report/Tabel Progress.
+ */
+
+export const DAY_MS=86400000;
+export const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"];
+
+export function activePondokId(){
+ const st=getState();
+ return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
+}
+
+/* ---------- halaqah saya (cache per pondok) ---------- */
+
+let info=null;
+let infoPid=null;
+let loading=false;
+
+export function myHalaqah(){return info}
+export function myHalaqahPid(){return infoPid}
+export function myHalaqahLoading(){return loading}
+export function clearMyHalaqah(){info=null;infoPid=null;loading=false}
+
+/** Tanggal mulai program milik login ini (null kalau belum diatur/beda pondok). */
+export function myProgramStart(){
+ return infoPid===String(activePondokId()??"")?(info?.program_start_date||null):null;
+}
+
+export function loadMyHalaqah(force=false){
+ const st=getState();
+ const pid=activePondokId();
+ if(!pid||!st.authToken||loading)return;
+ if(!force&&infoPid===String(pid)&&info)return;
+ loading=true;
+ fetch("/api/pondoks/halaqahs/mine?pondok_id="+pid+"&t="+Date.now(),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}})
+  .then(r=>r.json().then(b=>({ok:r.ok,b})))
+  .then(({ok,b})=>{
+   if(ok){info=b.data??null;infoPid=String(pid);window.dispatchEvent(new Event("app:render"));}
+  })
+  .catch(()=>{})
+  .finally(()=>{loading=false;});
+}
+
+/* ---------- tanggal program (Jum'at libur, tidak dihitung) ---------- */
+
+/** Tanggal Hari ke-N sejak tanggal mulai. */
+export function programDayDate(startDate,n){
+ if(!startDate||n<1)return null;
+ const d=new Date(startDate+"T00:00:00");
+ if(isNaN(d.getTime()))return null;
+ let count=1;
+ while(count<n){
+  d.setTime(d.getTime()+DAY_MS);
+  if(d.getDay()!==5)count++;
+ }
+ return d;
+}
+
+export function todayDayNumber(startDate){
+ if(!startDate)return null;
+ const start=new Date(startDate+"T00:00:00");
+ const now=new Date();
+ const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ if(isNaN(start.getTime())||today.getTime()<start.getTime())return null;
+ let n=1;
+ const cur=new Date(start.getTime());
+ while(cur.getTime()<today.getTime()){
+  cur.setTime(cur.getTime()+DAY_MS);
+  if(cur.getDay()!==5)n++;
+ }
+ return n;
+}
+
+/** Jum'at yang jatuh di rentang pekan tsb. */
+export function fridayOf(startDate,week){
+ if(!startDate)return null;
+ const first=programDayDate(startDate,(week-1)*6+1);
+ if(!first)return null;
+ const d=new Date(first.getTime());
+ for(let i=0;i<7;i++){
+  if(d.getDay()===5)return d;
+  d.setTime(d.getTime()+DAY_MS);
+ }
+ return null;
+}
+
+export function fmtShort(d){
+ return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"short"}):"";
+}
+
+export function fmtLong(d){
+ return d?d.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"}):"";
+}
+
+/** Stempel DB (UTC) → tampilan WIB. */
+export function fmtWib(value,withTime=true){
+ if(!value)return "-";
+ const date=new Date(String(value).replace(" ","T")+"Z");
+ if(isNaN(date.getTime()))return "-";
+ return date.toLocaleString("id-ID",{
+  timeZone:"Asia/Jakarta",
+  day:"numeric",month:"short",year:"numeric",
+  ...(withTime?{hour:"2-digit",minute:"2-digit"}:{})
+ });
+}

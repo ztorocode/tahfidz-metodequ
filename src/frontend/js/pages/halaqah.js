@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=578e63ba";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=578e63ba";
+import {getState,setState} from "../store.js?v=2d8fa471";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=2d8fa471";
 
 let selectedHalaqahId=null;
 
@@ -422,6 +422,7 @@ document.addEventListener("click",event=>{
    student:{...student,userId:Number(student.santriUserId)||null},
    halaqahId:item.id,
    halaqahName:item.name,
+   startDate:item.startDate||null,
    musyrifName:item.musyrifName||musyrifName(item.musyrifId)
   }});
   location.hash="santri-progress";

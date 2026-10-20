@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=a41d7b05";
-import {member,progress} from "../data/dummy-data.js?v=a41d7b05";
-import {getProgressContext} from "../utils/progress-context.js?v=a41d7b05";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=a41d7b05";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=a41d7b05";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=a41d7b05";
+import {getState} from "../store.js?v=d6f20b38";
+import {member,progress} from "../data/dummy-data.js?v=d6f20b38";
+import {getProgressContext} from "../utils/progress-context.js?v=d6f20b38";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=d6f20b38";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=d6f20b38";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=d6f20b38";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -177,7 +177,10 @@ export function progressTablePage(){
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
-   <a class="btn" href="${isMember?"#progress":"#santri-progress"}" style="display:inline-flex;margin-bottom:12px">← Kembali ke ${isMember?"Progress":"Progress Santri"}</a>
+   <div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <a class="btn" href="${isMember?"#progress":"#santri-progress"}" style="display:inline-flex">← Kembali ke ${isMember?"Progress":"Progress Santri"}</a>
+    ${isMember?`<a class="btn soft" href="#santri-progress" style="display:inline-flex">Summary</a>`:""}
+   </div>
    <p class="eyebrow">${isMember?"Santri / Report":"Pondok / Halaqah / Tabel Progress"}</p>
    <h1>${pageTitle}</h1>
    <p class="muted">${escapeHtml(student.name)} · ${escapeHtml(selected.halaqahName)}${personalMember?"":" · "+escapeHtml(pondok)}</p>

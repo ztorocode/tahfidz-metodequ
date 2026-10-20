@@ -1,7 +1,9 @@
-import {getState} from "../store.js?v=a41d7b05";
-import {badge} from "../utils/helpers.js?v=a41d7b05";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=a41d7b05";
-import {myHalaqah,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=a41d7b05";
+import {getState} from "../store.js?v=d6f20b38";
+import {badge} from "../utils/helpers.js?v=d6f20b38";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=d6f20b38";
+import {getProgressContext} from "../utils/progress-context.js?v=d6f20b38";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=d6f20b38";
+import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=d6f20b38";
 
 /**
  * Papan pantau progress seorang santri untuk musyrif/admin (santri melihat
@@ -88,7 +90,7 @@ function kpiGrid(sum){
  </div>`;
 }
 
-function dailyCard(data,start,tab){
+function dailyCard(data,start,tab,updatedAt){
  const blocks=WEEKS.map(week=>{
   const rows=PROGRESS_DAYS.filter(day=>dayFilled(data,week,day)).map(day=>{
    const pct=studentPercent(data,week,day);
@@ -105,7 +107,7 @@ function dailyCard(data,start,tab){
  return `<div class="card" style="margin-bottom:16px">
   <div class="row between" style="gap:12px;flex-wrap:wrap"><div><h3>Isian Progress Harian</h3><p class="muted">Data asli yang disimpan santri dari perangkatnya.</p></div><a class="btn" href="${tab.href}">${tab.label}</a></div>
   ${blocks}
-  <p class="muted" style="margin-top:12px;font-size:13px">${total} hari terisi · terakhir diperbarui ${escapeHtml(fmtWib(data.updatedAt))} WIB</p>
+  <p class="muted" style="margin-top:12px;font-size:13px">${total} hari terisi · terakhir diperbarui ${escapeHtml(fmtWib(updatedAt))} WIB</p>
  </div>`;
 }
 
@@ -136,19 +138,47 @@ function detailCard(data,start){
  </div>`;
 }
 
+/** Tarik 5 pekan milik sendiri. Santri memakai endpoint miliknya sendiri
+ *  (/api/progress); /api/progress/student hanya untuk admin pondok & musyrif
+ *  dan menolak santri yang membaca datanya sendiri (403). */
+let pulledPid=null,retryTimer=null,pulling=false;
+function pullMyWeeks(state){
+ const pid=activePondokId();
+ if(!pid||!state.authToken)return;
+ if(pulledPid===String(pid))return;
+ pulledPid=String(pid);
+ pulling=true;
+ const retry=()=>{clearTimeout(retryTimer);retryTimer=setTimeout(()=>{pulledPid=null;pulling=false;window.dispatchEvent(new Event("app:render"));},15000);};
+ Promise.all([1,2,3,4,5].map(week=>loadWeek(week)))
+  .then(results=>{
+   pulling=false;
+   if(results.every(Boolean))window.dispatchEvent(new Event("app:render"));
+   else retry();
+  })
+  .catch(()=>{pulling=false;retry();});
+}
+
+/** Identitas diri sendiri. Aturan privasi sama dengan halaman Report:
+ *  nama halaqah & musyrif hanya diungkap pada konteks Pondok. */
+function memberSelection(state){
+ const personal=state.context!=="pondok";
+ loadMyHalaqah();
+ const me=state.authUser||{};
+ const info=personal?null:myHalaqah();
+ return {
+  student:{name:state.profileOverrides?.member?.name||me.name||"Santri",userId:Number(me.id)||0,status:"Aktif"},
+  halaqahName:info?.name||"Hafalan pribadi",
+  musyrifName:info?.musyrif_name||"-",
+  startDate:myProgramStart()
+ };
+}
+
 export function studentProgressPage(){
  const state=getState();
  const isMember=state.persona==="member";
- const own=state.authUser;
- const mine=myHalaqah();
- const selected=isMember
-  ?{
-    student:{name:own?.name||"Santri",userId:Number(own?.id)||0,status:"Aktif"},
-    halaqahName:mine?.name||"—",
-    musyrifName:mine?.musyrif_name||"—",
-    startDate:mine?.program_start_date||null
-   }
-  :state.selectedStudentProgress;
+ if(isMember&&state.context==="pondok")pullMyWeeks(state);
+
+ const selected=isMember?memberSelection(state):state.selectedStudentProgress;
 
  if(!isMember&&state.context!=="pondok"){
   return `<div class="card"><p class="eyebrow">Progress Santri</p><h2>Aktifkan konteks Pondok</h2><p class="muted">Detail progress santri hanya tersedia pada konteks Pondok.</p><a class="btn" href="#halaqah">Kembali ke Halaqah</a></div>`;
@@ -159,19 +189,31 @@ export function studentProgressPage(){
  }
 
  const student=selected.student;
- const userId=Number(student.userId)||Number(own?.id)||0;
- const data=userId?cachedStudentProgress(userId):null;
- const loading=userId?isStudentProgressLoading(userId):false;
- if(userId&&!data&&!loading){
-  loadStudentProgress(userId).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+ const userId=Number(student.userId)||0;
+ let data=null,loading=false,updatedAt=null;
+ if(isMember){
+  data=getProgressContext(state);
+  updatedAt=lastSyncAt()||null;
+ }else{
+  data=userId?cachedStudentProgress(userId):null;
+  loading=userId?isStudentProgressLoading(userId):false;
+  if(userId&&!data&&!loading){
+   loadStudentProgress(userId).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+  }
+  updatedAt=data?.updatedAt||null;
  }
 
  const start=selected.startDate||null;
  const roleLabel=isMember?"Santri":state.persona==="musyrif"?"Musyrif":"Admin Pondok";
- const body=data?kpiGrid(summarize(data))
-  +dailyCard(data,start,isMember?{href:"#report",label:"Buka Report"}:{href:"#tabel-progress",label:"Buka Tabel Progress"})
-  +detailCard(data,start)
-  :`<div class="card" style="margin-bottom:16px"><h3>Isian Progress Harian</h3><p class="muted" style="margin-top:8px">${loading?"Memuat isian dari server…":"Belum ada isian dari santri ini."}</p></div>`;
+ const tab=isMember?{href:"#report",label:"Buka Report"}:{href:"#tabel-progress",label:"Buka Tabel Progress"};
+ const summary=data?summarize(data):null;
+ const pending=loading||(isMember&&pulling);
+ // Kartu hanya muncul bila ada isian nyata; kalau belum ada, tampilkan
+ // keterangan memuat/belum ada supaya tidak menampilkan angka nol palsu.
+ const showReal=Boolean(summary)&&!pending&&summary.days>0;
+ const body=showReal
+  ?kpiGrid(summary)+dailyCard(data,start,tab,updatedAt)+detailCard(data,start)
+  :`<div class="card" style="margin-bottom:16px"><h3>Isian Progress Harian</h3><p class="muted" style="margin-top:8px">${pending?"Memuat isian dari server…":"Belum ada isian dari santri ini."}</p></div>`;
 
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
   <div>

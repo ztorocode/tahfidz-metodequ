@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=7b31d4e6";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=7b31d4e6";
+import {getState,setState} from "../store.js?v=c94e2f17";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=c94e2f17";
 
 let selectedHalaqahId=null;
 
@@ -191,12 +191,18 @@ function pondokName(){
  return active?.name||st.pondokProfile?.name||"Pondok";
 }
 
+/** Maksimal 4 kotak per baris; bila jumlahnya lebih sedikit, kotak melebar
+ *  supaya lebarnya simetris dan tidak menyisakan kolom kosong. */
+function halaqahCols(items){
+ return Math.min(4,Math.max(1,(items||[]).length));
+}
+
 function adminList(items){
  return `<div style="margin-bottom:18px">
   <p class="eyebrow">Pondok / Halaqah</p>
   <div class="row between" style="gap:12px"><h1 style="margin:0">Halaqah</h1><button class="btn primary" type="button" data-halaqah-add>+Halaqah</button></div>
   <p class="muted">Kelola halaqah, tentukan musyrif, dan lihat santri di setiap halaqah.</p></div>
- <div class="grid-3">
+ <div class="halaqah-grid" style="--cols:${halaqahCols(items)}">
   ${items.length?items.map(item=>`<div class="card">
    <div class="row" style="gap:12px">
     <div class="grow" style="min-width:0">
@@ -232,7 +238,7 @@ function musyrifList(items){
   <h1>Halaqah Saya</h1>
   <p class="muted">Halaqah yang menjadi tanggung jawab Anda di ${escapeHtml(pondokName())}.</p>
  </div>
- <div class="grid-2">
+ <div class="halaqah-grid" style="--cols:${halaqahCols(items)}">
   ${items.length?items.map(item=>`<div class="card stack">
    <div class="row between"><div><h3>${escapeHtml(item.name)}</h3><small class="muted">${item.students.length} santri</small></div>${badge("Musyrif","success")}</div>
    <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Santri</button>

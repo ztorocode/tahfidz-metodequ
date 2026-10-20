@@ -88,7 +88,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'santri' AS role
+            "SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'santri' AS role, hm.joined_at AS joined_at
              FROM halaqah_memberships hm
              JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
@@ -96,12 +96,13 @@ final class HalaqahService
              WHERE hm.user_id = :user_id AND hm.status = 'active'
                AND h.pondok_id = :pondok_id AND h.status = 'active'
              UNION
-             SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'musyrif' AS role
+             SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'musyrif' AS role, NULL AS joined_at
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              JOIN users mu ON mu.id = mp.user_id
              WHERE mp.user_id = :user_id2 AND h.pondok_id = :pondok_id2
                AND h.status = 'active' AND h.deleted_at IS NULL
+             ORDER BY joined_at DESC, id DESC
              LIMIT 1"
         );
         $statement->execute([
@@ -270,6 +271,24 @@ final class HalaqahService
             . ($valid ? ' AND user_id NOT IN (' . implode(',', array_map('intval', $valid)) . ')' : '')
         );
         $leave->execute(['halaqah_id' => $halaqahId]);
+
+        // Satu santri hanya boleh aktif di satu halaqah per pondok.
+        // Menempatkan santri ke halaqah ini otomatis menutup keanggotaannya di
+        // halaqah lain pada pondok yang sama, supaya tidak ada santri yang
+        // nyangkut di dua halaqah sekaligus (pindah halaqah manual).
+        if ($valid) {
+            $inList = implode(',', array_map('intval', $valid));
+            $closeOther = $this->pdo->prepare(
+                'UPDATE halaqah_memberships hm
+                 JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+                 SET hm.status = \'left\', hm.ended_at = CURRENT_TIMESTAMP(3)
+                 WHERE hm.status = \'active\'
+                   AND hm.halaqah_id <> :halaqah_id
+                   AND h.pondok_id = :pondok_id
+                   AND hm.user_id IN (' . $inList . ')'
+            );
+            $closeOther->execute(['halaqah_id' => $halaqahId, 'pondok_id' => $pondokId]);
+        }
 
         foreach ($valid as $userId) {
             $check = $this->pdo->prepare(

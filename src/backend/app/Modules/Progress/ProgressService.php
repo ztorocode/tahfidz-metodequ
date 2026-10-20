@@ -209,6 +209,7 @@ final class ProgressService
              FROM halaqah_memberships hm
              JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
              WHERE hm.user_id = :user_id AND hm.status = \'active\' AND h.pondok_id = :pondok_id
+             ORDER BY hm.joined_at DESC, hm.id DESC
              LIMIT 1'
         );
         $statement->execute(['user_id' => $userId, 'pondok_id' => $pondokId]);

@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=5d9a1f37";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=5d9a1f37";
+import {getState,setState} from "../store.js?v=7b31d4e6";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=7b31d4e6";
 
 let selectedHalaqahId=null;
 
@@ -266,7 +266,7 @@ function detail(item,isAdmin){
    <h1>${escapeHtml(item.name)}</h1>
    <p class="muted">Musyrif: ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
   </div>
-  <button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
+  ${isAdmin?`<button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
   <div class="modal-backdrop hidden" id="santriModal">
    <div class="modal-card">
     <div><p class="eyebrow">Halaqah</p><h2>+Santri ke ${escapeHtml(item.name)}</h2></div>
@@ -277,7 +277,7 @@ function detail(item,isAdmin){
      <button class="btn primary" id="saveSantriBtn" type="button" data-save-santri="${item.id}">Simpan</button>
     </div>
    </div>
-  </div>
+  </div>`:""}
  </div>
  <div class="kpi-row" style="margin-bottom:16px">
   <div class="kpi"><b>${item.students.length}</b><span class="muted">Santri</span></div>
@@ -290,7 +290,7 @@ function detail(item,isAdmin){
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>
   ${item.students.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Setoran pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
    ${item.students.map(student=>`<tr><td><b>${escapeHtml(student.name)}</b></td><td>${student.mutqin}</td><td>${student.pending}</td><td>${badge(student.status,statusTone(student.status))}</td><td><button class="btn" type="button" data-student-progress="${escapeHtml(student.name)}" data-halaqah-id="${item.id}">Lihat Progress</button></td></tr>`).join("")}
-  </tbody></table></div>`:`<div class="quote">Belum ada santri di halaqah ini. ${isAdmin?"Gunakan invite link untuk mulai menambahkan santri.":""}</div>`}
+  </tbody></table></div>`:`<div class="quote">Belum ada santri di halaqah ini. ${isAdmin?"Gunakan invite link untuk mulai menambahkan santri.":"Hubungi admin pondok untuk menambahkan santri ke halaqah."}</div>`}
  </div>`;
 }
 
@@ -347,6 +347,7 @@ document.addEventListener("click",event=>{
 
  const santriBtn=event.target.closest("[data-halaqah-santri]");
  if(santriBtn){
+  if(getState().persona!=="admin"||getState().context!=="pondok")return;
   const item=halaqahs().find(row=>row.id===santriBtn.dataset.halaqahSantri);
   if(!item)return;
   document.querySelector("#santriModal")?.classList.remove("hidden");
@@ -370,6 +371,7 @@ document.addEventListener("click",event=>{
 
  const saveBtn=event.target.closest("[data-save-santri]");
  if(saveBtn){
+  if(getState().persona!=="admin"||getState().context!=="pondok")return;
   const item=halaqahs().find(row=>row.id===saveBtn.dataset.saveSantri);
   if(!item)return;
   const picked=[...document.querySelectorAll("[data-santri-check]")].filter(c=>c.checked).map(c=>Number(c.dataset.santriCheck)).filter(n=>n>0);

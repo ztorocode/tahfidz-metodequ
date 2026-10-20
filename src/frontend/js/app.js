@@ -1,12 +1,12 @@
-import {view,routeName} from "./router.js?v=c94e2f17";
-import {getState,setState} from "./store.js?v=c94e2f17";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c94e2f17";
-import {bindLogin} from "./pages/login.js?v=c94e2f17";
-import {bindInvite} from "./pages/terima-undangan.js?v=c94e2f17";
-import {toast} from "./utils/helpers.js?v=c94e2f17";
-import {initProgressSync} from "./utils/progress-sync.js?v=c94e2f17";
-import {bindWaPage} from "./pages/whatsapp.js?v=c94e2f17";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c94e2f17";
+import {view,routeName} from "./router.js?v=e5f81c2a";
+import {getState,setState} from "./store.js?v=e5f81c2a";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e5f81c2a";
+import {bindLogin} from "./pages/login.js?v=e5f81c2a";
+import {bindInvite} from "./pages/terima-undangan.js?v=e5f81c2a";
+import {toast} from "./utils/helpers.js?v=e5f81c2a";
+import {initProgressSync} from "./utils/progress-sync.js?v=e5f81c2a";
+import {bindWaPage} from "./pages/whatsapp.js?v=e5f81c2a";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=e5f81c2a";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -142,11 +142,59 @@ function bindPageActions(){
   loadPendingList("santri","pendingSantriList",()=>{loadSantriList();});
  }
  const inviteSantriModal=()=>document.querySelector("#inviteSantriModal");
+ // Pemilih halaqah tujuan: daftar halaqah pondok plus pemetaan email -> halaqah
+ // santri sekarang, dipakai untuk memberi tahu admin sebelum mengirim.
+ let inviteHalaqahs=[],inviteHalaqahByEmail={};
+ const escInvite=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ async function loadInviteHalaqahs(){
+  const sel=document.querySelector("#santriHalaqah");
+  if(!sel)return;
+  const pid=pondokId();
+  if(!pid)return;
+  try{
+   const b=await api("/api/pondoks/halaqahs?pondok_id="+pid);
+   inviteHalaqahs=b.data||[];
+   inviteHalaqahByEmail={};
+   inviteHalaqahs.forEach(h=>(h.students||[]).forEach(s=>{if(s.email)inviteHalaqahByEmail[String(s.email).toLowerCase()]=h;}));
+   const current=sel.value;
+   sel.innerHTML='<option value="">Undangan biasa — tanpa penempatan halaqah</option>'+inviteHalaqahs.map(h=>`<option value="${h.id}">${escInvite(h.name)} — ${(h.students||[]).length} santri</option>`).join("");
+   sel.value=inviteHalaqahs.some(h=>String(h.id)===current)?current:"";
+   refreshTransferUi();
+  }catch(e){}
+ }
+ function refreshTransferUi(){
+  const sel=document.querySelector("#santriHalaqah"),row=document.querySelector("#santriTransferRow"),
+   cb=document.querySelector("#santriTransfer"),hint=document.querySelector("#santriHalaqahHint");
+  const hid=Number(sel?.value||0);
+  const target=inviteHalaqahs.find(h=>Number(h.id)===hid);
+  row?.classList.toggle("hidden",!hid);
+  if(!hid&&cb)cb.checked=false;
+  if(!hint)return;
+  if(!target){hint.classList.add("hidden");hint.textContent="";hint.style.whiteSpace="";return;}
+  const emails=(document.querySelector("#santriEmail")?.value||"").split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean);
+  const notes=emails.map(em=>{
+   const src=inviteHalaqahByEmail[em.toLowerCase()];
+   if(!src)return `${em}: belum berada di halaqah mana pun, langsung ditempatkan di ${target.name}.`;
+   if(Number(src.id)===hid)return `${em}: sudah berada di halaqah ${src.name}.`;
+   return `${em}: berada di halaqah ${src.name}, wajib lewat opsi pindah halaqah.`;
+  });
+  hint.textContent=(cb?.checked?`Mode pindah: santri mulai dari nol di ${target.name}.`:"").concat(notes.length?"\n"+notes.slice(0,3).join("\n"):"");
+  hint.style.whiteSpace="pre-line";
+  hint.classList.remove("hidden");
+ }
+ document.querySelector("#santriHalaqah")?.addEventListener("change",refreshTransferUi);
+ document.querySelector("#santriTransfer")?.addEventListener("change",refreshTransferUi);
+ document.querySelector("#santriEmail")?.addEventListener("input",refreshTransferUi);
  document.querySelector("#inviteSantriBtn")?.addEventListener("click",()=>{
   const m=inviteSantriModal();if(!m)return;
   const msg=document.querySelector("#santriMessage");
   if(msg){msg.textContent="";msg.style.color="";}
+  const sel=document.querySelector("#santriHalaqah"),cb=document.querySelector("#santriTransfer");
+  if(sel)sel.value="";
+  if(cb)cb.checked=false;
+  refreshTransferUi();
   m.classList.remove("hidden");
+  loadInviteHalaqahs();
  });
  document.querySelector("#closeInviteSantriBtn")?.addEventListener("click",()=>inviteSantriModal()?.classList.add("hidden"));
  inviteSantriModal()?.addEventListener("click",event=>{if(event.target===inviteSantriModal())inviteSantriModal()?.classList.add("hidden");});
@@ -158,17 +206,45 @@ function bindPageActions(){
    if(msg){msg.textContent="Isi minimal satu email.";msg.style.color="var(--danger)";}
    return;
   }
+  const hid=Number(document.querySelector("#santriHalaqah")?.value||0);
+  const transfer=!!document.querySelector("#santriTransfer")?.checked;
+  const target=inviteHalaqahs.find(h=>Number(h.id)===hid);
+  if(hid&&transfer&&emails.length!==1){
+   if(msg){msg.textContent="Mode pindah halaqah hanya untuk satu email per undangan. Hapus email lain atau kosongkan pilihan halaqah.";msg.style.color="var(--danger)";}
+   return;
+  }
   btn.disabled=true;btn.textContent="Mengirim...";
   if(msg){msg.textContent="";msg.style.color="";}
+  let sent=0;const failed=[];
   try{
-   const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"santri",emails})});
-   const sent=(b.data?.sent||[]).map(x=>x.email);
-   const failed=(b.data?.failed||[]).map(x=>x.email+" ("+x.message+")");
+   if(!hid){
+    const b=await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"santri",emails})});
+    sent=(b.data?.sent||[]).length;
+    (b.data?.failed||[]).forEach(x=>failed.push(x.email+" ("+x.message+")"));
+   }else if(transfer){
+    // Satu undangan pindah halaqah. from_halaqah_id sengaja tidak dikirim:
+    // server yang menentukan halaqah asal dari keanggotaan aktif santri.
+    try{
+     await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"santri",email:emails[0],halaqah_id:hid,is_transfer:1})});
+     sent=1;
+    }catch(err){failed.push(emails[0]+" ("+(err?.message||"gagal")+")");}
+   }else{
+    // Halaqah tujuan tanpa mode pindah: dikirim satu per satu supaya tiap
+    // undangan membawa halaqah_id-nya sendiri.
+    for(const em of emails){
+     try{
+      await api("/api/pondok-invites",{method:"POST",body:JSON.stringify({pondok_id:pid,role:"santri",email:em,halaqah_id:hid})});
+      sent++;
+     }catch(err){failed.push(em+" ("+(err?.message||"gagal")+")");}
+    }
+   }
    if(msg){
-    msg.textContent=(sent.length?sent.length+" undangan terkirim":"")+((sent.length&&failed.length)?"; ":"")+failed.join("; ");
+    const where=target&&hid?` ke halaqah ${target.name}`:"";
+    msg.textContent=(sent?sent+" undangan terkirim"+where:"")+((sent&&failed.length)?"; ":"")+failed.join("; ");
     msg.style.color=failed.length?"var(--danger)":"var(--brand)";
    }
    document.querySelector("#santriEmail").value="";
+   refreshTransferUi();
    loadSantriList();
    if(!failed.length)setTimeout(()=>inviteSantriModal()?.classList.add("hidden"),900);
   }catch(err){
@@ -397,5 +473,5 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c94e2f17"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e5f81c2a"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

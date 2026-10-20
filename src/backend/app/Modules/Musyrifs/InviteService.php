@@ -110,13 +110,39 @@ final class InviteService
             // Pindah halaqah menempatkan santri ke halaqah baru, jadi keanggotaan
             // pondoknya memang sudah ada — cek "sudah menjadi santri" tidak berlaku.
         } elseif (is_array($existing)) {
-            $already = $this->pdo->prepare(
-                "SELECT 1 FROM pondok_memberships
-                 WHERE pondok_id = :pondok_id AND user_id = :user_id AND role = :role AND status = 'active' LIMIT 1"
-            );
-            $already->execute(['pondok_id' => $pondokId, 'user_id' => (int) $existing['id'], 'role' => $role]);
-            if ($already->fetchColumn() !== false) {
-                throw new RegistrationException('User ini sudah menjadi ' . $role . ' di pondok tersebut.', 409);
+            // Undangan langsung menyasar halaqah hanya untuk santri yang belum
+            // berada di halaqah mana pun. Kalau sudah, perpindahan wajib lewat
+            // mode pindah halaqah supaya selalu membawa catatan.
+            if ($halaqahId > 0) {
+                $currentHalaqah = $this->pdo->prepare(
+                    'SELECT h.name
+                     FROM halaqah_memberships hm
+                     JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+                     WHERE hm.user_id = :user_id AND hm.status = \'active\' AND h.pondok_id = :pondok_id
+                     LIMIT 1'
+                );
+                $currentHalaqah->execute(['user_id' => (int) $existing['id'], 'pondok_id' => $pondokId]);
+                $currentName = $currentHalaqah->fetchColumn();
+                if ($currentName !== false) {
+                    throw new RegistrationException(
+                        'Santri ini sudah berada di halaqah "' . (string) $currentName . '". '
+                        . 'Nyalakan opsi "Pindah dari halaqah lama" bila ingin memindahkannya.',
+                        422,
+                        ['halaqah_id' => 'Nyalakan opsi pindah halaqah.']
+                    );
+                }
+                // Penempatan ke halaqah sudah eksplisit, jadi keanggotaan pondok
+                // yang sudah aktif bukan halangan — cek "sudah menjadi santri"
+                // dilewati untuk undangan yang membawa pilihan halaqah.
+            } else {
+                $already = $this->pdo->prepare(
+                    "SELECT 1 FROM pondok_memberships
+                     WHERE pondok_id = :pondok_id AND user_id = :user_id AND role = :role AND status = 'active' LIMIT 1"
+                );
+                $already->execute(['pondok_id' => $pondokId, 'user_id' => (int) $existing['id'], 'role' => $role]);
+                if ($already->fetchColumn() !== false) {
+                    throw new RegistrationException('User ini sudah menjadi ' . $role . ' di pondok tersebut.', 409);
+                }
             }
         }
 
@@ -130,7 +156,10 @@ final class InviteService
             'pondok_id' => $pondokId,
             'role' => $role,
             'halaqah_id' => $halaqahId > 0 ? $halaqahId : null,
-            'from_halaqah_id' => $isTransfer ? $fromHalaqahId : null,
+            // Halaqah asal dipakai dari hasil deteksi server ($sourceHalaqah),
+            // bukan nilai mentah dari pengguna — bila frontend tidak mengirim
+            // from_halaqah_id, nilainya 0 dan akan melanggar foreign key.
+            'from_halaqah_id' => is_array($sourceHalaqah) ? (int) $sourceHalaqah['id'] : null,
             'is_transfer' => $isTransfer ? 1 : 0,
             'token_hash' => hash('sha256', $token),
             'email' => $email,

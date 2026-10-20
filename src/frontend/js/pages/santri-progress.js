@@ -1,7 +1,7 @@
-import {getState} from "../store.js?v=c94e2f17";
-import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=c94e2f17";
-import {badge,statusTone} from "../utils/helpers.js?v=c94e2f17";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=c94e2f17";
+import {getState} from "../store.js?v=e5f81c2a";
+import {member,progress,programPages,murajaah,daily} from "../data/dummy-data.js?v=e5f81c2a";
+import {badge,statusTone} from "../utils/helpers.js?v=e5f81c2a";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=e5f81c2a";
 
 const PROGRESS_DAYS=["sabtu","ahad","senin","selasa","rabu","kamis"];
 

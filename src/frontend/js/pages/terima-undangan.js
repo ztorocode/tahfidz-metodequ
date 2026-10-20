@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=c94e2f17";
-import {toast} from "../utils/helpers.js?v=c94e2f17";
+import {getState,setState} from "../store.js?v=e5f81c2a";
+import {toast} from "../utils/helpers.js?v=e5f81c2a";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -7,9 +7,11 @@ function inviteToken(){
  return new URLSearchParams(q).get("token")||"";
 }
 
+function acceptLabel(info){return info?.transfer?"Terima & Pindah Halaqah":"Terima & Buat Akun";}
+
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=c94e2f17">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=e5f81c2a">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }
@@ -28,14 +30,21 @@ function inviteForm(info,mode){
     :`<div class="quote">Halo <b>${info.registered_name||info.email}</b>, akun Anda sudah terdaftar. Masukkan password akun untuk menerima undangan ini.</div>
       <div><label class="label">Password akun Anda</label><input class="input" id="inviteLoginPassword" type="password" autocomplete="current-password"></div>`)
   :`<div><label class="label">Nama lengkap</label><input class="input" id="inviteName" autocomplete="name" placeholder="Nama lengkap"></div>`;
+ const t=info.transfer||null;
+ const blocked=!!(t&&t.blocked);
+ const escT=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ const transferRow=t
+  ?`<div class="quote" style="${blocked?"border-color:var(--danger);color:var(--danger)":""}"><b>Pindah halaqah</b><br>Dari halaqah <b>${escT(t.from_halaqah_name||"tanpa halaqah")}</b> ke <b>${escT(t.to_halaqah_name||"halaqah tujuan")}</b>.<br>${blocked?escT(t.blocked):"Isian progress lama akan dikosongkan — Anda memulai ulang dari nol di halaqah baru."}</div>`
+  :"";
  return `<div><h1>Terima Undangan</h1><p class="muted">Anda diundang sebagai <b>${roleLabel}</b> di <b>${info.pondok_name}</b>.</p></div>
  <div class="stack">
   ${emailRow}
   ${accountRow}
+  ${transferRow}
   <div><label class="label">Nomor WhatsApp</label><input class="input" id="invitePhone" inputmode="tel" placeholder="+62 ..." ${info.phone?`value="${info.phone}" disabled`:""}></div>
   <div><label class="label">Buat password</label><input class="input" id="invitePassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
-  <small class="muted" id="inviteMessage"></small>
-  <button class="btn primary full" id="acceptInviteBtn" type="button">Terima & Buat Akun</button>
+  <small class="muted" id="inviteMessage">${blocked?escT(t.blocked):""}</small>
+  <button class="btn primary full" id="acceptInviteBtn" type="button"${blocked?" disabled":""}>${acceptLabel(info)}</button>
  </div>`;
 }
 
@@ -95,10 +104,11 @@ export function bindInvite(){
      const persona=info.role==="musyrif"?"musyrif":"member";
      setState({loggedIn:true,persona,context:"pondok",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:info.role==="musyrif"?["musyrif"]:["member"],pondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}]},myPondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile,[persona]:profile}});
      if(/Menunggu persetujuan/.test(rb.message||""))toast("Pendaftaran terkirim. Menunggu persetujuan admin pondok.");
+     if(info.transfer)toast(`Anda dipindah ke halaqah ${info.transfer.to_halaqah_name||"tujuan"}. Progress dimulai dari nol.`);
      location.hash=persona==="musyrif"?"musyrif":"dashboard";
     }catch(err){
      if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
-     btn.disabled=false;btn.textContent="Terima & Buat Akun";
+     btn.disabled=false;btn.textContent=acceptLabel(info);
     }
    });
    function bindInviteSubmit(){
@@ -117,10 +127,11 @@ export function bindInvite(){
       const persona=info.role==="musyrif"?"musyrif":"member";
       setState({loggedIn:true,persona,context:"pondok",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:info.role==="musyrif"?["musyrif"]:["member"],pondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}]},myPondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile,[persona]:profile}});
       if(/Menunggu persetujuan/.test(rb.message||""))toast("Pendaftaran terkirim. Menunggu persetujuan admin pondok.");
+     if(info.transfer)toast(`Anda dipindah ke halaqah ${info.transfer.to_halaqah_name||"tujuan"}. Progress dimulai dari nol.`);
      location.hash=persona==="musyrif"?"musyrif":"dashboard";
      }catch(err){
       if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
-      btn.disabled=false;btn.textContent="Terima & Buat Akun";
+      btn.disabled=false;btn.textContent=acceptLabel(info);
      }
     });
    }

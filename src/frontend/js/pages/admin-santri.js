@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=c94e2f17";
+import {getState} from "../store.js?v=e5f81c2a";
 
 export function adminSantriPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
@@ -18,6 +18,14 @@ export function adminSantriPage(){
   <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
   <div class="stack">
    <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="santriEmail" rows="4" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
+   <div><label class="label">Halaqah tujuan (opsional)</label><select class="input" id="santriHalaqah"><option value="">Undangan biasa — tanpa penempatan halaqah</option></select></div>
+   <div id="santriTransferRow" class="hidden">
+    <label class="check-row" style="border:1px solid var(--border);border-radius:12px">
+     <input type="checkbox" id="santriTransfer">
+     <div class="grow"><b>Pindah dari halaqah lama</b><small class="muted" style="display:block;margin-top:2px">Santri keluar dari halaqahnya sekarang dan memulai ulang dari nol di halaqah tujuan.</small></div>
+    </label>
+   </div>
+   <small class="muted hidden" id="santriHalaqahHint"></small>
    <small class="muted" id="santriMessage">Nama & WA diisi santri saat terima undangan. Berlaku 7 hari.</small>
    <div class="btn-joined">
     <button class="btn" id="closeInviteSantriBtn" type="button">Tutup</button>

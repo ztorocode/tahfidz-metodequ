@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=c94e2f17";
-import {member,progress} from "../data/dummy-data.js?v=c94e2f17";
-import {getProgressContext} from "../utils/progress-context.js?v=c94e2f17";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=c94e2f17";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=c94e2f17";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=c94e2f17";
+import {getState} from "../store.js?v=e5f81c2a";
+import {member,progress} from "../data/dummy-data.js?v=e5f81c2a";
+import {getProgressContext} from "../utils/progress-context.js?v=e5f81c2a";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=e5f81c2a";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=e5f81c2a";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=e5f81c2a";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));

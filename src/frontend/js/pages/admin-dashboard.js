@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=e5f81c2a";
+import {getState} from "../store.js?v=a41d7b05";
 
 let summary=null;
 let sumPid=null;

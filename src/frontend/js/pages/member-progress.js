@@ -1,7 +1,7 @@
-import {getState} from "../store.js?v=3e7f9c14";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=3e7f9c14";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=3e7f9c14";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort} from "../utils/program-context.js?v=3e7f9c14";
+import {getState} from "../store.js?v=7b2e4d51";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=7b2e4d51";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=7b2e4d51";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=7b2e4d51";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -172,8 +172,27 @@ function syncWeek(week){
  loadWeek(week).then(changed=>{if(changed&&syncedWeek===week)window.dispatchEvent(new Event("app:render"));}).catch(()=>{});
 }
 
+/**
+ * Tanggal target dari Dashboard → pekan + kunci hari.
+ * Info halaqah mungkin belum termuat saat link diklik; kalau begitu openDate
+ * disimpan dulu dan diselesaikan pada render berikutnya (loadMyHalaqah memicu app:render).
+ */
+function applyOpenDate(data){
+ if(!data.openDate)return data;
+ const pid=String(activePondokId()??"");
+ if(myHalaqahPid()!==pid){
+  // Belum ada info halaqah untuk pondok aktif → tarik dulu, jangan nebak.
+  loadMyHalaqah();
+  return data;
+ }
+ const focus=resolveFocusDate(myProgramStart(),data.openDate);
+ if(!focus)return setProgressContextPatch({openDate:null,openDay:null});
+ const next=setProgressContextPatch({openDate:null,week:focus.week||data.week,openDay:focus.key});
+ return next;
+}
+
 export function memberProgressPage(){
- const data=getProgressContext(getState());
+ const data=applyOpenDate(getProgressContext(getState()));
  const week=stateWeek(data);
  loadMyHalaqah();
  syncWeek(week);
@@ -237,7 +256,7 @@ document.addEventListener("click",event=>{
 
  const weekButton=event.target.closest("[data-progress-week]");
  if(weekButton){
-  setProgressContextPatch({week:Number(weekButton.dataset.progressWeek),openDay:null});
+  setProgressContextPatch({week:Number(weekButton.dataset.progressWeek),openDay:null,openDate:null});
   window.dispatchEvent(new Event("app:render"));
   return;
  }
@@ -246,7 +265,7 @@ document.addEventListener("click",event=>{
  if(dayButton){
   const day=dayButton.dataset.progressDayToggle;
   const current=getProgressContext(getState()).openDay;
-  setProgressContextPatch({openDay:current===day?null:day});
+  setProgressContextPatch({openDay:current===day?null:day,openDate:null});
   window.dispatchEvent(new Event("app:render"));
   return;
  }

@@ -1,4 +1,4 @@
-import {getState,setState} from "../store.js?v=3e7f9c14";
+import {getState,setState} from "../store.js?v=7b2e4d51";
 
 function emptyProgressContext(){
  return {week:1,openDay:null,fields:{},checks:{}};
@@ -8,6 +8,8 @@ function normalizeProgressContext(value={}){
  return {
   week:Math.min(5,Math.max(1,Number(value.week)||1)),
   openDay:value.openDay||null,
+  // Target tanggal (YYYY-MM-DD) dari Dashboard; diselesaikan Progress → pekan + kunci hari.
+  openDate:value.openDate||null,
   fields:{...(value.fields||{})},
   checks:{...(value.checks||{})}
  };

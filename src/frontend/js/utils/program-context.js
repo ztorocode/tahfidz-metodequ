@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=3e7f9c14";
+import {getState} from "../store.js?v=7b2e4d51";
 
 /**
  * Sumber tunggal info halaqah milik login ini + perhitungan tanggal program.
@@ -139,6 +139,36 @@ export function todayProgramDay(startDate){
   dayNum,
   isFriday
  };
+}
+
+/**
+ * Selesaikan tanggal riil (YYYY-MM-DD) → posisi program {week,key,dayNum}.
+ * Ini lawan dari programDayDate: dari tanggal, kita cari Hari ke-N lalu pekan & kuncinya.
+ * Dipakai Dashboard → Progress supaya tombol "Buka" tidak salah hari walaupun
+ * tanggal mulai baru termuat setelah link dirender.
+ */
+export function resolveFocusDate(startDate,isoDate){
+ if(!isoDate)return null;
+ const target=new Date(isoDate+"T00:00:00");
+ if(isNaN(target.getTime()))return null;
+ const KEYS=["sabtu","ahad","senin","selasa","rabu","kamis"];
+ const isSameDay=(d)=>d&&d.getFullYear()===target.getFullYear()&&d.getMonth()===target.getMonth()&&d.getDate()===target.getDate();
+
+ if(!startDate){
+  // Tanpa tanggal mulai → Pekan 1 sejajar kalender; pekan tetap dari konteks pemakai.
+  if(target.getDay()===5)return null; // Jum'at libur
+  return {week:null,key:KEYS[(target.getDay()+1)%7],dayNum:null};
+ }
+
+ for(let n=1;n<=30;n++){
+  const date=programDayDate(startDate,n);
+  if(isSameDay(date)){
+   const week=Math.ceil(n/6);
+   if(week>5)return null;
+   return {week,key:KEYS[(n-1)%6],dayNum:n};
+  }
+ }
+ return null;
 }
 
 /** Stempel DB (UTC) → tampilan WIB. */

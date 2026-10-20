@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=7b2e4d51";
-import {member,progress} from "../data/dummy-data.js?v=7b2e4d51";
-import {getProgressContext} from "../utils/progress-context.js?v=7b2e4d51";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=7b2e4d51";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=7b2e4d51";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=7b2e4d51";
+import {getState} from "../store.js?v=5d9a1f37";
+import {member,progress} from "../data/dummy-data.js?v=5d9a1f37";
+import {getProgressContext} from "../utils/progress-context.js?v=5d9a1f37";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=5d9a1f37";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=5d9a1f37";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=5d9a1f37";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -93,7 +93,9 @@ function reportMeta(start,halaqahName,data){
 /** Data diri sendiri: nama login asli + halaqah asli dari server. */
 function memberSelection(state){
  const personal=state.context!=="pondok";
- if(!personal)loadMyHalaqah();
+ // Selalu tarik info halaqah (dibutuhkan untuk tanggal program). Nama halaqah &
+ // musyrif tetap disembunyikan pada konteks Personal.
+ loadMyHalaqah();
  const me=state.authUser||{};
  const info=personal?null:myHalaqah();
  const name=state.profileOverrides?.member?.name||me.name||member.name;
@@ -143,7 +145,9 @@ export function progressTablePage(){
  const isReport=location.hash.replace(/^#/,"")==="report";
  const pondok=ownPondokName(state)||(!isMember?(state.pondokProfile?.name||"Pondok Al-Furqan"):"Hafalan pribadi");
  const pageTitle=isReport?"Report":"Tabel Progress";
- const start=isMember?(state.context==="pondok"?myProgramStart():null):(selected.startDate||null);
+ // Sumber tanggal harus sama dengan halaman Progress (myProgramStart tanpa syarat
+ // konteks), supaya kunci hari & tanggal yang ditampilkan tidak meleset.
+ const start=isMember?myProgramStart():(selected.startDate||null);
 
  // Isian: milik sendiri → context (ditarik dari server), santri binaan → server.
  let progressData=isMember?getProgressContext(state):null;

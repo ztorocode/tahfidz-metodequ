@@ -1,9 +1,9 @@
-import {member} from "../data/dummy-data.js?v=7b2e4d51";
-import {getState} from "../store.js?v=7b2e4d51";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=7b2e4d51";
-import {badge} from "../utils/helpers.js?v=7b2e4d51";
-import {loadWeek} from "../utils/progress-sync.js?v=7b2e4d51";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=7b2e4d51";
+import {member} from "../data/dummy-data.js?v=5d9a1f37";
+import {getState} from "../store.js?v=5d9a1f37";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=5d9a1f37";
+import {badge} from "../utils/helpers.js?v=5d9a1f37";
+import {loadWeek} from "../utils/progress-sync.js?v=5d9a1f37";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=5d9a1f37";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};
@@ -59,8 +59,11 @@ let pulledKey=null;
 let retryTimer=null;
 function pullMyWeek(state,week){
  const pid=activePondokId();
- if(!pid||!state.authToken||state.context!=="pondok")return;
+ // Info halaqah (tanggal mulai program) dibutuhkan semua konteks — termasuk Personal —
+ // supaya kunci hari di dashboard sama dengan yang dipakai halaman Progress.
+ if(!pid||!state.authToken)return;
  loadMyHalaqah();
+ if(state.context!=="pondok")return;
  const key=String(pid)+":"+week;
  if(pulledKey===key)return;
  pulledKey=key;
@@ -79,7 +82,9 @@ export function memberDashboard(){
  const contextLabel=isPondok?ownPondokName(state):"Personal";
 
  // Hari ini diturunkan dari tanggal mulai program (bukan nama hari kalender).
- const start=isPondok?myProgramStart():null;
+ // Harus sama persis dengan halaman Progress (termasuk konteks Personal),
+ // supaya kunci hari (sabtu..kamis) yang dipakai membaca isian tidak meleset.
+ const start=myProgramStart();
  const today=todayProgramDay(start);
 
  const week=today.week||Math.min(5,Math.max(1,Number(data.week)||1));

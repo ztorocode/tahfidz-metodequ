@@ -1,9 +1,9 @@
-import {member} from "../data/dummy-data.js?v=91c5d7ea";
-import {getState} from "../store.js?v=91c5d7ea";
-import {getProgressContext} from "../utils/progress-context.js?v=91c5d7ea";
-import {badge} from "../utils/helpers.js?v=91c5d7ea";
-import {loadWeek} from "../utils/progress-sync.js?v=91c5d7ea";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=91c5d7ea";
+import {member} from "../data/dummy-data.js?v=3e7f9c14";
+import {getState} from "../store.js?v=3e7f9c14";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=3e7f9c14";
+import {badge} from "../utils/helpers.js?v=3e7f9c14";
+import {loadWeek} from "../utils/progress-sync.js?v=3e7f9c14";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=3e7f9c14";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};
@@ -135,7 +135,7 @@ export function memberDashboard(){
 <div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${escapeHtml(name)}</h1><p class="muted">Konteks aktif: <b>${escapeHtml(contextLabel)}</b> · Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
 
 <div id="inviteBanner"></div>
-<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(programTitle)}</h2><b>Target hari ini: ${targetText}</b>${startLine?`<small style="display:block;margin-top:6px;opacity:.85">${escapeHtml(startLine)}</small>`:""}</div><a class="btn" href="#progress" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
+<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(programTitle)}</h2><b>Target hari ini: ${targetText}</b>${startLine?`<small style="display:block;margin-top:6px;opacity:.85">${escapeHtml(startLine)}</small>`:""}</div><a class="btn" href="#progress" data-goto-progress="${week}:${tKey||""}" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
 
 ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Halaqah Anda</h3><small class="muted">Dari data pondok, bukan dari isian.</small></div></div>
 <div class="list" style="margin-top:12px">
@@ -147,7 +147,7 @@ ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between
 </div>
 </div>`:""}
 
-<div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Progress Pekan ${week}</h3><small class="muted">Dihitung langsung dari form Progress konteks ${escapeHtml(contextLabel)}.</small></div><a href="#progress" class="muted">Lihat detail</a></div><div class="progress" style="--value:${weekPct}%;margin-top:14px"><span></span></div>
+<div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Progress Pekan ${week}</h3><small class="muted">Dihitung langsung dari form Progress konteks ${escapeHtml(contextLabel)}.</small></div><a href="#progress" class="muted" data-goto-progress="${week}:">Lihat detail</a></div><div class="progress" style="--value:${weekPct}%;margin-top:14px"><span></span></div>
 <div class="grid-4" style="margin-top:16px">
  <div><b class="metric">${weekPct}%</b><div class="metric-label">Progress pekan</div></div>
  <div><b class="metric">${filledDays}/6</b><div class="metric-label">Hari terisi</div></div>
@@ -157,7 +157,7 @@ ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between
 
 <div class="grid-3">
  <div class="card">
-  <div class="row between"><div><h3>Aktivitas Hari Ini</h3><small class="muted">${idle?(notice||"Tidak ada isian"):"Pekan "+week+" · "+dayLabel}</small></div><a href="#progress" class="muted">Buka</a></div>
+  <div class="row between"><div><h3>Aktivitas Hari Ini</h3><small class="muted">${idle?(notice||"Tidak ada isian"):"Pekan "+week+" · "+dayLabel}</small></div><a href="#progress" class="muted" data-goto-progress="${week}:${tKey||""}">Buka</a></div>
   <div class="list" style="margin-top:12px">${activities.map(item=>`<div class="list-item"><span class="check ${item.tone==="success"?"done":""}">${item.tone==="success"?"✓":""}</span><div class="grow"><b>${escapeHtml(item.name)}</b><small class="muted" style="display:block">${escapeHtml(item.detail)}</small></div>${badge(item.status,item.tone)}</div>`).join("")}</div>
  </div>
 
@@ -182,3 +182,33 @@ ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between
  </div>
 </div>`;
 }
+
+/** Gulir ke kartu hari yang terbuka setelah halaman Progress selesai dirender. */
+function scrollToOpenDay(){
+ const go=()=>{
+  const card=document.querySelector(".member-progress-day.open");
+  if(!card)return false;
+  card.scrollIntoView({block:"start",behavior:"smooth"});
+  return true;
+ };
+ if(go())return;
+ let tries=0;
+ const timer=setInterval(()=>{
+  if(go()||++tries>10)clearInterval(timer);
+ },100);
+}
+
+/** "Buka"/"Buka Progress": langsung ke pekan & hari yang hari ini, bukan pekan terakhir. */
+document.addEventListener("click",event=>{
+ const link=event.target.closest("[data-goto-progress]");
+ if(!link)return;
+ event.preventDefault();
+ const [week,day]=String(link.dataset.gotoProgress||"").split(":");
+ setProgressContextPatch({
+  week:Math.min(5,Math.max(1,Number(week)||1)),
+  openDay:day||null
+ });
+ if(location.hash!=="#progress"){location.hash="progress";}
+ else{window.dispatchEvent(new Event("app:render"));}
+ scrollToOpenDay();
+});

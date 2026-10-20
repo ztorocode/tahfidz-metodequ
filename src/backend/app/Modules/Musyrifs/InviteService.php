@@ -31,6 +31,9 @@ final class InviteService
         $phoneRaw = trim((string) ($input['phone'] ?? ''));
         $email = strtolower(trim((string) ($input['email'] ?? '')));
         $phone = $phoneRaw === '' ? null : $this->normalizePhone($phoneRaw);
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        $fromHalaqahId = (int) ($input['from_halaqah_id'] ?? 0);
+        $isTransfer = !empty($input['is_transfer']);
 
         $errors = [];
         if ($pondokId <= 0) {
@@ -38,6 +41,12 @@ final class InviteService
         }
         if (!in_array($role, ['musyrif', 'santri'], true)) {
             $errors['role'] = 'Role undangan harus musyrif atau santri.';
+        }
+        if ($isTransfer && $role !== 'santri') {
+            $errors['halaqah_id'] = 'Pindah halaqah hanya berlaku untuk undangan santri.';
+        }
+        if ($isTransfer && $halaqahId <= 0) {
+            $errors['halaqah_id'] = 'Pilih halaqah tujuan untuk pindah halaqah.';
         }
         if ($name !== '' && (mb_strlen($name) < 2 || mb_strlen($name) > 150)) {
             $errors['name'] = 'Nama harus 2-150 karakter.';
@@ -66,13 +75,41 @@ final class InviteService
             throw new RegistrationException('Pondok tidak ditemukan.', 404);
         }
 
-        $existingStmt = $this->pdo->prepare('SELECT id, phone_e164 FROM users WHERE email = :email LIMIT 1');
+        // Halaqah tujuan wajib milik pondok yang sama dan masih berjalan programnya.
+        $targetHalaqah = null;
+        if ($halaqahId > 0) {
+            if ($role !== 'santri') {
+                throw new RegistrationException('Pilihan halaqah hanya untuk undangan santri.', 422, [
+                    'halaqah_id' => 'Pilihan halaqah hanya untuk undangan santri.',
+                ]);
+            }
+            $targetHalaqah = $this->halaqahRow($halaqahId, $pondokId);
+            if ($targetHalaqah === null) {
+                throw new RegistrationException('Halaqah tujuan tidak ditemukan di pondok ini.', 422, [
+                    'halaqah_id' => 'Halaqah tujuan tidak ditemukan di pondok ini.',
+                ]);
+            }
+            if ($targetHalaqah['status'] !== 'active') {
+                throw new RegistrationException('Halaqah tujuan sedang tidak aktif.', 422, [
+                    'halaqah_id' => 'Halaqah tujuan sedang tidak aktif.',
+                ]);
+            }
+            $this->assertProgramRunning($targetHalaqah, 'tujuan');
+        }
+
+        $existingStmt = $this->pdo->prepare('SELECT id, phone_e164, status FROM users WHERE email = :email LIMIT 1');
         $existingStmt->execute(['email' => $email]);
         $existing = $existingStmt->fetch(PDO::FETCH_ASSOC);
         if ($phone === null && is_array($existing)) {
             $phone = (string) $existing['phone_e164'];
         }
-        if (is_array($existing)) {
+
+        $sourceHalaqah = null;
+        if ($isTransfer) {
+            $sourceHalaqah = $this->assertTransferable($pondokId, $existing, $fromHalaqahId, (int) $targetHalaqah['id']);
+            // Pindah halaqah menempatkan santri ke halaqah baru, jadi keanggotaan
+            // pondoknya memang sudah ada — cek "sudah menjadi santri" tidak berlaku.
+        } elseif (is_array($existing)) {
             $already = $this->pdo->prepare(
                 "SELECT 1 FROM pondok_memberships
                  WHERE pondok_id = :pondok_id AND user_id = :user_id AND role = :role AND status = 'active' LIMIT 1"
@@ -85,11 +122,16 @@ final class InviteService
 
         $token = bin2hex(random_bytes(32));
         $this->pdo->prepare(
-            'INSERT INTO pondok_invites (pondok_id, role, token_hash, invited_email, invited_phone_e164, created_by, expires_at)
-             VALUES (:pondok_id, :role, :token_hash, :email, :phone, :created_by, DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY))'
+            'INSERT INTO pondok_invites (pondok_id, role, halaqah_id, from_halaqah_id, is_transfer,
+                                         token_hash, invited_email, invited_phone_e164, created_by, expires_at)
+             VALUES (:pondok_id, :role, :halaqah_id, :from_halaqah_id, :is_transfer,
+                     :token_hash, :email, :phone, :created_by, DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 7 DAY))'
         )->execute([
             'pondok_id' => $pondokId,
             'role' => $role,
+            'halaqah_id' => $halaqahId > 0 ? $halaqahId : null,
+            'from_halaqah_id' => $isTransfer ? $fromHalaqahId : null,
+            'is_transfer' => $isTransfer ? 1 : 0,
             'token_hash' => hash('sha256', $token),
             'email' => $email,
             'phone' => $phone,
@@ -124,6 +166,13 @@ final class InviteService
             'email' => $email,
             'email_sent' => $emailSent,
             'wa_sent' => $waSent,
+            'is_transfer' => $isTransfer,
+            'halaqah' => $targetHalaqah !== null
+                ? ['id' => (int) $targetHalaqah['id'], 'name' => (string) $targetHalaqah['name']]
+                : null,
+            'from_halaqah' => $sourceHalaqah !== null
+                ? ['id' => (int) $sourceHalaqah['id'], 'name' => (string) $sourceHalaqah['name']]
+                : null,
         ];
     }
 
@@ -320,7 +369,10 @@ final class InviteService
         return $update->rowCount() > 0;
     }
 
-    /** @return array{pondok_id:int,pondok_name:string,role:string,email:string,name_hint:string,expires_at:string} */
+    /**
+     * @return array{pondok_id:int,pondok_name:string,role:string,email:string,name_hint:string,
+     *               expires_at:string,transfer:?array<string,mixed>}
+     */
     public function info(string $token): array
     {
         $row = $this->findValid($token);
@@ -353,6 +405,55 @@ final class InviteService
             'email' => $email,
             'phone' => $row['invited_phone_e164'] !== null ? (string) $row['invited_phone_e164'] : null,
             'expires_at' => (string) $row['expires_at'],
+            'transfer' => $this->transferInfo($row),
+        ];
+    }
+
+    /**
+     * Ringkasan pindah halaqah untuk halaman terima undangan, termasuk alasan
+     * bila transfer tidak lagi bisa dijalankan (mis. program sudah selesai).
+     *
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>|null
+     */
+    private function transferInfo(array $row): ?array
+    {
+        if ((int) ($row['is_transfer'] ?? 0) !== 1 || (int) ($row['halaqah_id'] ?? 0) <= 0) {
+            return null;
+        }
+
+        $pondokId = (int) $row['pondok_id'];
+        $target = $this->halaqahRow((int) $row['halaqah_id'], $pondokId);
+        $source = isset($row['from_halaqah_id']) && $row['from_halaqah_id'] !== null
+            ? $this->halaqahRow((int) $row['from_halaqah_id'], $pondokId)
+            : null;
+
+        $blocked = null;
+        if ($target === null) {
+            $blocked = 'Halaqah tujuan sudah tidak tersedia.';
+        } elseif ($target['status'] !== 'active') {
+            $blocked = 'Halaqah tujuan sedang tidak aktif.';
+        } else {
+            try {
+                $this->assertProgramRunning($target, 'tujuan');
+            } catch (RegistrationException $exception) {
+                $blocked = $exception->getMessage();
+            }
+        }
+        if ($blocked === null && $source !== null) {
+            try {
+                $this->assertProgramRunning($source, 'asal');
+            } catch (RegistrationException $exception) {
+                $blocked = $exception->getMessage();
+            }
+        }
+
+        return [
+            'from_halaqah_id' => $source !== null ? (int) $source['id'] : (int) ($row['from_halaqah_id'] ?? 0),
+            'from_halaqah_name' => $source !== null ? (string) $source['name'] : null,
+            'to_halaqah_id' => (int) ($row['halaqah_id']),
+            'to_halaqah_name' => $target !== null ? (string) $target['name'] : null,
+            'blocked' => $blocked,
         ];
     }
 
@@ -411,6 +512,7 @@ final class InviteService
                 $userId = (int) $existingUser['id'];
                 $memberStatus = $invite['invited_email'] === null ? 'invited' : 'active';
                 $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role'], $memberStatus);
+                $this->placeInHalaqah($userId, $invite);
                 if ($invite['invited_email'] !== null) {
                     $this->pdo->prepare(
                         'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
@@ -469,6 +571,7 @@ final class InviteService
 
             $memberStatus = $invite['invited_email'] === null ? 'invited' : 'active';
                 $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role'], $memberStatus);
+            $this->placeInHalaqah($userId, $invite);
 
             if ($invite['invited_email'] !== null) {
                 $this->pdo->prepare(
@@ -551,6 +654,234 @@ final class InviteService
         )->execute(['pondok_id' => $pondokId, 'user_id' => $userId, 'role' => $role, 'status' => $status]);
     }
 
+    /** @return array<string,mixed>|null */
+    private function halaqahRow(int $halaqahId, int $pondokId): ?array
+    {
+        $statement = $this->pdo->prepare(
+            'SELECT id, name, status, program_start_date
+             FROM halaqahs
+             WHERE id = :id AND pondok_id = :pondok_id AND deleted_at IS NULL
+             LIMIT 1'
+        );
+        $statement->execute(['id' => $halaqahId, 'pondok_id' => $pondokId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * Pindah halaqah hanya boleh selama program tahfidz di halaqah tersebut
+     * belum selesai. Program berjalan 5 pekan x 6 hari = hari ke-30, jatuh pada
+     * hari ke-33 kalender sejak tanggal mulai.
+     *
+     * @param array<string,mixed> $halaqah
+     */
+    private function assertProgramRunning(array $halaqah, string $position): void
+    {
+        $start = $halaqah['program_start_date'] !== null ? trim((string) $halaqah['program_start_date']) : '';
+        if ($start === '') {
+            // Program belum dimulai — belum mungkin dianggap selesai.
+            return;
+        }
+
+        $tz = new \DateTimeZone('UTC');
+        try {
+            $startDate = (new \DateTimeImmutable($start, $tz))->setTime(0, 0);
+            $today = (new \DateTimeImmutable('now', $tz))->setTime(0, 0);
+        } catch (\Exception) {
+            return;
+        }
+
+        if ($today >= $startDate->modify('+34 days')) {
+            throw new RegistrationException(
+                'Program tahfidz di halaqah ' . $position . ' "' . (string) $halaqah['name'] . '" sudah selesai. '
+                . 'Pindah halaqah hanya bisa dilakukan selama program masih berjalan.',
+                422,
+                ['halaqah_id' => 'Program halaqah ' . $position . ' sudah selesai.']
+            );
+        }
+    }
+
+    /**
+     * Pastikan santri yang mau dipindah masih aktif dan halaqah asalnya masih
+     * berjalan programnya. Mengembalikan baris halaqah asal.
+     *
+     * @param array<string,mixed>|false|null $existing
+     * @return array<string,mixed>
+     */
+    private function assertTransferable(int $pondokId, array|false|null $existing, int $fromHalaqahId, int $toHalaqahId): array
+    {
+        if (!is_array($existing)) {
+            throw new RegistrationException(
+                'Santri dengan email ini belum punya akun. Pindah halaqah hanya untuk santri yang sudah terdaftar.',
+                422,
+                ['email' => 'Santri belum terdaftar.']
+            );
+        }
+
+        $userId = (int) $existing['id'];
+        if (($existing['status'] ?? 'active') !== 'active') {
+            throw new RegistrationException('Akun santri tidak aktif, jadi tidak bisa dipindah halaqah.', 422, [
+                'halaqah_id' => 'Akun santri tidak aktif.',
+            ]);
+        }
+
+        $membership = $this->pdo->prepare(
+            "SELECT status FROM pondok_memberships WHERE pondok_id = :pondok_id AND user_id = :user_id LIMIT 1"
+        );
+        $membership->execute(['pondok_id' => $pondokId, 'user_id' => $userId]);
+        if ($membership->fetchColumn() !== 'active') {
+            throw new RegistrationException('Santri ini belum aktif di pondok, jadi belum bisa dipindah halaqah.', 422, [
+                'halaqah_id' => 'Santri belum aktif di pondok.',
+            ]);
+        }
+
+        if ($fromHalaqahId <= 0) {
+            $current = $this->pdo->prepare(
+                "SELECT hm.halaqah_id
+                 FROM halaqah_memberships hm
+                 JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+                 WHERE hm.user_id = :user_id AND hm.status = 'active' AND h.pondok_id = :pondok_id
+                 ORDER BY hm.joined_at DESC, hm.id DESC
+                 LIMIT 1"
+            );
+            $current->execute(['user_id' => $userId, 'pondok_id' => $pondokId]);
+            $found = $current->fetchColumn();
+            $fromHalaqahId = $found === false ? 0 : (int) $found;
+        }
+
+        if ($fromHalaqahId <= 0) {
+            throw new RegistrationException('Santri ini belum tergabung di halaqah mana pun.', 422, [
+                'from_halaqah_id' => 'Santri belum berada di halaqah mana pun.',
+            ]);
+        }
+        if ($fromHalaqahId === $toHalaqahId) {
+            throw new RegistrationException('Santri sudah berada di halaqah tersebut.', 422, [
+                'from_halaqah_id' => 'Pilih halaqah tujuan yang berbeda.',
+            ]);
+        }
+
+        $source = $this->halaqahRow($fromHalaqahId, $pondokId);
+        if ($source === null) {
+            throw new RegistrationException('Halaqah asal tidak ditemukan di pondok ini.', 422, [
+                'from_halaqah_id' => 'Halaqah asal tidak ditemukan.',
+            ]);
+        }
+        if ($source['status'] !== 'active') {
+            throw new RegistrationException('Halaqah asal sedang tidak aktif.', 422, [
+                'from_halaqah_id' => 'Halaqah asal sedang tidak aktif.',
+            ]);
+        }
+
+        $activeInSource = $this->pdo->prepare(
+            "SELECT 1 FROM halaqah_memberships WHERE halaqah_id = :halaqah_id AND user_id = :user_id AND status = 'active' LIMIT 1"
+        );
+        $activeInSource->execute(['halaqah_id' => $fromHalaqahId, 'user_id' => $userId]);
+        if ($activeInSource->fetchColumn() === false) {
+            throw new RegistrationException('Santri bukan anggota aktif halaqah asal.', 422, [
+                'from_halaqah_id' => 'Santri bukan anggota halaqah asal.',
+            ]);
+        }
+
+        $this->assertProgramRunning($source, 'asal');
+
+        return $source;
+    }
+
+    /**
+     * Tempatkan santri di halaqah tujuan undangan. Untuk undangan pindah,
+     * halaqah lama ditutup dan isian progress lama dikosongkan (mulai nol).
+     * Dipanggil di dalam transaksi penerimaan undangan.
+     *
+     * @param array<string,mixed> $invite
+     */
+    private function placeInHalaqah(int $userId, array $invite): void
+    {
+        $halaqahId = isset($invite['halaqah_id']) && $invite['halaqah_id'] !== null ? (int) $invite['halaqah_id'] : 0;
+        if ($halaqahId <= 0) {
+            return;
+        }
+
+        $pondokId = (int) $invite['pondok_id'];
+        $isTransfer = (int) ($invite['is_transfer'] ?? 0) === 1;
+
+        $target = $this->halaqahRow($halaqahId, $pondokId);
+        if ($target === null) {
+            throw new RegistrationException('Halaqah tujuan sudah tidak tersedia.', 422);
+        }
+        if ($target['status'] !== 'active') {
+            throw new RegistrationException('Halaqah tujuan sedang tidak aktif.', 422);
+        }
+        $this->assertProgramRunning($target, 'tujuan');
+
+        $sourceHalaqahId = 0;
+        if ($isTransfer) {
+            $fromHalaqahId = isset($invite['from_halaqah_id']) && $invite['from_halaqah_id'] !== null
+                ? (int) $invite['from_halaqah_id']
+                : 0;
+            $userRow = $this->pdo->prepare('SELECT id, status FROM users WHERE id = :id LIMIT 1');
+            $userRow->execute(['id' => $userId]);
+            $user = $userRow->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($user)) {
+                throw new RegistrationException('Akun santri tidak ditemukan.', 404);
+            }
+            $source = $this->assertTransferable($pondokId, $user, $fromHalaqahId, $halaqahId);
+            $sourceHalaqahId = (int) $source['id'];
+
+            // Isian progress lama dikosongkan: santri mulai nol di halaqah baru.
+            $reset = $this->pdo->prepare(
+                'DELETE FROM member_progress WHERE user_id = :user_id AND pondok_id = :pondok_id'
+            );
+            $reset->execute(['user_id' => $userId, 'pondok_id' => $pondokId]);
+        }
+
+        // Satu santri satu halaqah: tutup keanggotaan aktif lain di pondok ini.
+        $close = $this->pdo->prepare(
+            "UPDATE halaqah_memberships hm
+             JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+             SET hm.status = 'left', hm.ended_at = CURRENT_TIMESTAMP(3)
+             WHERE hm.user_id = :user_id AND hm.status = 'active'
+               AND h.pondok_id = :pondok_id AND hm.halaqah_id <> :halaqah_id"
+        );
+        $close->execute(['user_id' => $userId, 'pondok_id' => $pondokId, 'halaqah_id' => $halaqahId]);
+
+        // Aktifkan kembali baris keanggotaan lama bila ada, supaya tidak ganda.
+        $existing = $this->pdo->prepare(
+            'SELECT id FROM halaqah_memberships WHERE halaqah_id = :halaqah_id AND user_id = :user_id LIMIT 1'
+        );
+        $existing->execute(['halaqah_id' => $halaqahId, 'user_id' => $userId]);
+        $membershipId = $existing->fetchColumn();
+
+        if ($membershipId !== false) {
+            $this->pdo->prepare(
+                "UPDATE halaqah_memberships
+                 SET status = 'active', joined_at = CURRENT_TIMESTAMP(3), ended_at = NULL
+                 WHERE id = :id"
+            )->execute(['id' => (int) $membershipId]);
+        } else {
+            $this->pdo->prepare(
+                "INSERT INTO halaqah_memberships (halaqah_id, user_id, status, joined_at)
+                 VALUES (:halaqah_id, :user_id, 'active', CURRENT_TIMESTAMP(3))"
+            )->execute(['halaqah_id' => $halaqahId, 'user_id' => $userId]);
+        }
+
+        if ($isTransfer) {
+            $this->pdo->prepare(
+                'INSERT INTO halaqah_transfer_requests
+                    (user_id, pondok_id, from_halaqah_id, to_halaqah_id, reason, status, reviewed_by, reviewed_at)
+                 VALUES
+                    (:user_id, :pondok_id, :from_halaqah_id, :to_halaqah_id,
+                     \'Pindah halaqah melalui undangan admin/musyrif.\', \'approved\', :reviewed_by, CURRENT_TIMESTAMP(3))'
+            )->execute([
+                'user_id' => $userId,
+                'pondok_id' => $pondokId,
+                'from_halaqah_id' => $sourceHalaqahId > 0 ? $sourceHalaqahId : null,
+                'to_halaqah_id' => $halaqahId,
+                'reviewed_by' => isset($invite['created_by']) && $invite['created_by'] !== null ? (int) $invite['created_by'] : null,
+            ]);
+        }
+    }
+
     /** @return array<int,array{id:int,pondok_id:int,pondok_name:string,role:string,expires_at:string}> */
     public function mine(string $email): array
     {
@@ -587,7 +918,8 @@ final class InviteService
 
         try {
             $statement = $this->pdo->prepare(
-                'SELECT i.id, i.pondok_id, i.role, i.invited_email, i.status, i.expires_at, u.id AS uid
+                'SELECT i.id, i.pondok_id, i.role, i.halaqah_id, i.from_halaqah_id, i.is_transfer,
+                        i.created_by, i.invited_email, i.status, i.expires_at, u.id AS uid
                  FROM pondok_invites i
                  JOIN users u ON u.email = i.invited_email
                  WHERE i.id = :id AND u.id = :user_id LIMIT 1 FOR UPDATE'
@@ -600,6 +932,7 @@ final class InviteService
             }
 
             $this->linkMembership((int) $row['uid'], (int) $row['pondok_id'], $row['role']);
+            $this->placeInHalaqah((int) $row['uid'], $row);
             $this->pdo->prepare(
                 'UPDATE pondok_invites SET status = \'accepted\', accepted_by = :user_id, accepted_at = CURRENT_TIMESTAMP(3)
                  WHERE id = :id AND status = \'pending\''
@@ -651,7 +984,8 @@ final class InviteService
         if ($token === '') {
             return null;
         }
-        $sql = 'SELECT id, pondok_id, role, invited_email, invited_phone_e164, status, expires_at
+        $sql = 'SELECT id, pondok_id, role, halaqah_id, from_halaqah_id, is_transfer, created_by,
+                       invited_email, invited_phone_e164, status, expires_at
                 FROM pondok_invites WHERE token_hash = :token_hash LIMIT 1';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';

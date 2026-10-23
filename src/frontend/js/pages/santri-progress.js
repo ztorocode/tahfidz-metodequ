@@ -1,9 +1,10 @@
-import {getState} from "../store.js?v=d6f20b38";
-import {badge} from "../utils/helpers.js?v=d6f20b38";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=d6f20b38";
-import {getProgressContext} from "../utils/progress-context.js?v=d6f20b38";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=d6f20b38";
-import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=d6f20b38";
+import {getState} from "../store.js?v=9ac4e2b7";
+import {badge} from "../utils/helpers.js?v=9ac4e2b7";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=9ac4e2b7";
+import {getProgressContext} from "../utils/progress-context.js?v=9ac4e2b7";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=9ac4e2b7";
+import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=9ac4e2b7";
+import {cachedSetoran,loadSetoran,isSetoranLoading,decisionMeta} from "../utils/setoran.js?v=9ac4e2b7";
 
 /**
  * Papan pantau progress seorang santri untuk musyrif/admin (santri melihat
@@ -138,6 +139,153 @@ function detailCard(data,start){
  </div>`;
 }
 
+/** ============ Kartu hasil penilaian setoran oleh musyrif ============ */
+
+function setoranCounters(rows){
+ const counts={mutqin:0,cukup_stabil:0,penguatan:0,ulang:0};
+ rows.forEach(row=>{const key=String(row.decision||"");if(key in counts)counts[key]++});
+ return counts;
+}
+
+function setoranSummaryCard(rows,student,canRate){
+ const counts=setoranCounters(rows);
+ return `<div class="card" style="margin-bottom:16px">
+  <div class="row between" style="gap:12px;flex-wrap:wrap">
+   <div><h3>Ringkasan Penilaian Setoran</h3><p class="muted">Dihitung dari penilaian musyrif yang tersimpan.</p></div>
+   ${canRate?`<button class="btn primary" type="button" id="addSetoranBtn" data-setoran-user="${Number(student.userId)||0}">+ Tambah Setoran</button>`:""}
+  </div>
+  <div class="grid-4" style="margin-top:14px">
+   <div class="kpi"><b>${counts.mutqin}</b><span class="muted">Mutqin</span></div>
+   <div class="kpi"><b>${counts.cukup_stabil}</b><span class="muted">Cukup Stabil</span></div>
+   <div class="kpi"><b>${counts.penguatan}</b><span class="muted">Perlu Penguatan</span></div>
+   <div class="kpi"><b>${counts.ulang}</b><span class="muted">Perlu Ulang</span></div>
+  </div>
+ </div>`;
+}
+
+function setoranHistoryCard(rows,canRate){
+ const head=`<div style="margin-bottom:12px"><h3>Riwayat Setoran</h3><p class="muted">Setoran terakhir beserta penilaian dan catatan musyrif.</p></div>`;
+ if(!rows.length){
+  return `<div class="card" style="margin-bottom:16px">${head}<p class="muted">Belum ada penilaian setoran untuk santri ini.${canRate?" Tekan \"+ Tambah Setoran\" untuk mencatat penilaian pertama.":""}</p></div>`;
+ }
+ const mine=Number(getState().authUser?.id)||0;
+ const body=rows.map(row=>{
+  const meta=decisionMeta(row.decision);
+  const canDelete=canRate&&Number(row.created_by)===mine;
+  return `<tr>
+   <td>${escapeHtml(fmtWib(row.created_at))} WIB</td>
+   <td><b>${escapeHtml(row.ref)}</b>${row.page_no?`<small class="muted" style="display:block">Halaman ${escapeHtml(row.page_no)}</small>`:""}</td>
+   <td>${badge(meta.label,meta.tone)}</td>
+   <td>${row.notes?escapeHtml(row.notes):'<span class="muted">—</span>'}</td>
+   <td>${escapeHtml(row.created_by_name||"—")}</td>
+   <td>${canDelete?`<button class="btn" type="button" data-del-setoran="${Number(row.id)}">Hapus</button>`:""}</td>
+  </tr>`;
+ }).join("");
+ return `<div class="card" style="margin-bottom:16px">${head}
+  <div class="table-wrap"><table class="table"><thead><tr><th>Tanggal</th><th>Setoran</th><th>Status</th><th>Catatan</th><th>Penilai</th><th><span class="muted">Aksi</span></th></tr></thead><tbody>${body}</tbody></table></div>
+ </div>`;
+}
+
+function setoranNotesCard(rows){
+ const notes=rows.filter(row=>row.notes).slice(0,6);
+ if(!notes.length){
+  return `<div class="card" style="margin-bottom:16px"><h3>Catatan Musyrif</h3><p class="muted" style="margin-top:8px">Belum ada catatan untuk santri ini.</p></div>`;
+ }
+ return `<div class="card" style="margin-bottom:16px">
+  <h3>Catatan Musyrif</h3><p class="muted">Fokus penguatan berikutnya.</p>
+  <div class="list">${notes.map(row=>{
+   const meta=decisionMeta(row.decision);
+   return `<div class="list-item"><div class="grow"><b>${escapeHtml(row.ref)}</b>
+    <small class="muted" style="display:block">${escapeHtml(row.created_by_name||"—")} · ${escapeHtml(fmtWib(row.created_at))} WIB</small>
+    <p style="margin-top:6px">${escapeHtml(row.notes)}</p></div>${badge(meta.label,meta.tone)}</div>`;
+  }).join("")}</div>
+ </div>`;
+}
+
+function setoranPagesCard(rows){
+ const byPage=new Map();
+ rows.forEach(row=>{
+  const page=Number(row.page_no);
+  if(!page||byPage.has(page))return; // daftar sudah urut terbaru -> yang pertama adalah penilaian terakhir
+  byPage.set(page,row);
+ });
+ const pages=[...byPage.entries()].sort((a,b)=>a[0]-b[0]);
+ if(!pages.length){
+  return `<div class="card" style="margin-bottom:16px"><h3>Progress Hafalan</h3><p class="muted" style="margin-top:8px">Belum ada halaman yang dinilai. Isi kolom "Halaman" saat mencatat setoran supaya kartu ini terisi.</p></div>`;
+ }
+ return `<div class="card" style="margin-bottom:16px">
+  <h3>Progress Hafalan</h3><p class="muted">Status terakhir tiap halaman yang pernah dinilai.</p>
+  <div class="grid-3" style="margin-top:14px">${pages.map(([page,row])=>{
+   const meta=decisionMeta(row.decision);
+   return `<div class="kpi" style="text-align:left">
+    <b>Halaman ${escapeHtml(page)}</b>
+    <span style="display:block;margin-top:6px">${badge(meta.label,meta.tone)}</span>
+    <small class="muted" style="display:block;margin-top:6px">${escapeHtml(row.ref)}</small>
+   </div>`;
+  }).join("")}</div>
+ </div>`;
+}
+
+function setoranMurajaahCard(rows){
+ const items=rows.filter(row=>["penguatan","ulang"].includes(String(row.decision||"")));
+ if(!items.length){
+  return `<div class="card" style="margin-bottom:16px"><h3>Muraja'ah &amp; Penguatan</h3><p class="muted" style="margin-top:8px">Belum ada setoran yang menunggu diulang.</p></div>`;
+ }
+ return `<div class="card" style="margin-bottom:16px">
+  <h3>Muraja'ah &amp; Penguatan</h3><p class="muted">Bagian yang perlu diulang atau dikuatkan kembali.</p>
+  <div class="list">${items.map(row=>{
+   const meta=decisionMeta(row.decision);
+   return `<div class="list-item"><div class="grow"><b>${escapeHtml(row.ref)}</b>
+    <small class="muted" style="display:block">${escapeHtml(row.created_by_name||"—")} · ${escapeHtml(fmtWib(row.created_at))} WIB</small>
+    ${row.notes?`<small class="muted" style="display:block;margin-top:4px">${escapeHtml(row.notes)}</small>`:""}</div>${badge(meta.label,meta.tone)}</div>`;
+  }).join("")}</div>
+ </div>`;
+}
+
+function setoranActivityCard(rows,updatedAt){
+ const events=rows.slice(0,10).map(row=>({
+  at:String(row.created_at||""),
+  text:`${row.created_by_name||"Musyrif"} menilai ${row.ref} — ${decisionMeta(row.decision).label}`
+ }));
+ if(updatedAt)events.push({at:String(updatedAt),text:"Isian progress diperbarui oleh santri"});
+ events.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+ if(!events.length){
+  return `<div class="card" style="margin-bottom:16px"><h3>Aktivitas Terakhir</h3><p class="muted" style="margin-top:8px">Belum ada aktivitas untuk santri ini.</p></div>`;
+ }
+ return `<div class="card" style="margin-bottom:16px">
+  <h3>Aktivitas Terakhir</h3>
+  <div class="list">${events.slice(0,6).map(event=>`<div class="list-item"><div class="grow"><b>${escapeHtml(event.text)}</b>
+   <small class="muted" style="display:block">${escapeHtml(fmtWib(event.at))} WIB</small></div></div>`).join("")}</div>
+ </div>`;
+}
+
+/** Formulir penilaian setoran — hanya untuk musyrif halaqah santri itu. */
+function setoranModal(){
+ return `<div class="modal-backdrop hidden" id="setoranModal">
+  <div class="modal-card">
+   <div><p class="eyebrow">Setoran</p><h2>Tambah Penilaian Setoran</h2></div>
+   <div class="stack">
+    <div><label class="label">Setoran</label><input class="input" id="setoranRef" autocomplete="off" placeholder="Juz 30 Hal. 12 · An-Naas"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+     <div style="flex:1 1 160px"><label class="label">Halaman (opsional)</label><input class="input" id="setoranPage" inputmode="numeric" autocomplete="off" placeholder="12"></div>
+     <div style="flex:1 1 200px"><label class="label">Penilaian</label><select class="input" id="setoranDecision">
+      <option value="mutqin">Mutqin</option>
+      <option value="cukup_stabil">Cukup Stabil</option>
+      <option value="penguatan">Perlu Penguatan</option>
+      <option value="ulang">Perlu Ulang</option>
+     </select></div>
+    </div>
+    <div><label class="label">Catatan untuk santri</label><textarea class="input" id="setoranNotes" rows="4" placeholder="Perhatikan tajwid pada ayat terakhir."></textarea></div>
+    <small class="muted" id="setoranMessage">Santri akan melihat penilaian dan catatan ini pada halamannya.</small>
+    <div class="btn-joined">
+     <button class="btn" id="closeSetoranBtn" type="button">Tutup</button>
+     <button class="btn primary" id="saveSetoranBtn" type="button">Simpan</button>
+    </div>
+   </div>
+  </div>
+ </div>`;
+}
+
 /** Tarik 5 pekan milik sendiri. Santri memakai endpoint miliknya sendiri
  *  (/api/progress); /api/progress/student hanya untuk admin pondok & musyrif
  *  dan menolak santri yang membaca datanya sendiri (403). */
@@ -211,9 +359,25 @@ export function studentProgressPage(){
  // Kartu hanya muncul bila ada isian nyata; kalau belum ada, tampilkan
  // keterangan memuat/belum ada supaya tidak menampilkan angka nol palsu.
  const showReal=Boolean(summary)&&!pending&&summary.days>0;
- const body=showReal
+ const isianCard=showReal
   ?kpiGrid(summary)+dailyCard(data,start,tab,updatedAt)+detailCard(data,start)
   :`<div class="card" style="margin-bottom:16px"><h3>Isian Progress Harian</h3><p class="muted" style="margin-top:8px">${pending?"Memuat isian dari server…":"Belum ada isian dari santri ini."}</p></div>`;
+
+ // Penilaian setoran oleh musyrif halaqah (tabel setoran_reviews).
+ if(userId&&!cachedSetoran(userId)&&!isSetoranLoading(userId)){
+  loadSetoran(userId).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+ }
+ const setoranRows=cachedSetoran(userId)||[];
+ const setoranPending=isSetoranLoading(userId);
+ const canRate=state.persona==="musyrif";
+ const setoranCards=setoranPending&&!setoranRows.length
+  ?`<div class="card" style="margin-bottom:16px"><h3>Riwayat Setoran</h3><p class="muted" style="margin-top:8px">Memuat riwayat setoran…</p></div>`
+  :setoranSummaryCard(setoranRows,student,canRate)
+   +setoranHistoryCard(setoranRows,canRate)
+   +setoranNotesCard(setoranRows)
+   +setoranPagesCard(setoranRows)
+   +setoranMurajaahCard(setoranRows)
+   +setoranActivityCard(setoranRows,updatedAt);
 
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
   <div>
@@ -227,5 +391,9 @@ export function studentProgressPage(){
 
  ${programCard(selected.halaqahName,start)}
 
- ${body}`;
+ ${setoranCards}
+
+ ${isianCard}
+
+ ${canRate?setoranModal():""}`;
 }

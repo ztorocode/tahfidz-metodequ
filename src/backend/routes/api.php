@@ -28,4 +28,7 @@ return static function (Router $router): void {
 
     $registerProgress = require dirname(__DIR__) . '/app/Modules/Progress/routes.php';
     $registerProgress($router);
+
+    $registerSetoran = require dirname(__DIR__) . '/app/Modules/Setoran/routes.php';
+    $registerSetoran($router);
 };

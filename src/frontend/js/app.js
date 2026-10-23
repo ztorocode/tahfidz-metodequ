@@ -1,12 +1,13 @@
-import {view,routeName} from "./router.js?v=d6f20b38";
-import {getState,setState} from "./store.js?v=d6f20b38";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=d6f20b38";
-import {bindLogin} from "./pages/login.js?v=d6f20b38";
-import {bindInvite} from "./pages/terima-undangan.js?v=d6f20b38";
-import {toast} from "./utils/helpers.js?v=d6f20b38";
-import {initProgressSync} from "./utils/progress-sync.js?v=d6f20b38";
-import {bindWaPage} from "./pages/whatsapp.js?v=d6f20b38";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=d6f20b38";
+import {view,routeName} from "./router.js?v=9ac4e2b7";
+import {getState,setState} from "./store.js?v=9ac4e2b7";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=9ac4e2b7";
+import {bindLogin} from "./pages/login.js?v=9ac4e2b7";
+import {bindInvite} from "./pages/terima-undangan.js?v=9ac4e2b7";
+import {toast} from "./utils/helpers.js?v=9ac4e2b7";
+import {initProgressSync} from "./utils/progress-sync.js?v=9ac4e2b7";
+import {forgetSetoran} from "./utils/setoran.js?v=9ac4e2b7";
+import {bindWaPage} from "./pages/whatsapp.js?v=9ac4e2b7";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=9ac4e2b7";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -415,6 +416,72 @@ function bindPageActions(){
    }
    btn.disabled=false;btn.textContent="Simpan Musyrif";
   });
+  // ============ Penilaian setoran oleh musyrif (#santri-progress) ============
+  const setoranModal=()=>document.querySelector("#setoranModal");
+  const closeSetoranModal=()=>setoranModal()?.classList.add("hidden");
+  const setoranTargetUser=()=>Number(setoranModal()?.dataset?.userId||getState().selectedStudentProgress?.student?.userId||0);
+  document.querySelector("#addSetoranBtn")?.addEventListener("click",()=>{
+   if(getState().persona!=="musyrif")return;
+   const m=setoranModal();if(!m)return;
+   m.dataset.userId=String(document.querySelector("#addSetoranBtn")?.dataset?.setoranUser||"");
+   m.dataset.pondokId=String(pondokId()||"");
+   const msg=document.querySelector("#setoranMessage");
+   if(msg){msg.textContent="Santri akan melihat penilaian dan catatan ini pada halamannya.";msg.style.color="";}
+   ["#setoranRef","#setoranPage","#setoranNotes"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
+   m.classList.remove("hidden");
+   document.querySelector("#setoranRef")?.focus();
+  });
+  document.querySelector("#closeSetoranBtn")?.addEventListener("click",closeSetoranModal);
+  setoranModal()?.addEventListener("click",event=>{if(event.target===setoranModal())closeSetoranModal();});
+  document.querySelector("#saveSetoranBtn")?.addEventListener("click",async e=>{
+   if(getState().persona!=="musyrif")return;
+   const btn=e.currentTarget,msg=document.querySelector("#setoranMessage");
+   const userId=setoranTargetUser();
+   const pid=Number(setoranModal()?.dataset?.pondokId||pondokId()||0);
+   const ref=(document.querySelector("#setoranRef")?.value||"").trim();
+   const pageRaw=(document.querySelector("#setoranPage")?.value||"").trim();
+   const decision=document.querySelector("#setoranDecision")?.value||"mutqin";
+   const notes=(document.querySelector("#setoranNotes")?.value||"").trim();
+   if(msg){msg.textContent="";msg.style.color="";}
+   if(!userId||!pid||!ref){
+    if(msg){msg.textContent="Nama setoran wajib diisi.";msg.style.color="var(--danger)";}
+    return;
+   }
+   if(pageRaw&&!/^\d+$/.test(pageRaw)){
+    if(msg){msg.textContent="Nomor halaman harus angka.";msg.style.color="var(--danger)";}
+    return;
+   }
+   btn.disabled=true;btn.textContent="Menyimpan...";
+   try{
+    const b=await api("/api/setoran-reviews",{method:"POST",body:JSON.stringify({
+     pondok_id:pid,user_id:userId,ref,page_no:pageRaw||null,decision,notes
+    })});
+    forgetSetoran(userId);
+    toast(b?.message||"Penilaian setoran tersimpan.");
+    closeSetoranModal();
+    window.dispatchEvent(new Event("app:render"));
+   }catch(err){
+    if(msg){msg.textContent=err?.message||"Gagal menyimpan penilaian.";msg.style.color="var(--danger)";}
+   }
+   btn.disabled=false;btn.textContent="Simpan";
+  });
+  document.querySelectorAll("[data-del-setoran]").forEach(btn=>btn.addEventListener("click",async ()=>{
+   if(getState().persona!=="musyrif")return;
+   const id=Number(btn.dataset.delSetoran||0);
+   if(!id)return;
+   const userId=setoranTargetUser();
+   btn.disabled=true;
+   try{
+    const b=await api("/api/setoran-reviews/remove",{method:"POST",body:JSON.stringify({id})});
+    forgetSetoran(userId);
+    toast(b?.message||"Penilaian setoran dihapus.");
+    window.dispatchEvent(new Event("app:render"));
+   }catch(err){
+    toast(err?.message||"Gagal menghapus penilaian.");
+    btn.disabled=false;
+   }
+  }));
+
   document.querySelectorAll("[data-copy-invite-link]").forEach(btn=>btn.addEventListener("click",async ()=>{
    const link=btn.dataset.copyInviteLink||"";
    if(!link)return;
@@ -473,5 +540,5 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d6f20b38"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=9ac4e2b7"));
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

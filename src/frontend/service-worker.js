@@ -1,21 +1,21 @@
-const CACHE='metodequ-9ac4e2b7';
+const CACHE='metodequ-f52d1a07';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './assets/css/variables.css?v=9ac4e2b7','./assets/css/base.css?v=9ac4e2b7','./assets/css/layout.css?v=9ac4e2b7',
-  './assets/css/components.css?v=9ac4e2b7','./assets/css/responsive.css?v=9ac4e2b7',
-  './assets/images/icon.svg?v=9ac4e2b7',
-  './js/app.js?v=9ac4e2b7','./js/router.js?v=9ac4e2b7','./js/store.js?v=9ac4e2b7',
-  './js/data/dummy-data.js?v=9ac4e2b7','./js/components/app-shell.js?v=9ac4e2b7',
-  './js/components/context-switcher.js?v=9ac4e2b7','./js/layouts/app-layout.js?v=9ac4e2b7',
-  './js/utils/helpers.js?v=9ac4e2b7','./js/utils/progress-context.js?v=9ac4e2b7',
- './js/utils/progress-sync.js?v=9ac4e2b7','./js/utils/student-progress.js?v=9ac4e2b7',
- './js/utils/setoran.js?v=9ac4e2b7',
- './js/utils/program-context.js?v=9ac4e2b7',
-  './js/pages/login.js?v=9ac4e2b7','./js/pages/member-progress.js?v=9ac4e2b7','./js/pages/member-dashboard.js?v=9ac4e2b7','./js/pages/program.js?v=9ac4e2b7',
-  './js/pages/activity.js?v=9ac4e2b7','./js/pages/submission.js?v=9ac4e2b7','./js/pages/murajaah.js?v=9ac4e2b7',
-  './js/pages/notifications.js?v=9ac4e2b7','./js/pages/musyrif-dashboard.js?v=9ac4e2b7',
-  './js/pages/review.js?v=9ac4e2b7','./js/pages/admin-dashboard.js?v=9ac4e2b7','./js/pages/halaqah.js?v=9ac4e2b7','./js/pages/santri-progress.js?v=9ac4e2b7','./js/pages/tabel-progress.js?v=9ac4e2b7',
-  './js/pages/whatsapp.js?v=9ac4e2b7','./js/pages/super-admin.js?v=9ac4e2b7'
+  './assets/css/variables.css?v=f52d1a07','./assets/css/base.css?v=f52d1a07','./assets/css/layout.css?v=f52d1a07',
+  './assets/css/components.css?v=f52d1a07','./assets/css/responsive.css?v=f52d1a07',
+  './assets/images/icon.svg?v=f52d1a07',
+  './js/app.js?v=f52d1a07','./js/router.js?v=f52d1a07','./js/store.js?v=f52d1a07',
+  './js/data/dummy-data.js?v=f52d1a07','./js/components/app-shell.js?v=f52d1a07',
+  './js/components/context-switcher.js?v=f52d1a07','./js/layouts/app-layout.js?v=f52d1a07',
+  './js/utils/helpers.js?v=f52d1a07','./js/utils/progress-context.js?v=f52d1a07',
+ './js/utils/progress-sync.js?v=f52d1a07','./js/utils/student-progress.js?v=f52d1a07',
+ './js/utils/setoran.js?v=f52d1a07',
+ './js/utils/program-context.js?v=f52d1a07',
+  './js/pages/login.js?v=f52d1a07','./js/pages/member-progress.js?v=f52d1a07','./js/pages/member-dashboard.js?v=f52d1a07','./js/pages/program.js?v=f52d1a07',
+  './js/pages/activity.js?v=f52d1a07','./js/pages/submission.js?v=f52d1a07','./js/pages/murajaah.js?v=f52d1a07',
+  './js/pages/notifications.js?v=f52d1a07','./js/pages/musyrif-dashboard.js?v=f52d1a07',
+  './js/pages/review.js?v=f52d1a07','./js/pages/admin-dashboard.js?v=f52d1a07','./js/pages/halaqah.js?v=f52d1a07','./js/pages/santri-progress.js?v=f52d1a07','./js/pages/tabel-progress.js?v=f52d1a07',
+  './js/pages/whatsapp.js?v=f52d1a07','./js/pages/super-admin.js?v=f52d1a07'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

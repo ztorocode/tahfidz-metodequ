@@ -1,9 +1,9 @@
-import {member} from "../data/dummy-data.js?v=9ac4e2b7";
-import {getState} from "../store.js?v=9ac4e2b7";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=9ac4e2b7";
-import {badge} from "../utils/helpers.js?v=9ac4e2b7";
-import {loadWeek} from "../utils/progress-sync.js?v=9ac4e2b7";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=9ac4e2b7";
+import {member} from "../data/dummy-data.js?v=f52d1a07";
+import {getState} from "../store.js?v=f52d1a07";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=f52d1a07";
+import {badge} from "../utils/helpers.js?v=f52d1a07";
+import {loadWeek} from "../utils/progress-sync.js?v=f52d1a07";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=f52d1a07";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};
@@ -157,11 +157,11 @@ ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between
 </div>`:""}
 
 <div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Progress Pekan ${week}</h3><small class="muted">Dihitung langsung dari form Progress konteks ${escapeHtml(contextLabel)}.</small></div><a href="#progress" class="muted" data-goto-progress="${week}:">Lihat detail</a></div><div class="progress" style="--value:${weekPct}%;margin-top:14px"><span></span></div>
-<div class="grid-4" style="margin-top:16px">
- <div><b class="metric">${weekPct}%</b><div class="metric-label">Progress pekan</div></div>
- <div><b class="metric">${filledDays}/6</b><div class="metric-label">Hari terisi</div></div>
- <div><b class="metric" style="color:var(--brand)">${hafalanDays}/6</b><div class="metric-label">Menghafal selesai</div></div>
- <div><b class="metric">${tikrarWeek}</b><div class="metric-label">Tikrar tercatat</div></div>
+<div class="grid-4 week-metrics" style="margin-top:16px">
+ <div class="wm-1"><b class="metric">${weekPct}%</b><div class="metric-label">Progress pekan</div></div>
+ <div class="wm-2"><b class="metric">${filledDays}/6</b><div class="metric-label">Hari terisi</div></div>
+ <div class="wm-3"><b class="metric" style="color:var(--brand)">${hafalanDays}/6</b><div class="metric-label">Menghafal selesai</div></div>
+ <div class="wm-4"><b class="metric">${tikrarWeek}</b><div class="metric-label">Tikrar tercatat</div></div>
 </div></div>
 
 <div class="grid-3">

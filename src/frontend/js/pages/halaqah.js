@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=f52d1a07";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=f52d1a07";
+import {getState,setState} from "../store.js?v=6b9d0e42";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=6b9d0e42";
 
 let selectedHalaqahId=null;
 

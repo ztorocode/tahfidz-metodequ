@@ -1,9 +1,9 @@
-import {member} from "../data/dummy-data.js?v=f52d1a07";
-import {getState} from "../store.js?v=f52d1a07";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=f52d1a07";
-import {badge} from "../utils/helpers.js?v=f52d1a07";
-import {loadWeek} from "../utils/progress-sync.js?v=f52d1a07";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=f52d1a07";
+import {member} from "../data/dummy-data.js?v=6b9d0e42";
+import {getState} from "../store.js?v=6b9d0e42";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=6b9d0e42";
+import {badge} from "../utils/helpers.js?v=6b9d0e42";
+import {loadWeek} from "../utils/progress-sync.js?v=6b9d0e42";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=6b9d0e42";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};

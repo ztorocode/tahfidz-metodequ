@@ -1,13 +1,13 @@
-import {view,routeName} from "./router.js?v=a83f2c51";
-import {getState,setState} from "./store.js?v=a83f2c51";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a83f2c51";
-import {bindLogin} from "./pages/login.js?v=a83f2c51";
-import {bindInvite} from "./pages/terima-undangan.js?v=a83f2c51";
-import {toast} from "./utils/helpers.js?v=a83f2c51";
-import {initProgressSync} from "./utils/progress-sync.js?v=a83f2c51";
-import {forgetSetoran} from "./utils/setoran.js?v=a83f2c51";
-import {bindWaPage} from "./pages/whatsapp.js?v=a83f2c51";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=a83f2c51";
+import {view,routeName} from "./router.js?v=d1c4e8a2";
+import {getState,setState} from "./store.js?v=d1c4e8a2";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=d1c4e8a2";
+import {bindLogin} from "./pages/login.js?v=d1c4e8a2";
+import {bindInvite} from "./pages/terima-undangan.js?v=d1c4e8a2";
+import {toast} from "./utils/helpers.js?v=d1c4e8a2";
+import {initProgressSync} from "./utils/progress-sync.js?v=d1c4e8a2";
+import {forgetSetoran} from "./utils/setoran.js?v=d1c4e8a2";
+import {bindWaPage} from "./pages/whatsapp.js?v=d1c4e8a2";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=d1c4e8a2";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -540,5 +540,11 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a83f2c51"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d1c4e8a2"));
+// Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
+const bootState=getState();
+if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){
+ setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null,authToken:null,authUser:null,myPondoks:[],activePondokId:null});
+ if(routeName().split("?")[0]!=="login")location.hash="login";
+}
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";render();

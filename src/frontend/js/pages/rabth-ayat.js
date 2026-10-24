@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=a6d2e9c4";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=a6d2e9c4";
-import {scheduleSave} from "../utils/progress-sync.js?v=a6d2e9c4";
-import {SURAHS} from "../data/quran-juz.js?v=a6d2e9c4";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=a6d2e9c4";
-import {dayProgress} from "./member-progress.js?v=a6d2e9c4";
+import {getState} from "../store.js?v=b7e3f1d5";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b7e3f1d5";
+import {scheduleSave} from "../utils/progress-sync.js?v=b7e3f1d5";
+import {SURAHS} from "../data/quran-juz.js?v=b7e3f1d5";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=b7e3f1d5";
+import {dayProgress} from "./member-progress.js?v=b7e3f1d5";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -41,7 +41,6 @@ export function rabthAyatPage(){
   +'<div id="ayatList" class="ayat-list"><div class="card"><small class="muted">Memuat ayat…</small></div></div>'
   +'<audio id="ayatAudio" preload="none"></audio>'
   +'<div class="btn-joined ayat-actions" id="ayatActions"></div>'
-  +'<div class="ayat-unmark" id="ayatUnmark"></div>'
   +'<small class="muted ayat-credit">Teks Al-Qur\'an: <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil Project</a> · CC BY 3.0</small>'
   +'</section>';
 }
@@ -81,7 +80,6 @@ export function bindRabthAyat(){
 
  // Simpan / Batal
  const key=week+":"+day+":"+step;
- const done=Boolean(data.checks?.[key]);
  const audio=document.querySelector("#ayatAudio");
  const stopAudio=()=>{if(audio){audio.pause();audio.removeAttribute("src");}};
  const saveChecks=(nextChecks)=>{
@@ -92,17 +90,12 @@ export function bindRabthAyat(){
  };
  actions.innerHTML='<button class="btn" type="button" data-ayat-cancel>Batal</button>'
   +'<button class="btn primary" type="button" data-ayat-save>Simpan</button>';
- const unmark=document.querySelector("#ayatUnmark");
- if(done){
-  unmark.innerHTML='<button class="ayat-unmark-btn" type="button" data-ayat-unmark>Batalkan tanda selesai</button>';
-  unmark.querySelector("[data-ayat-unmark]")?.addEventListener("click",()=>{
-   const fresh=getProgressContext(getState());
-   const checks={...(fresh.checks||{})};
-   delete checks[key];
-   saveChecks(checks);
-  });
- }
- actions.querySelector("[data-ayat-cancel]")?.addEventListener("click",()=>{stopAudio();location.hash="progress";});
+ actions.querySelector("[data-ayat-cancel]")?.addEventListener("click",()=>{
+  const fresh=getProgressContext(getState());
+  const checks={...(fresh.checks||{})};
+  delete checks[key];
+  saveChecks(checks);
+ });
  actions.querySelector("[data-ayat-save]")?.addEventListener("click",()=>{
   const fresh=getProgressContext(getState());
   const checks={...(fresh.checks||{})};

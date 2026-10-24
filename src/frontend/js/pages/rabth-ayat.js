@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=f2d8c6b3";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=f2d8c6b3";
-import {scheduleSave} from "../utils/progress-sync.js?v=f2d8c6b3";
-import {SURAHS} from "../data/quran-juz.js?v=f2d8c6b3";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=f2d8c6b3";
-import {dayProgress} from "./member-progress.js?v=f2d8c6b3";
+import {getState} from "../store.js?v=a6d2e9c4";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=a6d2e9c4";
+import {scheduleSave} from "../utils/progress-sync.js?v=a6d2e9c4";
+import {SURAHS} from "../data/quran-juz.js?v=a6d2e9c4";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=a6d2e9c4";
+import {dayProgress} from "./member-progress.js?v=a6d2e9c4";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -39,7 +39,9 @@ export function rabthAyatPage(){
   +'<small class="muted" id="ayatMeta">Memuat…</small>'
   +'</div></div>'
   +'<div id="ayatList" class="ayat-list"><div class="card"><small class="muted">Memuat ayat…</small></div></div>'
-  +'<div class="ayat-actions" id="ayatActions"></div>'
+  +'<audio id="ayatAudio" preload="none"></audio>'
+  +'<div class="btn-joined ayat-actions" id="ayatActions"></div>'
+  +'<div class="ayat-unmark" id="ayatUnmark"></div>'
   +'<small class="muted ayat-credit">Teks Al-Qur\'an: <a href="https://tanzil.net" target="_blank" rel="noopener">Tanzil Project</a> · CC BY 3.0</small>'
   +'</section>';
 }
@@ -47,7 +49,11 @@ export function rabthAyatPage(){
 export function bindRabthAyat(){
  const root=document.querySelector("[data-ayat-page]");
  if(!root)return;
- root.querySelector("[data-ayat-back]")?.addEventListener("click",()=>{location.hash="progress";});
+ root.querySelector("[data-ayat-back]")?.addEventListener("click",()=>{
+  const player=document.querySelector("#ayatAudio");
+  if(player){player.pause();player.removeAttribute("src");}
+  location.hash="progress";
+ });
 
  const data=getProgressContext(getState());
  const week=Number(root.dataset.week)||1;
@@ -73,20 +79,74 @@ export function bindRabthAyat(){
   return;
  }
 
- // Tandai selesai / batalkan
+ // Simpan / Batal
  const key=week+":"+day+":"+step;
  const done=Boolean(data.checks?.[key]);
- actions.innerHTML='<button class="btn" type="button" data-ayat-back2>Kembali</button>'
-  +'<button class="btn '+(done?"soft":"primary")+'" type="button" data-ayat-toggle>'+(done?"Batalkan tanda selesai":"Tandai selesai")+'</button>';
- actions.querySelector("[data-ayat-back2]")?.addEventListener("click",()=>{location.hash="progress";});
- actions.querySelector("[data-ayat-toggle]")?.addEventListener("click",()=>{
+ const audio=document.querySelector("#ayatAudio");
+ const stopAudio=()=>{if(audio){audio.pause();audio.removeAttribute("src");}};
+ const saveChecks=(nextChecks)=>{
+  setProgressContextPatch({checks:nextChecks});
+  scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+  stopAudio();
+  location.hash="progress";
+ };
+ actions.innerHTML='<button class="btn" type="button" data-ayat-cancel>Batal</button>'
+  +'<button class="btn primary" type="button" data-ayat-save>Simpan</button>';
+ const unmark=document.querySelector("#ayatUnmark");
+ if(done){
+  unmark.innerHTML='<button class="ayat-unmark-btn" type="button" data-ayat-unmark>Batalkan tanda selesai</button>';
+  unmark.querySelector("[data-ayat-unmark]")?.addEventListener("click",()=>{
+   const fresh=getProgressContext(getState());
+   const checks={...(fresh.checks||{})};
+   delete checks[key];
+   saveChecks(checks);
+  });
+ }
+ actions.querySelector("[data-ayat-cancel]")?.addEventListener("click",()=>{stopAudio();location.hash="progress";});
+ actions.querySelector("[data-ayat-save]")?.addEventListener("click",()=>{
   const fresh=getProgressContext(getState());
   const checks={...(fresh.checks||{})};
-  if(checks[key])delete checks[key]; else checks[key]=true;
-  setProgressContextPatch({checks});
-  scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
-  location.hash="progress";
+  checks[key]=true;
+  saveChecks(checks);
  });
+
+ // Pemutar audio per ayat
+ let playingBtn=null;
+ const pad3=value=>String(value).padStart(3,"0");
+ const globalAyah=(surah,ayah)=>{
+  let total=0;
+  for(let index=0;index<surah-1;index+=1)total+=SURAHS[index][1];
+  return total+ayah;
+ };
+ const setPlaying=button=>{
+  if(playingBtn&&playingBtn!==button){playingBtn.classList.remove("playing");playingBtn.textContent="▶";}
+  playingBtn=button;
+  if(button){button.classList.add("playing");button.textContent="❚❚";}
+ };
+ list.addEventListener("click",event=>{
+  const button=event.target.closest("[data-play]");
+  if(!button||!audio)return;
+  if(button===playingBtn){audio.pause();setPlaying(null);return;}
+  const [surah,ayah]=button.dataset.play.split(":").map(Number);
+  audio.dataset.surah=String(surah);
+  audio.dataset.ayah=String(ayah);
+  audio.dataset.fallback="0";
+  audio.src="https://everyayah.com/data/Alafasy_128kbps/"+pad3(surah)+pad3(ayah)+".mp3";
+  setPlaying(button);
+  const attempt=audio.play();
+  if(attempt&&attempt.catch)attempt.catch(()=>setPlaying(null));
+ });
+ audio?.addEventListener("error",()=>{
+  if(!audio||audio.dataset.fallback==="1"){setPlaying(null);return;}
+  audio.dataset.fallback="1";
+  const surah=Number(audio.dataset.surah);
+  const ayah=Number(audio.dataset.ayah);
+  if(!surah||!ayah){setPlaying(null);return;}
+  audio.src="https://cdn.islamic.network/quran/audio/128/ar.alafasy/"+globalAyah(surah,ayah)+".mp3";
+  const retry=audio.play();
+  if(retry&&retry.catch)retry.catch(()=>setPlaying(null));
+ });
+ audio?.addEventListener("ended",()=>setPlaying(null));
 
  versesBetween(awal,akhir).then(({list:verses,startJuz,endJuz})=>{
   if(meta)meta.textContent=(startJuz===endJuz?"Juz "+startJuz:"Juz "+startJuz+"–"+endJuz)+" · "+verses.length+" ayat";
@@ -104,7 +164,9 @@ export function bindRabthAyat(){
      +'<small class="muted">Surah ke-'+verse.surah+'</small></div>';
     if(verse.surah!==1&&verse.surah!==9&&verse.ayah===1)html+='<p class="ayat-bismillah">'+BISMILLAH+'</p>';
    }
-   html+='<p class="ayat"><span class="ayat-no">'+verse.ayah+'</span><span class="ayat-text">'+verse.text+'</span></p>';
+   html+='<p class="ayat"><span class="ayat-tools"><span class="ayat-no">'+verse.ayah+'</span>'
+    +'<button class="ayat-play" type="button" data-play="'+verse.surah+':'+verse.ayah+'" aria-label="Putar ayat '+verse.ayah+'">▶</button></span>'
+    +'<span class="ayat-text">'+verse.text+'</span></p>';
   });
   if(current)html+="</div>";
   list.innerHTML=html;

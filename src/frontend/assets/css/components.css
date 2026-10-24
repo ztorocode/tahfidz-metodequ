@@ -20,6 +20,12 @@
 .ayat{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;direction:rtl}
 .ayat-no{flex:0 0 auto;min-width:30px;height:30px;border-radius:999px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:13px;direction:ltr}
 .ayat-text{font-size:24px;line-height:2.1;font-family:"Scheherazade New","Amiri","Noto Naskh Arabic","Traditional Arabic",serif}
-.ayat-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px}
+.ayat-actions{margin:18px 0 8px}
 .ayat-credit{display:block;text-align:center;margin-top:6px}
-@media(max-width:620px){.ayat-head{flex-direction:column}.ayat-text{font-size:21px;line-height:2}.ayat-actions{grid-template-columns:1fr}.ayat-surah{padding:16px}}
+@media(max-width:620px){.ayat-head{flex-direction:column}.ayat-text{font-size:21px;line-height:2}.ayat-surah{padding:16px}}
+
+.ayat-tools{display:flex;flex-direction:column;gap:6px;align-items:center;flex:0 0 auto}
+.ayat-play{width:30px;height:30px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:11px;line-height:1;padding:0;cursor:pointer}
+.ayat-play.playing{background:var(--brand);color:#fff;border-color:var(--brand)}
+.ayat-unmark{text-align:center;margin-top:2px}
+.ayat-unmark-btn{border:0;background:none;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px;padding:6px}

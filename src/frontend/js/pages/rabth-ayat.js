@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=c8f4a2e6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8f4a2e6";
-import {scheduleSave} from "../utils/progress-sync.js?v=c8f4a2e6";
-import {SURAHS} from "../data/quran-juz.js?v=c8f4a2e6";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=c8f4a2e6";
-import {dayProgress} from "./member-progress.js?v=c8f4a2e6";
+import {getState} from "../store.js?v=2889f847";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=2889f847";
+import {scheduleSave} from "../utils/progress-sync.js?v=2889f847";
+import {SURAHS} from "../data/quran-juz.js?v=2889f847";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=2889f847";
+import {dayProgress} from "./member-progress.js?v=2889f847";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -26,6 +26,9 @@ export function rabthAyatPage(){
  const params=query();
  const day=params.get("day")||data.openDay||"sabtu";
  const step=params.get("step")||"kemarin-1";
+ const isIstima=step.startsWith("istima-");
+ const stepLabel=isIstima?"Istima' qari mujawwad":"Hafalan kemarin";
+ const maxSteps=isIstima?3:5;
  const count=(step.match(/(\d+)$/)||[,"1"])[1];
  const awal=fieldValue(data,week,day,"rabth-awal");
  const akhir=fieldValue(data,week,day,"rabth-akhir");
@@ -34,7 +37,7 @@ export function rabthAyatPage(){
   +'<div class="ayat-head">'
   +'<button class="btn soft" type="button" data-ayat-back>← Kembali</button>'
   +'<div class="ayat-title">'
-  +'<p class="eyebrow">Hafalan kemarin · '+escapeHtml(count)+'x</p>'
+  +'<p class="eyebrow">'+escapeHtml(stepLabel)+' · '+escapeHtml(count)+'x</p>'
   +'<h1>'+title+'</h1>'
   +'<small class="muted" id="ayatMeta">Memuat…</small>'
   +'</div></div>'
@@ -63,14 +66,16 @@ export function bindRabthAyat(){
  const meta=document.querySelector("#ayatMeta");
 
  const stepIndex=Number((step.match(/(\d+)$/)||[,"1"])[1])||1;
- const keyFor=index=>week+":"+day+":kemarin-"+index;
+ const stepPrefix=isIstima?"istima":"kemarin";
+ const keyFor=index=>week+":"+day+":"+stepPrefix+"-"+index;
  const key=keyFor(stepIndex);
 
- // Hafalan kemarin harus berurutan: 1x → 2x → 3x → 4x → 5x
+ // Harus berurutan: kemarin 1x→5x, istima' 1x→3x
  if(stepIndex>1&&!data.checks?.[keyFor(stepIndex-1)]){
   if(meta)meta.textContent="Terkunci";
+  const sequence=isIstima?"1x → 2x → 3x":"1x → 2x → 3x → 4x → 5x";
   list.innerHTML='<div class="card"><b>Selesaikan '+(stepIndex-1)+'x dulu.</b>'
-   +'<p class="muted" style="margin-top:8px">Hafalan kemarin harus berurutan: 1x → 2x → 3x → 4x → 5x. Tandai '+(stepIndex-1)+'x sebagai selesai dulu, baru '+(stepIndex)+'x bisa dibuka.</p></div>';
+   +'<p class="muted" style="margin-top:8px">'+stepLabel+' harus berurutan: '+sequence+'. Tandai '+(stepIndex-1)+'x sebagai selesai dulu, baru '+(stepIndex)+'x bisa dibuka.</p></div>';
   actions.innerHTML='<button class="btn" type="button" data-ayat-back2>Kembali</button>';
   actions.querySelector("[data-ayat-back2]")?.addEventListener("click",()=>{location.hash="progress";});
   return;
@@ -82,7 +87,7 @@ export function bindRabthAyat(){
  if(!awal||!akhir){
   if(meta)meta.textContent="Rabth belum lengkap";
   list.innerHTML='<div class="card"><b>Rabth awal / akhir belum diisi.</b>'
-   +'<p class="muted" style="margin-top:8px">Isi Rabth awal dan Rabth akhir di halaman Progress (pilih surat & ayat), lalu klik lagi tombol hafalan kemarin.</p></div>';
+   +'<p class="muted" style="margin-top:8px">Isi Rabth awal dan Rabth akhir di halaman Progress (pilih surat & ayat), lalu klik lagi tombol di bagian '+stepLabel+'.</p></div>';
   return;
  }
  if(awal.surah>akhir.surah||(awal.surah===akhir.surah&&awal.ayah>akhir.ayah)){
@@ -106,7 +111,7 @@ export function bindRabthAyat(){
  actions.querySelector("[data-ayat-cancel]")?.addEventListener("click",()=>{
   const fresh=getProgressContext(getState());
   const checks={...(fresh.checks||{})};
-  for(let index=stepIndex;index<=5;index+=1)delete checks[keyFor(index)];
+  for(let index=stepIndex;index<=maxSteps;index+=1)delete checks[keyFor(index)];
   saveChecks(checks);
  });
  actions.querySelector("[data-ayat-save]")?.addEventListener("click",()=>{

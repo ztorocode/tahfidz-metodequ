@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=c8f4a2e6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8f4a2e6";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=c8f4a2e6";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=c8f4a2e6";
-import {juzEntries} from "../data/quran-juz.js?v=c8f4a2e6";
+import {getState} from "../store.js?v=2889f847";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=2889f847";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=2889f847";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=2889f847";
+import {juzEntries} from "../data/quran-juz.js?v=2889f847";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -193,6 +193,11 @@ document.addEventListener("click",event=>{
   location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay);
   return;
  }
+ const istima=event.target.closest("[data-istima-open]");
+ if(istima){
+  location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay);
+  return;
+ }
  const pick=event.target.closest("[data-rabth-pick]");
  if(pick){openRabthModal(pick.dataset.rabthPick,pick.dataset.progressDay);return;}
  const modal=document.querySelector("#rabthModal");
@@ -212,6 +217,13 @@ function kemarinButton(data,week,day,label,id){
  return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-kemarin-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
 }
 
+function istimaButton(data,week,day,label,id){
+ const index=Number(id.split("-")[1])||1;
+ const active=isStepDone(data,week,day,id);
+ const locked=index>1&&!isStepDone(data,week,day,"istima-"+(index-1));
+ return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-istima-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
+}
+
 function stepButton(data,week,day,label,id){
  const active=isStepDone(data,week,day,id);
  return '<button type="button" class="member-progress-step'+(active?" active":"")+'" data-progress-step="'+id+'" data-progress-day="'+day+'" aria-pressed="'+String(active)+'">'+label+'</button>';
@@ -219,7 +231,7 @@ function stepButton(data,week,day,label,id){
 
 function dayBody(data,week,day){
  const kemarin=Array.from({length:5},(_,i)=>kemarinButton(data,week,day,(i+1)+"x","kemarin-"+(i+1))).join("");
- const istima=Array.from({length:3},(_,i)=>stepButton(data,week,day,(i+1)+"x","istima-"+(i+1))).join("");
+ const istima=Array.from({length:3},(_,i)=>istimaButton(data,week,day,(i+1)+"x","istima-"+(i+1))).join("");
  const tikrar=Array.from({length:25},(_,i)=>stepButton(data,week,day,(i+1)+"x","tikrar-"+(i+1))).join("");
  return '<div class="member-progress-day-body">'+
   '<div class="member-progress-fields">'+

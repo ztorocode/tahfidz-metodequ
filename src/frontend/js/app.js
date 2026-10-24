@@ -1,13 +1,14 @@
-import {view,routeName} from "./router.js?v=e5c9b7a4";
-import {getState,setState} from "./store.js?v=e5c9b7a4";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e5c9b7a4";
-import {bindLogin} from "./pages/login.js?v=e5c9b7a4";
-import {bindInvite} from "./pages/terima-undangan.js?v=e5c9b7a4";
-import {toast} from "./utils/helpers.js?v=e5c9b7a4";
-import {initProgressSync} from "./utils/progress-sync.js?v=e5c9b7a4";
-import {forgetSetoran} from "./utils/setoran.js?v=e5c9b7a4";
-import {bindWaPage} from "./pages/whatsapp.js?v=e5c9b7a4";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=e5c9b7a4";
+import {view,routeName} from "./router.js?v=f2d8c6b3";
+import {getState,setState} from "./store.js?v=f2d8c6b3";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=f2d8c6b3";
+import {bindLogin} from "./pages/login.js?v=f2d8c6b3";
+import {bindInvite} from "./pages/terima-undangan.js?v=f2d8c6b3";
+import {toast} from "./utils/helpers.js?v=f2d8c6b3";
+import {initProgressSync} from "./utils/progress-sync.js?v=f2d8c6b3";
+import {forgetSetoran} from "./utils/setoran.js?v=f2d8c6b3";
+import {bindWaPage} from "./pages/whatsapp.js?v=f2d8c6b3";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=f2d8c6b3";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=f2d8c6b3";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -120,6 +121,7 @@ async function loadPendingList(role,boxId,reload){
  }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
 }
 function bindPageActions(){
+ if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
  loadInviteBanner();
@@ -540,7 +542,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e5c9b7a4"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f2d8c6b3"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

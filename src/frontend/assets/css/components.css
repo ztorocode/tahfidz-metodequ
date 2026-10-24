@@ -8,3 +8,18 @@
 @media(max-width:620px){.member-progress-page{width:100%}.member-progress-weeks{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.member-progress-week{min-width:0;min-height:52px;padding:0 3px;font-size:clamp(11px,3.2vw,14px)}.member-progress-day-head{min-height:72px;padding:14px 16px}.member-progress-day-title{gap:8px}.member-progress-day-title b,.member-progress-friday b{font-size:20px}.member-progress-day-title span,.member-progress-friday span,.member-progress-day-head strong{font-size:15px}.member-progress-day-body{padding:16px;gap:17px}.member-progress-fields{gap:8px}.member-progress-field label,.member-progress-block>label{font-size:13px}.member-progress-input{height:54px;padding:9px 10px}.member-progress-options{gap:7px}.member-progress-options.cols-7{grid-template-columns:repeat(7,minmax(36px,1fr))}.member-progress-step{min-height:48px;padding:6px 4px;font-size:13px}.member-progress-friday{min-height:72px;padding:14px 16px}}
 #inviteMessage{color:var(--danger);font-weight:700;font-size:14px}
 .member-progress-pick{display:flex;align-items:center;text-align:left;cursor:pointer;font:inherit;line-height:1.2}.member-progress-pick.empty{color:var(--muted)}.rabth-form{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:10px;align-items:start}.rabth-label{display:block;margin-bottom:0;font-size:14px;color:var(--muted)}.rabth-label select,.rabth-label input{display:block;width:100%;margin-top:6px;height:46px}
+.ayat-page{width:min(100%,820px);margin:0 auto}
+.ayat-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:16px}
+.ayat-title{min-width:0}
+.ayat-title h1{font-size:22px;margin:4px 0 6px;word-break:break-word}
+.ayat-list{display:grid;gap:16px}
+.ayat-surah{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px 20px}
+.ayat-surah-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:14px}
+.ayat-surah-head h3{font-size:18px}
+.ayat-bismillah{font-size:22px;line-height:2;text-align:center;direction:rtl;margin:0 0 14px}
+.ayat{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;direction:rtl}
+.ayat-no{flex:0 0 auto;min-width:30px;height:30px;border-radius:999px;background:var(--brand-soft);color:var(--brand);display:inline-flex;align-items:center;justify-content:center;font-size:13px;direction:ltr}
+.ayat-text{font-size:24px;line-height:2.1;font-family:"Scheherazade New","Amiri","Noto Naskh Arabic","Traditional Arabic",serif}
+.ayat-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 8px}
+.ayat-credit{display:block;text-align:center;margin-top:6px}
+@media(max-width:620px){.ayat-head{flex-direction:column}.ayat-text{font-size:21px;line-height:2}.ayat-actions{grid-template-columns:1fr}.ayat-surah{padding:16px}}

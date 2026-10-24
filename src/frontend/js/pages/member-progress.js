@@ -1,7 +1,8 @@
-import {getState} from "../store.js?v=a2b6d3e8";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=a2b6d3e8";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=a2b6d3e8";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=a2b6d3e8";
+import {getState} from "../store.js?v=c8e1f4a7";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8e1f4a7";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=c8e1f4a7";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=c8e1f4a7";
+import {juzEntries} from "../data/quran-juz.js?v=c8e1f4a7";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -51,6 +52,132 @@ function progressField(data,week,day,label,id,placeholder="",numeric=false){
  return '<div class="member-progress-field"><label>'+label+'</label><input class="member-progress-input"'+numericAttr+' data-progress-field="'+id+'" data-progress-day="'+day+'" value="'+escapeHtml(fieldValue(data,week,day,id))+'" placeholder="'+placeholder+'"></div>';
 }
 
+let rabthTarget=null;
+
+/** Rabth diisi lewat picker surat & ayat, bukan ketik bebas. */
+function rabthField(data,week,day,label,id){
+ const value=String(fieldValue(data,week,day,id)||"");
+ return '<div class="member-progress-field"><label>'+label+'</label>'
+  +'<button type="button" class="member-progress-input member-progress-pick'+(value?'':' empty')+'" data-rabth-pick="'+id+'" data-progress-day="'+day+'">'
+  +(value?escapeHtml(value):"Pilih surat &amp; ayat")+'</button></div>';
+}
+
+function rabthModal(){
+ return '<div class="modal-backdrop hidden" id="rabthModal"><div class="modal-card">'
+  +'<div><p class="eyebrow" id="rabthModalEyebrow">Rabth</p><h2 id="rabthModalTitle">Pilih surat &amp; ayat</h2></div>'
+  +'<p class="muted" id="rabthModalNote" style="margin:12px 0 0"></p>'
+  +'<div id="rabthModalForm" style="margin-top:14px">'
+  +'<label class="rabth-label">Surat<select class="input" id="rabthSurah"></select></label>'
+  +'<label class="rabth-label">Ayat<select class="input" id="rabthAyah"></select></label>'
+  +'</div>'
+  +'<small class="muted" id="rabthModalMessage" style="display:block;margin-top:8px"></small>'
+  +'<div class="btn-joined" style="margin-top:16px">'
+  +'<button class="btn" type="button" data-rabth-close>Tutup</button>'
+  +'<button class="btn primary" type="button" data-rabth-save>Simpan</button>'
+  +'</div></div></div>';
+}
+
+function rabthJuzOf(value){
+ const n=Number(String(value||"").replace(",","."));
+ if(!Number.isFinite(n)||n<1)return 0;
+ return Math.min(30,Math.ceil(n));
+}
+
+function rabthEntries(){
+ return rabthTarget&&rabthTarget.juz?juzEntries(rabthTarget.juz):[];
+}
+
+function fillRabthAyahs(){
+ const entries=rabthEntries();
+ const surahSel=document.querySelector("#rabthSurah");
+ const ayahSel=document.querySelector("#rabthAyah");
+ if(!surahSel||!ayahSel)return;
+ const entry=entries[Number(surahSel.value||0)];
+ if(!entry){ayahSel.innerHTML="";return;}
+ const options=[];
+ for(let ayah=entry.from;ayah<=entry.to;ayah+=1)options.push('<option value="'+ayah+'">'+ayah+'</option>');
+ ayahSel.innerHTML=options.join("");
+}
+
+function closeRabthModal(){
+ document.querySelector("#rabthModal")?.classList.add("hidden");
+ rabthTarget=null;
+}
+
+function openRabthModal(field,day){
+ const data=getProgressContext(getState());
+ const week=stateWeek(data);
+ const juz=rabthJuzOf(fieldValue(data,week,day,"murajaah"));
+ rabthTarget={field,day,week,juz};
+ const modal=document.querySelector("#rabthModal");
+ if(!modal)return;
+ document.querySelector("#rabthModalEyebrow").textContent=field==="rabth-akhir"?"Rabth akhir":"Rabth awal";
+ document.querySelector("#rabthModalMessage").textContent="";
+ const form=document.querySelector("#rabthModalForm");
+ const note=document.querySelector("#rabthModalNote");
+ if(!juz){
+  note.textContent="Isi kolom Muraja'ah (juz) dulu dengan angka 1–30, lalu pilih rabth.";
+  form.classList.add("hidden");
+  modal.classList.remove("hidden");
+  return;
+ }
+ form.classList.remove("hidden");
+ note.textContent="Pilihan surat & ayat dari Juz "+juz+" sesuai kolom Muraja'ah.";
+ const entries=rabthEntries();
+ const surahSel=document.querySelector("#rabthSurah");
+ surahSel.innerHTML=entries.map((entry,index)=>'<option value="'+index+'">'+escapeHtml(entry.name)+' (ayat '+entry.from+'–'+entry.to+')</option>').join("");
+ const current=String(fieldValue(data,week,day,field)||"");
+ const match=current.match(/^(.*)\s+(\d+)$/);
+ if(match){
+  const index=entries.findIndex(entry=>entry.name===match[1]);
+  if(index>=0)surahSel.value=String(index);
+ }
+ fillRabthAyahs();
+ if(match){
+  const ayahSel=document.querySelector("#rabthAyah");
+  if(ayahSel&&Array.prototype.some.call(ayahSel.options,option=>option.value===match[2]))ayahSel.value=match[2];
+ }
+ modal.classList.remove("hidden");
+}
+
+function saveRabth(){
+ if(!rabthTarget||!rabthTarget.juz){closeRabthModal();return;}
+ const entries=rabthEntries();
+ const surahSel=document.querySelector("#rabthSurah");
+ const ayahSel=document.querySelector("#rabthAyah");
+ const entry=entries[Number(surahSel?.value||0)];
+ const ayah=Number(ayahSel?.value||0);
+ const message=document.querySelector("#rabthModalMessage");
+ if(!entry||!ayah){
+  if(message)message.textContent="Pilih surat dan ayat dulu.";
+  return;
+ }
+ const value=entry.name+" "+ayah;
+ const data=getProgressContext(getState());
+ const key=fieldKey(rabthTarget.week,rabthTarget.day,rabthTarget.field);
+ setProgressContextPatch({fields:{...(data.fields||{}),[key]:value}});
+ const button=document.querySelector('[data-rabth-pick="'+rabthTarget.field+'"][data-progress-day="'+rabthTarget.day+'"]');
+ if(button){button.textContent=value;button.classList.remove("empty");}
+ const week=rabthTarget.week, day=rabthTarget.day;
+ updatePercent(day);
+ scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+ closeRabthModal();
+}
+
+document.addEventListener("click",event=>{
+ if(location.hash!=="#progress")return;
+ const pick=event.target.closest("[data-rabth-pick]");
+ if(pick){openRabthModal(pick.dataset.rabthPick,pick.dataset.progressDay);return;}
+ const modal=document.querySelector("#rabthModal");
+ if(!modal||modal.classList.contains("hidden"))return;
+ if(event.target.closest("[data-rabth-close]")||event.target===modal){closeRabthModal();return;}
+ if(event.target.closest("[data-rabth-save]"))saveRabth();
+});
+document.addEventListener("change",event=>{
+ if(location.hash!=="#progress")return;
+ if(event.target.id==="rabthSurah")fillRabthAyahs();
+});
+
 function stepButton(data,week,day,label,id){
  const active=isStepDone(data,week,day,id);
  return '<button type="button" class="member-progress-step'+(active?" active":"")+'" data-progress-step="'+id+'" data-progress-day="'+day+'" aria-pressed="'+String(active)+'">'+label+'</button>';
@@ -65,8 +192,8 @@ function dayBody(data,week,day){
    progressField(data,week,day,"Target hal/hari","target","",true)+
    progressField(data,week,day,"Muraja\'ah (juz)","murajaah","",true)+
    '<div class="member-progress-rabth">'+
-    progressField(data,week,day,"Rabth awal","rabth-awal")+
-    progressField(data,week,day,"Rabth akhir","rabth-akhir")+
+    rabthField(data,week,day,"Rabth awal","rabth-awal")+
+    rabthField(data,week,day,"Rabth akhir","rabth-akhir")+
    '</div>'+
   '</div>'+
   '<div class="member-progress-block"><label>Hafalan kemarin</label><div class="member-progress-options cols-5">'+kemarin+'</div></div>'+
@@ -207,6 +334,7 @@ export function memberProgressPage(){
   '<div class="member-progress-days">'+
    weekDaysHtml(data,week,start,fridayDate).join("")+
   '</div>'+
+  rabthModal()+
  '</section>';
 }
 

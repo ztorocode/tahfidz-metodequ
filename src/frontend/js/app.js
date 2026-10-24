@@ -1,13 +1,13 @@
-import {view,routeName} from "./router.js?v=a2b6d3e8";
-import {getState,setState} from "./store.js?v=a2b6d3e8";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=a2b6d3e8";
-import {bindLogin} from "./pages/login.js?v=a2b6d3e8";
-import {bindInvite} from "./pages/terima-undangan.js?v=a2b6d3e8";
-import {toast} from "./utils/helpers.js?v=a2b6d3e8";
-import {initProgressSync} from "./utils/progress-sync.js?v=a2b6d3e8";
-import {forgetSetoran} from "./utils/setoran.js?v=a2b6d3e8";
-import {bindWaPage} from "./pages/whatsapp.js?v=a2b6d3e8";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=a2b6d3e8";
+import {view,routeName} from "./router.js?v=c8e1f4a7";
+import {getState,setState} from "./store.js?v=c8e1f4a7";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c8e1f4a7";
+import {bindLogin} from "./pages/login.js?v=c8e1f4a7";
+import {bindInvite} from "./pages/terima-undangan.js?v=c8e1f4a7";
+import {toast} from "./utils/helpers.js?v=c8e1f4a7";
+import {initProgressSync} from "./utils/progress-sync.js?v=c8e1f4a7";
+import {forgetSetoran} from "./utils/setoran.js?v=c8e1f4a7";
+import {bindWaPage} from "./pages/whatsapp.js?v=c8e1f4a7";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c8e1f4a7";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -540,7 +540,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a2b6d3e8"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c8e1f4a7"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

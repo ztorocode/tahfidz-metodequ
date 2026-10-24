@@ -89,6 +89,7 @@ final class RegistrationService
             }
 
             $emailSent = $this->sendWelcomeEmail($data, $verifyToken, $ownsTransaction);
+            $waSent = $this->sendWelcomeWhatsApp($data, $verifyToken, $userId, $ownsTransaction);
 
             return [
                 'account_type' => $data['mode'],
@@ -102,6 +103,7 @@ final class RegistrationService
                 'pondok' => $pondok,
                 'verification' => [
                     'email_sent' => $emailSent,
+                    'whatsapp_sent' => $waSent,
                     'expires_in_hours' => 48,
                 ],
             ];
@@ -143,6 +145,28 @@ final class RegistrationService
             );
         } catch (\Throwable $exception) {
             error_log('MetodeQu welcome email failed: ' . $exception->getMessage());
+            return false;
+        }
+    }
+
+    private function sendWelcomeWhatsApp(array $data, string $verifyToken, int $userId, bool $ownsTransaction): bool
+    {
+        // Smoke test memakai transaksi luar + email dummy: jangan kirim WhatsApp asli.
+        if (!$ownsTransaction || str_ends_with($data['email'], '@invalid.example')) {
+            return false;
+        }
+
+        try {
+            return (new VerificationWhatsApp($this->pdo))->send(
+                (string) $data['email'],
+                (string) $data['name'],
+                (string) $data['phone'],
+                $verifyToken,
+                $userId,
+                true
+            );
+        } catch (\Throwable $exception) {
+            error_log('MetodeQu welcome WhatsApp failed: ' . $exception->getMessage());
             return false;
         }
     }

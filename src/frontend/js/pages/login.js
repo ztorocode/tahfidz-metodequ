@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=d1c4e8a2";
+import {setState} from "../store.js?v=f4a7c1d9";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -76,7 +76,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=d1c4e8a2">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=f4a7c1d9">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -368,12 +368,15 @@ export function bindLogin(){
    try{
      const result=await postRegistration(payload);
      const user=result.user||{};
-     const sent=result?.verification?.email_sent!==false;
+     const sent=result?.verification?.email_sent===true;
+     const waSent=result?.verification?.whatsapp_sent===true;
+     const via=[sent?"email":null,waSent?"WhatsApp":null].filter(Boolean);
+     const viaText=via.length?("Kami sudah mengirim link verifikasi lewat "+via.join(" dan ")+". Link berlaku 48 jam — buka sebelum bisa masuk."):"Namun link verifikasi belum berhasil dikirim; gunakan tombol kirim ulang di halaman masuk.";
      const card=document.querySelector("#authCard");
      if(card){
       card.innerHTML=`<div class="stack">
        <div><p class="eyebrow">Pendaftaran berhasil</p><h1>Cek email Anda</h1>
-        <p class="muted">Akun <b>${esc(user.email)}</b> sudah dibuat.${sent?" Link verifikasi sudah dikirim ke alamat itu dan berlaku 48 jam — buka link tersebut sebelum bisa masuk.":" Namun email verifikasi gagal terkirim; gunakan tombol kirim ulang di halaman masuk."}</p>
+        <p class="muted">Akun <b>${esc(user.email)}</b> sudah dibuat. ${viaText}</p>
         <p class="muted" style="margin-top:8px">Belum menerima email? Cek folder spam, lalu minta kirim ulang dari halaman masuk.</p></div>
        <button class="btn primary full" id="backToLoginAfterRegister" type="button">Ke halaman masuk</button>
       </div>`;

@@ -22,7 +22,7 @@ final class ResendVerificationService
         }
 
         $statement = $this->pdo->prepare(
-            'SELECT id, name, email, email_verified_at FROM users
+            'SELECT id, name, email, phone_e164, email_verified_at FROM users
              WHERE (email = :by_email OR username = :by_username) AND deleted_at IS NULL
              LIMIT 1'
         );
@@ -81,11 +81,29 @@ final class ResendVerificationService
             error_log('MetodeQu resend verification failed: ' . $exception->getMessage());
         }
 
+        $waSent = (new VerificationWhatsApp($this->pdo))->send(
+            (string) $user['email'],
+            (string) $user['name'],
+            (string) ($user['phone_e164'] ?? ''),
+            $token,
+            (int) $user['id'],
+            false
+        );
+
+        $channels = [];
+        if ($sent) {
+            $channels[] = 'email ' . $user['email'];
+        }
+        if ($waSent) {
+            $channels[] = 'WhatsApp';
+        }
+
         return [
             'email_sent' => $sent,
-            'message' => $sent
-                ? 'Link verifikasi baru sudah dikirim ke ' . $user['email'] . '. Cek kotak masuk atau folder spam.'
-                : 'Link verifikasi baru sudah dibuat, tetapi email gagal dikirim. Hubungi admin pondok.',
+            'whatsapp_sent' => $waSent,
+            'message' => $channels === []
+                ? 'Link verifikasi baru sudah dibuat, tetapi email dan WhatsApp gagal terkirim. Hubungi admin pondok.'
+                : 'Link verifikasi baru sudah dikirim lewat ' . implode(' dan ', $channels) . '.',
         ];
     }
 }

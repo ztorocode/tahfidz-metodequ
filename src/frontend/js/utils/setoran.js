@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=b9f2d6e1";
+import {getState} from "../store.js?v=d3a8f5c2";
 
 /**
  * Penilaian setoran seorang santri oleh musyrif halaqahnya (tabel

@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=b9f2d6e1";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b9f2d6e1";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=b9f2d6e1";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=b9f2d6e1";
-import {juzEntries} from "../data/quran-juz.js?v=b9f2d6e1";
+import {getState} from "../store.js?v=d3a8f5c2";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=d3a8f5c2";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=d3a8f5c2";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=d3a8f5c2";
+import {juzEntries} from "../data/quran-juz.js?v=d3a8f5c2";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -68,7 +68,7 @@ function rabthModal(){
   +'<p class="muted" id="rabthModalNote" style="margin:12px 0 0"></p>'
   +'<div id="rabthModalForm" class="rabth-form" style="margin-top:14px">'
   +'<label class="rabth-label">Surat<select class="input" id="rabthSurah"></select></label>'
-  +'<label class="rabth-label">Ayat<select class="input" id="rabthAyah"></select></label>'
+  +'<label class="rabth-label">Ayat<input class="input" type="number" id="rabthAyah" inputmode="numeric" min="1" step="1" placeholder="ayat"></label>'
   +'</div>'
   +'<small class="muted" id="rabthModalMessage" style="display:block;margin-top:8px"></small>'
   +'<div class="btn-joined" style="margin-top:16px">'
@@ -90,13 +90,15 @@ function rabthEntries(){
 function fillRabthAyahs(){
  const entries=rabthEntries();
  const surahSel=document.querySelector("#rabthSurah");
- const ayahSel=document.querySelector("#rabthAyah");
- if(!surahSel||!ayahSel)return;
+ const ayahInput=document.querySelector("#rabthAyah");
+ if(!surahSel||!ayahInput)return;
  const entry=entries[Number(surahSel.value||0)];
- if(!entry){ayahSel.innerHTML="";return;}
- const options=[];
- for(let ayah=entry.from;ayah<=entry.to;ayah+=1)options.push('<option value="'+ayah+'">'+ayah+'</option>');
- ayahSel.innerHTML=options.join("");
+ if(!entry)return;
+ ayahInput.min=String(entry.from);
+ ayahInput.max=String(entry.to);
+ ayahInput.placeholder=entry.from+"–"+entry.to;
+ const current=Number(ayahInput.value);
+ if(!current||current<entry.from||current>entry.to)ayahInput.value=String(entry.from);
 }
 
 function closeRabthModal(){
@@ -134,8 +136,10 @@ function openRabthModal(field,day){
  }
  fillRabthAyahs();
  if(match){
-  const ayahSel=document.querySelector("#rabthAyah");
-  if(ayahSel&&Array.prototype.some.call(ayahSel.options,option=>option.value===match[2]))ayahSel.value=match[2];
+  const ayahInput=document.querySelector("#rabthAyah");
+  const entry=entries[Number(surahSel.value||0)];
+  const ayah=Number(match[2]);
+  if(ayahInput&&entry&&ayah>=entry.from&&ayah<=entry.to)ayahInput.value=String(ayah);
  }
  modal.classList.remove("hidden");
 }
@@ -144,12 +148,16 @@ function saveRabth(){
  if(!rabthTarget||!rabthTarget.juz){closeRabthModal();return;}
  const entries=rabthEntries();
  const surahSel=document.querySelector("#rabthSurah");
- const ayahSel=document.querySelector("#rabthAyah");
+ const ayahInput=document.querySelector("#rabthAyah");
  const entry=entries[Number(surahSel?.value||0)];
- const ayah=Number(ayahSel?.value||0);
+ const ayah=Number(ayahInput?.value||0);
  const message=document.querySelector("#rabthModalMessage");
  if(!entry||!ayah){
-  if(message)message.textContent="Pilih surat dan ayat dulu.";
+  if(message)message.textContent="Isi nomor ayat dulu.";
+  return;
+ }
+ if(ayah<entry.from||ayah>entry.to){
+  if(message)message.textContent="Ayat harus antara "+entry.from+" dan "+entry.to+" untuk "+entry.name+" di juz ini.";
   return;
  }
  const value=entry.name+" "+ayah;

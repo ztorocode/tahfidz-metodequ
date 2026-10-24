@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=b7e3f1d5";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b7e3f1d5";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=b7e3f1d5";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=b7e3f1d5";
-import {juzEntries} from "../data/quran-juz.js?v=b7e3f1d5";
+import {getState} from "../store.js?v=c8f4a2e6";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8f4a2e6";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=c8f4a2e6";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=c8f4a2e6";
+import {juzEntries} from "../data/quran-juz.js?v=c8f4a2e6";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -206,8 +206,10 @@ document.addEventListener("change",event=>{
 });
 
 function kemarinButton(data,week,day,label,id){
+ const index=Number(id.split("-")[1])||1;
  const active=isStepDone(data,week,day,id);
- return '<button type="button" class="member-progress-step'+(active?" active":"")+'" data-kemarin-open="'+id+'" data-progress-day="'+day+'" aria-pressed="'+String(active)+'">'+label+'</button>';
+ const locked=index>1&&!isStepDone(data,week,day,"kemarin-"+(index-1));
+ return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-kemarin-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
 }
 
 function stepButton(data,week,day,label,id){

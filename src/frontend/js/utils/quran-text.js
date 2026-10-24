@@ -1,6 +1,6 @@
-import {JUZ,SURAHS} from "../data/quran-juz.js?v=b7e3f1d5";
+import {JUZ,SURAHS} from "../data/quran-juz.js?v=c8f4a2e6";
 
-const VERSION="b7e3f1d5";
+const VERSION="c8f4a2e6";
 const loaded=new Map();
 
 /** Nomor surah dari namanya (mis. "Hud" → 11). 0 bila tidak dikenal. */

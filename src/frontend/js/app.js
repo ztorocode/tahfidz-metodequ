@@ -1,14 +1,14 @@
-import {view,routeName} from "./router.js?v=b7e3f1d5";
-import {getState,setState} from "./store.js?v=b7e3f1d5";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b7e3f1d5";
-import {bindLogin} from "./pages/login.js?v=b7e3f1d5";
-import {bindInvite} from "./pages/terima-undangan.js?v=b7e3f1d5";
-import {toast} from "./utils/helpers.js?v=b7e3f1d5";
-import {initProgressSync} from "./utils/progress-sync.js?v=b7e3f1d5";
-import {forgetSetoran} from "./utils/setoran.js?v=b7e3f1d5";
-import {bindWaPage} from "./pages/whatsapp.js?v=b7e3f1d5";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=b7e3f1d5";
-import {bindRabthAyat} from "./pages/rabth-ayat.js?v=b7e3f1d5";
+import {view,routeName} from "./router.js?v=c8f4a2e6";
+import {getState,setState} from "./store.js?v=c8f4a2e6";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c8f4a2e6";
+import {bindLogin} from "./pages/login.js?v=c8f4a2e6";
+import {bindInvite} from "./pages/terima-undangan.js?v=c8f4a2e6";
+import {toast} from "./utils/helpers.js?v=c8f4a2e6";
+import {initProgressSync} from "./utils/progress-sync.js?v=c8f4a2e6";
+import {forgetSetoran} from "./utils/setoran.js?v=c8f4a2e6";
+import {bindWaPage} from "./pages/whatsapp.js?v=c8f4a2e6";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c8f4a2e6";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=c8f4a2e6";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -542,7 +542,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b7e3f1d5"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c8f4a2e6"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

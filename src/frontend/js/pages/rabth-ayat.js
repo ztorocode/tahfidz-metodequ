@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=b7e3f1d5";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b7e3f1d5";
-import {scheduleSave} from "../utils/progress-sync.js?v=b7e3f1d5";
-import {SURAHS} from "../data/quran-juz.js?v=b7e3f1d5";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=b7e3f1d5";
-import {dayProgress} from "./member-progress.js?v=b7e3f1d5";
+import {getState} from "../store.js?v=c8f4a2e6";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8f4a2e6";
+import {scheduleSave} from "../utils/progress-sync.js?v=c8f4a2e6";
+import {SURAHS} from "../data/quran-juz.js?v=c8f4a2e6";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=c8f4a2e6";
+import {dayProgress} from "./member-progress.js?v=c8f4a2e6";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -62,6 +62,20 @@ export function bindRabthAyat(){
  const actions=document.querySelector("#ayatActions");
  const meta=document.querySelector("#ayatMeta");
 
+ const stepIndex=Number((step.match(/(\d+)$/)||[,"1"])[1])||1;
+ const keyFor=index=>week+":"+day+":kemarin-"+index;
+ const key=keyFor(stepIndex);
+
+ // Hafalan kemarin harus berurutan: 1x → 2x → 3x → 4x → 5x
+ if(stepIndex>1&&!data.checks?.[keyFor(stepIndex-1)]){
+  if(meta)meta.textContent="Terkunci";
+  list.innerHTML='<div class="card"><b>Selesaikan '+(stepIndex-1)+'x dulu.</b>'
+   +'<p class="muted" style="margin-top:8px">Hafalan kemarin harus berurutan: 1x → 2x → 3x → 4x → 5x. Tandai '+(stepIndex-1)+'x sebagai selesai dulu, baru '+(stepIndex)+'x bisa dibuka.</p></div>';
+  actions.innerHTML='<button class="btn" type="button" data-ayat-back2>Kembali</button>';
+  actions.querySelector("[data-ayat-back2]")?.addEventListener("click",()=>{location.hash="progress";});
+  return;
+ }
+
  const awal=parseVerseRef(fieldValue(data,week,day,"rabth-awal"));
  const akhir=parseVerseRef(fieldValue(data,week,day,"rabth-akhir"));
 
@@ -79,7 +93,6 @@ export function bindRabthAyat(){
  }
 
  // Simpan / Batal
- const key=week+":"+day+":"+step;
  const audio=document.querySelector("#ayatAudio");
  const stopAudio=()=>{if(audio){audio.pause();audio.removeAttribute("src");}};
  const saveChecks=(nextChecks)=>{
@@ -93,7 +106,7 @@ export function bindRabthAyat(){
  actions.querySelector("[data-ayat-cancel]")?.addEventListener("click",()=>{
   const fresh=getProgressContext(getState());
   const checks={...(fresh.checks||{})};
-  delete checks[key];
+  for(let index=stepIndex;index<=5;index+=1)delete checks[keyFor(index)];
   saveChecks(checks);
  });
  actions.querySelector("[data-ayat-save]")?.addEventListener("click",()=>{

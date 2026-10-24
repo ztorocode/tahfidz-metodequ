@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=d3a8f5c2";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=d3a8f5c2";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=d3a8f5c2";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=d3a8f5c2";
-import {juzEntries} from "../data/quran-juz.js?v=d3a8f5c2";
+import {getState} from "../store.js?v=e5c9b7a4";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e5c9b7a4";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=e5c9b7a4";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=e5c9b7a4";
+import {juzEntries} from "../data/quran-juz.js?v=e5c9b7a4";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -83,8 +83,18 @@ function rabthJuzOf(value){
  return Math.min(30,Math.ceil(n));
 }
 
+/** Rabth akhir ikut membuka 1 juz berikutnya (maksimal juz 30). */
+function rabthJuzList(){
+ const base=rabthTarget?.juz||0;
+ if(!base)return [];
+ if(rabthTarget.field==="rabth-akhir"&&base<30)return [base,base+1];
+ return [base];
+}
+
 function rabthEntries(){
- return rabthTarget&&rabthTarget.juz?juzEntries(rabthTarget.juz):[];
+ const list=rabthJuzList();
+ if(!list.length)return [];
+ return list.flatMap(juz=>juzEntries(juz).map(entry=>({...entry,juz})));
 }
 
 function fillRabthAyahs(){
@@ -124,14 +134,18 @@ function openRabthModal(field,day){
   return;
  }
  form.classList.remove("hidden");
- note.textContent="Pilihan surat & ayat dari Juz "+juz+" sesuai kolom Muraja'ah.";
+ const juzList=rabthJuzList();
+ note.textContent=juzList.length>1
+  ?"Pilihan surat & ayat dari Juz "+juzList.join(" dan ")+" — rabth akhir mencakup 1 juz berikutnya."
+  :"Pilihan surat & ayat dari Juz "+juz+" sesuai kolom Muraja'ah.";
  const entries=rabthEntries();
  const surahSel=document.querySelector("#rabthSurah");
- surahSel.innerHTML=entries.map((entry,index)=>'<option value="'+index+'">'+escapeHtml(entry.name)+' (ayat '+entry.from+'–'+entry.to+')</option>').join("");
+ surahSel.innerHTML=entries.map((entry,index)=>'<option value="'+index+'">'+escapeHtml(entry.name)+' (ayat '+entry.from+'–'+entry.to+')'+(juzList.length>1?' · Juz '+entry.juz:'')+'</option>').join("");
  const current=String(fieldValue(data,week,day,field)||"");
  const match=current.match(/^(.*)\s+(\d+)$/);
  if(match){
-  const index=entries.findIndex(entry=>entry.name===match[1]);
+  const ayah=Number(match[2]);
+  const index=entries.findIndex(entry=>entry.name===match[1]&&ayah>=entry.from&&ayah<=entry.to);
   if(index>=0)surahSel.value=String(index);
  }
  fillRabthAyahs();
@@ -157,7 +171,7 @@ function saveRabth(){
   return;
  }
  if(ayah<entry.from||ayah>entry.to){
-  if(message)message.textContent="Ayat harus antara "+entry.from+" dan "+entry.to+" untuk "+entry.name+" di juz ini.";
+  if(message)message.textContent="Ayat harus antara "+entry.from+" dan "+entry.to+" untuk "+entry.name+" (Juz "+entry.juz+").";
   return;
  }
  const value=entry.name+" "+ayah;

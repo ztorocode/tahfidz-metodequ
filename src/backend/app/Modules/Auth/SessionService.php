@@ -38,6 +38,17 @@ final class SessionService
             throw new RegistrationException('Akun tidak aktif.', 403);
         }
 
+        // Email wajib diverifikasi lebih dulu (akun lama sudah ditandai terverifikasi).
+        if (($user['email_verified_at'] ?? null) === null) {
+            throw new RegistrationException(
+                'Email Anda belum diverifikasi. Buka link verifikasi yang kami kirim ke ' . $user['email']
+                    . ', lalu coba masuk lagi. Bisa juga kirim ulang lewat tombol di bawah.',
+                403,
+                ['email' => 'Email belum diverifikasi.'],
+                'email_unverified'
+            );
+        }
+
         $token = bin2hex(random_bytes(32));
         $expiresAt = (new \DateTimeImmutable('+' . self::SESSION_DAYS . ' days'))->format('Y-m-d H:i:s');
 
@@ -68,6 +79,17 @@ final class SessionService
      */
     public function startSession(array $user, array $context = []): array
     {
+        // Sama seperti login email: akun harus sudah verifikasi email.
+        if (($user['email_verified_at'] ?? null) === null) {
+            throw new RegistrationException(
+                'Email Anda belum diverifikasi. Buka link verifikasi yang kami kirim ke ' . $user['email']
+                    . ', lalu coba masuk lagi.',
+                403,
+                ['email' => 'Email belum diverifikasi.'],
+                'email_unverified'
+            );
+        }
+
         $token = bin2hex(random_bytes(32));
         $expiresAt = (new \DateTimeImmutable('+' . self::SESSION_DAYS . ' days'))->format('Y-m-d H:i:s');
 

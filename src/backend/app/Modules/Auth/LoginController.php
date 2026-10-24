@@ -32,6 +32,7 @@ final class LoginController
                 'success' => false,
                 'message' => $exception->getMessage(),
                 'errors' => $exception->errors,
+                'code' => $exception->reasonCode,
             ], $exception->statusCode);
         }
     }

@@ -135,23 +135,12 @@ final class RegistrationService
         }
 
         try {
-            $mailer = \App\Core\SmtpMailer::fromConfig();
-            $baseUrl = rtrim((string) (getenv('APP_URL') ?: ''), '/');
-            $verifyUrl = $baseUrl . '/api/auth/verify-email?token=' . urlencode($verifyToken);
-            $name = htmlspecialchars($data['name'], ENT_QUOTES, 'UTF-8');
-
-            $html = "<p>Halo {$name},</p>"
-                . '<p>Selamat datang di <strong>MetodeQu</strong> — akun Anda telah terdaftar.</p>'
-                . '<p>Silakan verifikasi email Anda dengan mengklik link berikut (berlaku 48 jam):</p>'
-                . "<p><a href=\"{$verifyUrl}\">Verifikasi Email Saya</a></p>"
-                . "<p>Jika tombol tidak berfungsi, salin link ini ke browser:<br>{$verifyUrl}</p>"
-                . '<p>Abaikan email ini jika Anda tidak mendaftar.</p>';
-
-            $text = "Halo {$data['name']},\n\nSelamat datang di MetodeQu — akun Anda telah terdaftar.\n\n"
-                . "Verifikasi email Anda (berlaku 48 jam):\n{$verifyUrl}\n\nAbaikan email ini jika Anda tidak mendaftar.";
-
-            $mailer->send($data['email'], 'Selamat datang di MetodeQu — verifikasi email Anda', $html, $text);
-            return true;
+            return (new VerificationMailer())->send(
+                (string) $data['email'],
+                (string) $data['name'],
+                $verifyToken,
+                true
+            );
         } catch (\Throwable $exception) {
             error_log('MetodeQu welcome email failed: ' . $exception->getMessage());
             return false;

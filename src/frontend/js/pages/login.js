@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=6b9d0e42";
+import {setState} from "../store.js?v=a83f2c51";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -9,6 +9,7 @@ const demoAccounts=[
 ];
 
 function normalizePhone(value=""){return value.replace(/\D/g,"")}
+function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]))}
 
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
@@ -75,7 +76,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=6b9d0e42">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=a83f2c51">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -192,6 +193,40 @@ export function bindLogin(){
   });
  };
 
+ /** Akun ada tapi emailnya belum diverifikasi: tampilkan tombol kirim ulang. */
+ const showResendVerification=(email)=>{
+  const message=document.querySelector("#loginMessage");
+  let box=document.querySelector("#resendVerifyBox");
+  if(!box){
+   box=document.createElement("div");
+   box.id="resendVerifyBox";
+   box.className="stack";
+   box.style.marginTop="4px";
+   box.innerHTML=`<button class="btn soft full" id="resendVerifyBtn" type="button">Kirim ulang email verifikasi</button><small class="muted" id="resendVerifyMessage"></small>`;
+   message?.insertAdjacentElement("afterend",box);
+  }
+  document.querySelector("#resendVerifyBtn")?.addEventListener("click",async event=>{
+   const btn=event.currentTarget;
+   const info=document.querySelector("#resendVerifyMessage");
+   btn.disabled=true;btn.textContent="Mengirim...";
+   if(info){info.textContent="";info.style.color="";}
+   try{
+    const response=await fetch("/api/auth/verify-email/resend",{
+     method:"POST",
+     headers:{"Content-Type":"application/json","Accept":"application/json"},
+     body:JSON.stringify({email})
+    });
+    let body={};
+    try{body=await response.json()}catch{}
+    if(!response.ok)throw new Error(body?.message||"Gagal mengirim ulang link verifikasi.");
+    if(info){info.textContent=body?.message||"Link verifikasi dikirim ulang.";info.style.color="var(--brand)";}
+   }catch(error){
+    if(info){info.textContent=error?.message||"Gagal mengirim ulang link verifikasi.";info.style.color="var(--danger)";}
+   }
+   btn.disabled=false;btn.textContent="Kirim ulang email verifikasi";
+  });
+ };
+
  const bindDemoAccounts=()=>{
   document.querySelectorAll("[data-demo-account]").forEach(item=>item.addEventListener("click",()=>{
    const account=demoAccounts.find(entry=>entry.id===item.dataset.demoAccount);
@@ -253,6 +288,12 @@ export function bindLogin(){
     try{body=await response.json()}catch{}
     if(response.ok&&body?.data?.token){
      goWithSession(body.data);
+     return;
+    }
+    if(body?.code==="email_unverified"){
+     if(message){message.textContent=body?.message||"Email Anda belum diverifikasi.";message.style.color="var(--danger)";}
+     if(button){button.disabled=false;button.textContent="Masuk";}
+     showResendVerification(email);
      return;
     }
     if(response.status!==401&&response.status!==422){
@@ -325,32 +366,19 @@ export function bindLogin(){
    if(message){message.textContent="";message.style.color="";}
 
    try{
-    const result=await postRegistration(payload);
-    const user=result.user;
-    const profileOverrides={};
-
-    if(result.account_type==="pondok"){
-     profileOverrides.admin={name:user.name,email:user.email,phone:user.phone};
-     const pnd=result.pondok||{};
-     go("admin","pondok",{
-      registeredUserId:user.id,
-      registeredUsername:user.username,
-      profileOverrides,
-      pondokProfile:pnd,
-      myPondoks:pnd.id?[{id:pnd.id,name:pnd.name,slug:pnd.slug||"",role:"admin"}]:[],
-      activePondokId:pnd.id??null
-     });
-     return;
-    }
-
-    profileOverrides.member={name:user.name,email:user.email,phone:user.phone};
-    go("member","personal",{
-     registeredUserId:user.id,
-     registeredUsername:user.username,
-     profileOverrides,
-     myPondoks:[],
-     activePondokId:null
-    });
+     const result=await postRegistration(payload);
+     const user=result.user||{};
+     const sent=result?.verification?.email_sent!==false;
+     const card=document.querySelector("#authCard");
+     if(card){
+      card.innerHTML=`<div class="stack">
+       <div><p class="eyebrow">Pendaftaran berhasil</p><h1>Cek email Anda</h1>
+        <p class="muted">Akun <b>${esc(user.email)}</b> sudah dibuat.${sent?" Link verifikasi sudah dikirim ke alamat itu dan berlaku 48 jam — buka link tersebut sebelum bisa masuk.":" Namun email verifikasi gagal terkirim; gunakan tombol kirim ulang di halaman masuk."}</p>
+        <p class="muted" style="margin-top:8px">Belum menerima email? Cek folder spam, lalu minta kirim ulang dari halaman masuk.</p></div>
+       <button class="btn primary full" id="backToLoginAfterRegister" type="button">Ke halaman masuk</button>
+      </div>`;
+      document.querySelector("#backToLoginAfterRegister")?.addEventListener("click",showLogin);
+     }
    }catch(error){
     if(message){message.textContent=error?.message||"Registrasi gagal. Silakan coba lagi.";message.style.color="var(--danger)";}
     button.disabled=false;

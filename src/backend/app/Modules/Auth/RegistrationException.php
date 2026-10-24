@@ -10,6 +10,7 @@ final class RegistrationException extends \RuntimeException
         string $message,
         public readonly int $statusCode = 422,
         public readonly array $errors = [],
+        public readonly ?string $reasonCode = null,
     ) {
         parent::__construct($message);
     }

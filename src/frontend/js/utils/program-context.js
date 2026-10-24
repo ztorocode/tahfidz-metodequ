@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=c8e1f4a7";
+import {getState} from "../store.js?v=b9f2d6e1";
 
 /**
  * Sumber tunggal info halaqah milik login ini + perhitungan tanggal program.

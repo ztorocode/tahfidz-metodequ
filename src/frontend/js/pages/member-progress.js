@@ -1,7 +1,7 @@
-import {getState} from "../store.js?v=f4a7c1d9";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=f4a7c1d9";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=f4a7c1d9";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=f4a7c1d9";
+import {getState} from "../store.js?v=a2b6d3e8";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=a2b6d3e8";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=a2b6d3e8";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=a2b6d3e8";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -46,8 +46,9 @@ function dayProgress(data,week,day){
  return Math.round(done/(fieldIds.length+stepIds.length)*100);
 }
 
-function progressField(data,week,day,label,id,placeholder=""){
- return '<div class="member-progress-field"><label>'+label+'</label><input class="member-progress-input" data-progress-field="'+id+'" data-progress-day="'+day+'" value="'+escapeHtml(fieldValue(data,week,day,id))+'" placeholder="'+placeholder+'"></div>';
+function progressField(data,week,day,label,id,placeholder="",numeric=false){
+ const numericAttr=numeric?' type="number" inputmode="decimal" min="0" step="any" data-progress-numeric="1"':'';
+ return '<div class="member-progress-field"><label>'+label+'</label><input class="member-progress-input"'+numericAttr+' data-progress-field="'+id+'" data-progress-day="'+day+'" value="'+escapeHtml(fieldValue(data,week,day,id))+'" placeholder="'+placeholder+'"></div>';
 }
 
 function stepButton(data,week,day,label,id){
@@ -61,10 +62,10 @@ function dayBody(data,week,day){
  const tikrar=Array.from({length:25},(_,i)=>stepButton(data,week,day,(i+1)+"x","tikrar-"+(i+1))).join("");
  return '<div class="member-progress-day-body">'+
   '<div class="member-progress-fields">'+
-   progressField(data,week,day,"Target hal/hari","target")+
-   progressField(data,week,day,"Muraja\'ah (juz)","murajaah")+
+   progressField(data,week,day,"Target hal/hari","target","",true)+
+   progressField(data,week,day,"Muraja\'ah (juz)","murajaah","",true)+
    '<div class="member-progress-rabth">'+
-    progressField(data,week,day,"Rabth (1x)","rabth-awal","awal")+
+    progressField(data,week,day,"Rabth awal","rabth-awal")+
     progressField(data,week,day,"Rabth akhir","rabth-akhir")+
    '</div>'+
   '</div>'+
@@ -290,6 +291,11 @@ document.addEventListener("input",event=>{
  if(location.hash!=="#progress")return;
  const input=event.target.closest("[data-progress-field]");
  if(!input)return;
+ // Kolom angka: buang karakter selain digit dan satu pemisah desimal.
+ if(input.dataset.progressNumeric){
+  const cleaned=input.value.replace(/[^0-9.,]/g,"").replace(/,/g,".");
+  if(cleaned!==input.value)input.value=cleaned;
+ }
  const data=getProgressContext(getState());
  const week=stateWeek(data);
  const day=input.dataset.progressDay;

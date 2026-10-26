@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=fcee076c";
+import {getState} from "../store.js?v=b1d7cf8b";
 
 let summary=null;
 let sumPid=null;
@@ -120,6 +120,9 @@ async function loadWa(){
 }
 
 export function bindAdminDashboard(){
+ // Dipanggil setiap render; hanya jalan di halaman #admin (elemen refresh ada di sana).
+ // Tanpa guard ini, member/musyrif ikut memanggil summary/wa → 403 di console.
+ if(!document.querySelector("[data-dash-refresh]"))return;
  document.querySelector("[data-dash-refresh]")?.addEventListener("click",async ()=>{
   summary=null;
   await loadSummary(true);

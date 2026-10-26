@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=fcee076c";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fcee076c";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=fcee076c";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=fcee076c";
-import {juzEntries} from "../data/quran-juz.js?v=fcee076c";
+import {getState} from "../store.js?v=b1d7cf8b";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b1d7cf8b";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=b1d7cf8b";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=b1d7cf8b";
+import {juzEntries} from "../data/quran-juz.js?v=b1d7cf8b";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -198,6 +198,11 @@ document.addEventListener("click",event=>{
   location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay);
   return;
  }
+ const tikrar=event.target.closest("[data-tikrar-open]");
+ if(tikrar){
+  location.hash="rabth-ayat?step="+encodeURIComponent(tikrar.dataset.tikrarOpen)+"&day="+encodeURIComponent(tikrar.dataset.progressDay);
+  return;
+ }
  const pick=event.target.closest("[data-rabth-pick]");
  if(pick){openRabthModal(pick.dataset.rabthPick,pick.dataset.progressDay);return;}
  const modal=document.querySelector("#rabthModal");
@@ -229,10 +234,17 @@ function stepButton(data,week,day,label,id){
  return '<button type="button" class="member-progress-step'+(active?" active":"")+'" data-progress-step="'+id+'" data-progress-day="'+day+'" aria-pressed="'+String(active)+'">'+label+'</button>';
 }
 
+function tikrarButton(data,week,day,label,id){
+ const index=Number(id.split("-")[1])||1;
+ const active=isStepDone(data,week,day,id);
+ const locked=index>1&&!isStepDone(data,week,day,"tikrar-"+(index-1));
+ return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-tikrar-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
+}
+
 function dayBody(data,week,day){
  const kemarin=Array.from({length:5},(_,i)=>kemarinButton(data,week,day,(i+1)+"x","kemarin-"+(i+1))).join("");
  const istima=Array.from({length:3},(_,i)=>istimaButton(data,week,day,(i+1)+"x","istima-"+(i+1))).join("");
- const tikrar=Array.from({length:25},(_,i)=>stepButton(data,week,day,(i+1)+"x","tikrar-"+(i+1))).join("");
+ const tikrar=Array.from({length:25},(_,i)=>tikrarButton(data,week,day,(i+1)+"x","tikrar-"+(i+1))).join("");
  return '<div class="member-progress-day-body">'+
   '<div class="member-progress-group">'+
    '<div class="member-progress-group-title">Hafalan Lama</div>'+

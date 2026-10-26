@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=fcee076c";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fcee076c";
-import {scheduleSave} from "../utils/progress-sync.js?v=fcee076c";
-import {SURAHS} from "../data/quran-juz.js?v=fcee076c";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=fcee076c";
-import {dayProgress} from "./member-progress.js?v=fcee076c";
+import {getState} from "../store.js?v=b1d7cf8b";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b1d7cf8b";
+import {scheduleSave} from "../utils/progress-sync.js?v=b1d7cf8b";
+import {SURAHS} from "../data/quran-juz.js?v=b1d7cf8b";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=b1d7cf8b";
+import {dayProgress} from "./member-progress.js?v=b1d7cf8b";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -20,6 +20,36 @@ function fieldValue(data,week,day,id){
  return data.fields?.[week+":"+day+":"+id]||"";
 }
 
+// Range default istima'/tikrar (hafalan baru): setelah akhir hafalan kemarin/rabth, 5 ayat.
+function defaultNewRange(data,week,day){
+ const prevEnd=parseVerseRef(fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir")||fieldValue(data,week,day,"rabth-akhir"));
+ if(!prevEnd)return null;
+ let s=prevEnd.surah,y=prevEnd.ayah+1;
+ if(y>SURAHS[s-1][1]){s+=1;y=1;}
+ if(s>114)return null;
+ const awal={surah:s,ayah:y};
+ let es=s,ey=y+4;
+ while(es<=114&&ey>SURAHS[es-1][1]){ey-=SURAHS[es-1][1];es++;}
+ if(es>114){es=114;ey=SURAHS[113][1];}
+ return {awal,akhir:{surah:es,ayah:ey}};
+}
+
+// Tikrar = hafalan baru (sama dengan istima'). Urutan: Set Ayat tikrar → ayat istima'
+// tersimpan → range default (kemarin+1, 5 ayat) → ayat hafalan kemarin → rabth.
+// Mengembalikan string "Surah Ayat" (format fieldValue) atau null per field.
+function tikrarRange(data,week,day){
+ for(const p of ["ayat_tikrar","ayat_istima"]){
+  const a=fieldValue(data,week,day,p+"-awal"),k=fieldValue(data,week,day,p+"-akhir");
+  if(a&&k)return{awal:a,akhir:k};
+ }
+ const d=defaultNewRange(data,week,day);
+ if(d)return{awal:SURAHS[d.awal.surah-1][0]+" "+d.awal.ayah,akhir:SURAHS[d.akhir.surah-1][0]+" "+d.akhir.ayah};
+ return{
+  awal:fieldValue(data,week,day,"ayat_hafalan_kemaren-awal")||fieldValue(data,week,day,"rabth-awal")||null,
+  akhir:fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir")||fieldValue(data,week,day,"rabth-akhir")||null
+ };
+}
+
 export function rabthAyatPage(){
  const data=getProgressContext(getState());
  const week=Math.min(5,Math.max(1,Number(data.week)||1));
@@ -27,15 +57,20 @@ export function rabthAyatPage(){
  const day=params.get("day")||data.openDay||"sabtu";
  const step=params.get("step")||"kemarin-1";
  const isIstima=step.startsWith("istima-");
- const stepLabel=isIstima?"Istima' qari mujawwad":"Hafalan kemarin";
- const maxSteps=isIstima?3:5;
+ const isTikrar=step.startsWith("tikrar-");
+ const stepLabel=isIstima?"Istima' qari mujawwad":(isTikrar?"Tikrar":"Hafalan kemarin");
+ const maxSteps=isIstima?3:(isTikrar?25:5);
  const count=(step.match(/(\d+)$/)||[,"1"])[1];
- // Set Ayat menimpa rabth bila diisi; kalau kosong pakai rabth. Istima' pakai field terpisah.
- const setPrefix=isIstima?"ayat_istima":"ayat_hafalan_kemaren";
+ // Set Ayat menimpa fallback step. Hafalan kemarin: ayat sendiri → rabth; Istima': ayat
+ // hafalan kemarin → rabth; Tikrar dihitung terpisah lewat tikrarRange (ikat hafalan baru).
+ const setPrefix=isIstima?"ayat_istima":(isTikrar?"ayat_tikrar":"ayat_hafalan_kemaren");
+ const fallbackPrefixes=isIstima?["ayat_hafalan_kemaren"]:[];
+ const fb=name=>{for(const p of fallbackPrefixes){const v=fieldValue(data,week,day,p+"-"+name);if(v)return v;}return fieldValue(data,week,day,"rabth-"+name);};
  const setAwal=fieldValue(data,week,day,setPrefix+"-awal");
  const setAkhir=fieldValue(data,week,day,setPrefix+"-akhir");
- const awal=setAwal||(isIstima?fieldValue(data,week,day,"ayat_hafalan_kemaren-awal"):fieldValue(data,week,day,"rabth-awal"))||fieldValue(data,week,day,"rabth-awal");
- const akhir=setAkhir||(isIstima?fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir"):fieldValue(data,week,day,"rabth-akhir"))||fieldValue(data,week,day,"rabth-akhir");
+ const tr=isTikrar?tikrarRange(data,week,day):null;
+ const awal=tr?tr.awal:(setAwal||fb("awal"));
+ const akhir=tr?tr.akhir:(setAkhir||fb("akhir"));
  const title=awal&&akhir?escapeHtml(awal)+" → "+escapeHtml(akhir):"Rabth belum diisi";
  return '<section class="ayat-page" data-ayat-page data-week="'+week+'" data-day="'+escapeHtml(day)+'" data-step="'+escapeHtml(step)+'">'
   +'<div class="ayat-head">'
@@ -86,9 +121,14 @@ export function bindRabthAyat(){
  const day=root.dataset.day;
  const step=root.dataset.step;
  const isIstima=step.startsWith("istima-");
- const setPrefix=isIstima?"ayat_istima":"ayat_hafalan_kemaren";
- const stepLabel=isIstima?"Istima' qari mujawwad":"Hafalan kemarin";
- const maxSteps=isIstima?3:5;
+ const isTikrar=step.startsWith("tikrar-");
+ const setPrefix=isIstima?"ayat_istima":(isTikrar?"ayat_tikrar":"ayat_hafalan_kemaren");
+ const stepLabel=isIstima?"Istima' qari mujawwad":(isTikrar?"Tikrar":"Hafalan kemarin");
+ const maxSteps=isIstima?3:(isTikrar?25:5);
+ // Hafalan kemarin fallback ke rabth; istima' fallback ke ayat hafalan kemarin → rabth;
+ // tikrar dihitung terpisah lewat tikrarRange (ikat hafalan baru, sama dengan istima').
+ const fallbackPrefixes=isIstima?["ayat_hafalan_kemaren"]:[];
+ const fb=name=>{for(const p of fallbackPrefixes){const v=fieldValue(data,week,day,p+"-"+name);if(v)return v;}return fieldValue(data,week,day,"rabth-"+name);};
 
  // --- Set Ayat: modal rentang ayat (dari/sampai surat & ayat) ---
  const setModal=document.querySelector("#ayatSetModal");
@@ -98,7 +138,7 @@ export function bindRabthAyat(){
  const ayahAkhirInput=document.querySelector("#ayatSetAyahAkhir");
  const setMessage=msg=>{const el=document.querySelector("#ayatSetMessage");if(el)el.textContent=msg||"";};
  const jumlahLabel=document.querySelector("#ayatSetJumlahLabel");
- if(jumlahLabel)jumlahLabel.textContent=isIstima?"Jumlah ayat istima'":"Jumlah ayat yang dihafal kemarin";
+ if(jumlahLabel)jumlahLabel.textContent=isIstima?"Jumlah ayat istima'":(isTikrar?"Jumlah ayat tikrar":"Jumlah ayat yang dihafal kemarin");
  if(surahAwalSel&&!surahAwalSel.options.length){
   const opts=SURAHS.map((row,i)=>'<option value="'+(i+1)+'">'+(i+1)+'. '+escapeHtml(row[0])+' ('+row[1]+')</option>').join("");
   surahAwalSel.innerHTML=opts;
@@ -130,6 +170,13 @@ export function bindRabthAyat(){
    if(s<=114)currentAwal={surah:s,ayah:y};
   }
  }
+ // Tikrar belum diisi Set Ayat → ikut ayat istima' (hafalan baru yang diulang),
+ // lalu range default (akhir kemarin + 1, 5 ayat), baru fallback biasa.
+ if(isTikrar){
+  const r=tikrarRange(data,week,day);
+  currentAwal=parseVerseRef(r.awal);
+  currentAkhir=parseVerseRef(r.akhir);
+ }
  if(currentAwal){surahAwalSel.value=String(currentAwal.surah);ayahAwalInput.value=String(currentAwal.ayah);}
  if(currentAkhir){surahAkhirSel.value=String(currentAkhir.surah);ayahAkhirInput.value=String(currentAkhir.ayah);}
  else if(currentAwal)updateSampai();
@@ -153,14 +200,14 @@ export function bindRabthAyat(){
  const meta=document.querySelector("#ayatMeta");
 
  const stepIndex=Number((step.match(/(\d+)$/)||[,"1"])[1])||1;
- const stepPrefix=isIstima?"istima":"kemarin";
+ const stepPrefix=isIstima?"istima":(isTikrar?"tikrar":"kemarin");
  const keyFor=index=>week+":"+day+":"+stepPrefix+"-"+index;
  const key=keyFor(stepIndex);
 
- // Harus berurutan: kemarin 1x→5x, istima' 1x→3x
+ // Harus berurutan: kemarin 1x→5x, istima' 1x→3x, tikrar 1x→25x
  if(stepIndex>1&&!data.checks?.[keyFor(stepIndex-1)]){
   if(meta)meta.textContent="Terkunci";
-  const sequence=isIstima?"1x → 2x → 3x":"1x → 2x → 3x → 4x → 5x";
+  const sequence=isTikrar?"1x → 2x → … → 25x":(isIstima?"1x → 2x → 3x":"1x → 2x → 3x → 4x → 5x");
   list.innerHTML='<div class="card"><b>Selesaikan '+(stepIndex-1)+'x dulu.</b>'
    +'<p class="muted" style="margin-top:8px">'+stepLabel+' harus berurutan: '+sequence+'. Tandai '+(stepIndex-1)+'x sebagai selesai dulu, baru '+(stepIndex)+'x bisa dibuka.</p></div>';
   actions.innerHTML='<button class="btn" type="button" data-ayat-back2>Kembali</button>';
@@ -170,6 +217,12 @@ export function bindRabthAyat(){
 
  let awal=parseVerseRef(fieldValue(data,week,day,setPrefix+"-awal"));
  let akhir=parseVerseRef(fieldValue(data,week,day,setPrefix+"-akhir"));
+ // Tikrar ikut hafalan baru: ayat istima' / range default, bukan ayat hafalan kemarin.
+ if(isTikrar){
+  const r=tikrarRange(data,week,day);
+  awal=parseVerseRef(r.awal);
+  akhir=parseVerseRef(r.akhir);
+ }
  // Istima' belum diisi → tampilkan range default: akhir hafalan kemarin/rabth + 1, sejumlah 5 ayat.
  if(isIstima&&(!awal||!akhir)){
   const prevEnd=parseVerseRef(fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir")||fieldValue(data,week,day,"rabth-akhir"));
@@ -185,8 +238,8 @@ export function bindRabthAyat(){
    }
   }
  }
- if(!awal)awal=parseVerseRef(fieldValue(data,week,day,"ayat_hafalan_kemaren-awal")||fieldValue(data,week,day,"rabth-awal"));
- if(!akhir)akhir=parseVerseRef(fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir")||fieldValue(data,week,day,"rabth-akhir"));
+ if(!awal)awal=parseVerseRef(fb("awal"));
+ if(!akhir)akhir=parseVerseRef(fb("akhir"));
 
  if(!awal||!akhir){
   if(meta)meta.textContent="Rabth belum lengkap";

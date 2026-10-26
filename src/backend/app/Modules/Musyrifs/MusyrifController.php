@@ -11,6 +11,7 @@ use App\Modules\Auth\LoginValidator;
 use App\Modules\Auth\RegisterRepository;
 use App\Modules\Auth\RegistrationException;
 use App\Modules\Auth\SessionService;
+use PDO;
 
 final class MusyrifController
 {
@@ -82,5 +83,59 @@ final class MusyrifController
                 'errors' => $exception->errors,
             ], $exception->statusCode);
         }
+    }
+
+    /**
+     * Daftar musyrif lintas platform (super admin): tipe platform/pondok,
+     * jumlah dampingan aktif, dan status — untuk #platform-musyrif.
+     */
+    public function platformIndex(Request $request): never
+    {
+        $actor = $this->actor($request);
+        if (!in_array('super_admin', $actor['roles'], true)) {
+            Response::json(['success' => false, 'message' => 'Hanya super admin yang boleh mengakses.'], 403);
+        }
+
+        $pdo = Database::connection();
+        $rows = $pdo->query(
+            'SELECT mp.id, mp.type, mp.status, u.name, u.email, p.name AS pondok_name,
+                    (SELECT COUNT(*) FROM musyrif_mentees mm
+                      WHERE mm.musyrif_profile_id = mp.id AND mm.status = "active") AS dampingan
+             FROM musyrif_profiles mp
+             JOIN users u ON u.id = mp.user_id AND u.deleted_at IS NULL
+             LEFT JOIN pondoks p ON p.id = mp.pondok_id
+             ORDER BY mp.type = "platform" DESC, u.name ASC'
+        )->fetchAll(PDO::FETCH_ASSOC);
+
+        $items = array_map(static fn (array $row): array => [
+            'id' => (int) $row['id'],
+            'name' => (string) $row['name'],
+            'email' => (string) $row['email'],
+            'type' => (string) $row['type'],
+            'scope' => $row['type'] === 'platform' ? 'MetodeQu' : (string) ($row['pondok_name'] ?? '-'),
+            'dampingan' => (int) $row['dampingan'],
+            'status' => (string) $row['status'],
+        ], $rows);
+
+        $activePlatform = 0;
+        $activePondok = 0;
+        foreach ($items as $item) {
+            if ($item['status'] !== 'active') {
+                continue;
+            }
+            if ($item['type'] === 'platform') {
+                $activePlatform++;
+            } else {
+                $activePondok++;
+            }
+        }
+
+        Response::json(['success' => true, 'data' => [
+            'items' => $items,
+            'total' => count($items),
+            'platform_active' => $activePlatform,
+            'pondok_active' => $activePondok,
+            'dampingan_total' => array_sum(array_column($items, 'dampingan')),
+        ]]);
     }
 }

@@ -10,6 +10,7 @@ use App\Modules\Musyrifs\SantriController;
 
 return static function (Router $router): void {
     $router->get('/api/pondoks/musyrifs', [new MusyrifController(), 'index']);
+    $router->get('/api/platform/musyrifs', [new MusyrifController(), 'platformIndex']);
     $router->post('/api/pondoks/musyrifs', [new MusyrifController(), 'store']);
     $router->get('/api/pondoks/santris', [new SantriController(), 'index']);
     $router->post('/api/pondoks/santris', [new SantriController(), 'store']);

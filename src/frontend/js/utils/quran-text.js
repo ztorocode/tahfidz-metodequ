@@ -1,4 +1,4 @@
-import {JUZ,SURAHS} from "../data/quran-juz.js?v=fcee076c";
+import {JUZ,SURAHS} from "../data/quran-juz.js?v=b1d7cf8b";
 
 const VERSION="f1e7665";
 const loaded=new Map();

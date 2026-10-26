@@ -14,6 +14,9 @@ return static function (Router $router): void {
     $registerMusyrifs = require dirname(__DIR__) . '/app/Modules/Musyrifs/routes.php';
     $registerMusyrifs($router);
 
+    $registerPlatform = require dirname(__DIR__) . '/app/Modules/Platform/routes.php';
+    $registerPlatform($router);
+
     $registerUsers = require dirname(__DIR__) . '/app/Modules/Users/routes.php';
     $registerUsers($router);
 

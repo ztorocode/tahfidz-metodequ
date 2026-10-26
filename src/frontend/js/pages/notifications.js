@@ -1,5 +1,5 @@
-import {notifications} from "../data/dummy-data.js?v=fcee076c";import {badge} from "../utils/helpers.js?v=fcee076c";
-import {getState} from "../store.js?v=fcee076c";
+import {notifications} from "../data/dummy-data.js?v=b1d7cf8b";import {badge} from "../utils/helpers.js?v=b1d7cf8b";
+import {getState} from "../store.js?v=b1d7cf8b";
 export function notificationsPage(){
  const st=getState();
  const mine=Array.isArray(st.myInvites)?st.myInvites:[];

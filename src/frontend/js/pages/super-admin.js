@@ -1,3 +1,32 @@
+import {getState} from "../store.js?v=b1d7cf8b";
+
+function esc(value=""){
+ return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+
+// State #platform-musyrif: null = belum dimuat, object = hasil API, {error} = gagal.
+let platformMusyrif=null;
+let platformMusyrifState="idle"; // idle | loading | done | error
+
+export async function loadPlatformMusyrif(force=false){
+ const st=getState();
+ if(!st.authToken)return;
+ if(platformMusyrifState==="loading")return;
+ if(platformMusyrifState==="done"&&!force)return;
+ platformMusyrifState="loading";
+ try{
+  const r=await fetch("/api/platform/musyrifs"+(force?"?t="+Date.now():''),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}});
+  const b=await r.json().catch(()=>({}));
+  if(!r.ok||!b.success)throw new Error(b?.message||"Gagal memuat musyrif platform.");
+  platformMusyrif=b.data||{items:[],total:0,platform_active:0,pondok_active:0,dampingan_total:0};
+  platformMusyrifState="done";
+ }catch(err){
+  platformMusyrif={error:err?.message||"Gagal memuat data."};
+  platformMusyrifState="error";
+ }
+ window.dispatchEvent(new Event("app:render"));
+}
+
 const users=[
  {name:"Ahmad Fauzi",email:"member@metodequ.id",role:"Member",type:"Personal",scope:"Personal",status:"Aktif"},
  {name:"Siti Aisyah",email:"siti@example.com",role:"Santri",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
@@ -26,8 +55,23 @@ export function platformPondoksPage(){
 }
 
 export function platformMusyrifPage(){
- const items=[["Ust. Abdullah","abdullah@metodequ.id",8],["Ust. Salman","salman@metodequ.id",11],["Ust. Haris","haris@metodequ.id",6]];
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Musyrif Platform</h1><p class="muted">Musyrif yang dikelola MetodeQu untuk mendampingi user Personal.</p></div><span class="badge success">12 musyrif aktif</span></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Musyrif</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Status</th></tr></thead><tbody>${items.map(item=>`<tr><td><b>${item[0]}</b></td><td>${item[1]}</td><td>${item[2]}</td><td>Platform</td><td><span class="badge success">Aktif</span></td></tr>`).join("")}</tbody></table></div></div>`;
+ const d=platformMusyrif;
+ const items=Array.isArray(d?.items)?d.items:[];
+ const badge=!d
+  ?"Memuat…"
+  :(d.error?"Gagal memuat":`${d.total??"0"} musyrif (${d.platform_active??0} platform · ${d.pondok_active??0} pondok)`);
+ let body;
+ if(!d){
+  body='<tr><td colspan="6"><span class="muted">Memuat musyrif…</span></td></tr>';
+ }else if(d.error){
+  body=`<tr><td colspan="6"><span class="muted">${esc(d.error)} Muat ulang halaman untuk mencoba lagi.</span></td></tr>`;
+ }else if(!items.length){
+  body='<tr><td colspan="6"><span class="muted">Belum ada musyrif terdaftar.</span></td></tr>';
+ }else{
+  body=items.map(item=>`<tr><td><b>${esc(item.name)}</b></td><td>${esc(item.email)}</td><td>${item.dampingan}</td><td>${item.type==="platform"?"Platform":"Pondok"}</td><td>${esc(item.scope)}</td><td>${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
+ }
+ return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Musyrif Platform</h1><p class="muted">Musyrif yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge ${d&&!d.error?"success":""}">${badge}</span></div>
+ <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Musyrif</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div>`;
 }
 
 export function platformSettingsPage(){

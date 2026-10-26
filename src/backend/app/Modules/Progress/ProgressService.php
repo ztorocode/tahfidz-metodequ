@@ -234,7 +234,18 @@ final class ProgressService
              WHERE pondok_id = :pondok_id AND user_id = :user_id AND status = \'active\' LIMIT 1'
         );
         $statement->execute(['pondok_id' => $pondokId, 'user_id' => (int) $actor['id']]);
-        if ($statement->fetchColumn() === false) {
+        if ($statement->fetchColumn() !== false) {
+            return;
+        }
+        // Santri tanpa pondok_memberships: boleh selama punya halaqah aktif di pondok ini.
+        $viaHalaqah = $this->pdo->prepare(
+            'SELECT 1 FROM halaqah_memberships hm
+             JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+             WHERE hm.user_id = :user_id AND hm.status = \'active\' AND h.pondok_id = :pondok_id
+             LIMIT 1'
+        );
+        $viaHalaqah->execute(['pondok_id' => $pondokId, 'user_id' => (int) $actor['id']]);
+        if ($viaHalaqah->fetchColumn() === false) {
             throw new RegistrationException('Hanya anggota pondok yang boleh mengakses progress.', 403);
         }
     }

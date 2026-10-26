@@ -142,14 +142,26 @@ final class SessionService
     /** @return array<int,array{id:int,name:string,slug:string,role:string}> */
     private function activePondoks(int $userId): array
     {
+        // Anggota halaqah otomatis dianggap terkait pondok pemilik halaqahnya,
+        // walau tidak punya pondok_memberships sendiri (santri cukup punya halaqah + musyrif).
         $statement = $this->pdo->prepare(
             "SELECT p.id, p.name, p.slug, m.role
              FROM pondok_memberships m
              JOIN pondoks p ON p.id = m.pondok_id
              WHERE m.user_id = :user_id AND m.status = 'active' AND p.status = 'active'
-             ORDER BY p.name"
+             UNION
+             SELECT p.id, p.name, p.slug, 'member' AS role
+             FROM halaqah_memberships hm
+             JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+             JOIN pondoks p ON p.id = h.pondok_id
+             WHERE hm.user_id = :user_id2 AND hm.status = 'active' AND p.status = 'active'
+               AND NOT EXISTS (
+                   SELECT 1 FROM pondok_memberships pm
+                   WHERE pm.user_id = hm.user_id AND pm.pondok_id = h.pondok_id AND pm.status = 'active'
+               )
+             ORDER BY name"
         );
-        $statement->execute(['user_id' => $userId]);
+        $statement->execute(['user_id' => $userId, 'user_id2' => $userId]);
         return array_map(
             static fn(array $row) => [
                 'id' => (int) $row['id'],

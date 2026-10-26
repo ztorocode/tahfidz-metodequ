@@ -1,24 +1,24 @@
-import {getState} from "./store.js?v=fcee076c";
-import {loginPage} from "./pages/login.js?v=fcee076c";
-import {memberDashboard} from "./pages/member-dashboard.js?v=fcee076c";
-import {programPage} from "./pages/program.js?v=fcee076c";
-import {activityPage} from "./pages/activity.js?v=fcee076c";
-import {submissionPage} from "./pages/submission.js?v=fcee076c";
-import {murajaahPage} from "./pages/murajaah.js?v=fcee076c";
-import {notificationsPage} from "./pages/notifications.js?v=fcee076c";
-import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=fcee076c";
-import {reviewPage} from "./pages/review.js?v=fcee076c";
-import {acceptInvitePage} from "./pages/terima-undangan.js?v=fcee076c";
-import {adminSantriPage} from "./pages/admin-santri.js?v=fcee076c";
-import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=fcee076c";
-import {adminDashboard} from "./pages/admin-dashboard.js?v=fcee076c";
-import {halaqahPage} from "./pages/halaqah.js?v=fcee076c";
-import {studentProgressPage} from "./pages/santri-progress.js?v=fcee076c";
-import {memberProgressPage} from "./pages/member-progress.js?v=fcee076c";
-import {progressTablePage} from "./pages/tabel-progress.js?v=fcee076c";
-import {rabthAyatPage} from "./pages/rabth-ayat.js?v=fcee076c";
-import {whatsappPage} from "./pages/whatsapp.js?v=fcee076c";
-import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=fcee076c";
+import {getState} from "./store.js?v=b1d7cf8b";
+import {loginPage} from "./pages/login.js?v=b1d7cf8b";
+import {memberDashboard} from "./pages/member-dashboard.js?v=b1d7cf8b";
+import {programPage} from "./pages/program.js?v=b1d7cf8b";
+import {activityPage} from "./pages/activity.js?v=b1d7cf8b";
+import {submissionPage} from "./pages/submission.js?v=b1d7cf8b";
+import {murajaahPage} from "./pages/murajaah.js?v=b1d7cf8b";
+import {notificationsPage} from "./pages/notifications.js?v=b1d7cf8b";
+import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=b1d7cf8b";
+import {reviewPage} from "./pages/review.js?v=b1d7cf8b";
+import {acceptInvitePage} from "./pages/terima-undangan.js?v=b1d7cf8b";
+import {adminSantriPage} from "./pages/admin-santri.js?v=b1d7cf8b";
+import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=b1d7cf8b";
+import {adminDashboard} from "./pages/admin-dashboard.js?v=b1d7cf8b";
+import {halaqahPage} from "./pages/halaqah.js?v=b1d7cf8b";
+import {studentProgressPage} from "./pages/santri-progress.js?v=b1d7cf8b";
+import {memberProgressPage} from "./pages/member-progress.js?v=b1d7cf8b";
+import {progressTablePage} from "./pages/tabel-progress.js?v=b1d7cf8b";
+import {rabthAyatPage} from "./pages/rabth-ayat.js?v=b1d7cf8b";
+import {whatsappPage} from "./pages/whatsapp.js?v=b1d7cf8b";
+import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=b1d7cf8b";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,
@@ -27,6 +27,7 @@ const routes={
  "super-admin":superAdminDashboard,users:userManagementPage,pondoks:platformPondoksPage,"platform-musyrif":platformMusyrifPage,"platform-settings":platformSettingsPage
 };
 const platformRoutes=["super-admin","users","pondoks","platform-musyrif","platform-settings"];
+const adminRoutes=["admin","kelola-musyrif","kelola-santri","whatsapp"];
 function homeRoute(state){
  return state.persona==="super_admin"?"super-admin":state.persona==="admin"?"admin":state.persona==="musyrif"?"musyrif":"dashboard";
 }
@@ -38,6 +39,7 @@ export function view(){
  if(!s.loggedIn&&!publicRoutes.includes(name)){location.hash="login";return loginPage();}
  if(s.loggedIn&&name==="login"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(platformRoutes.includes(name)&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
+ if(adminRoutes.includes(name)&&s.persona!=="admin"&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
  const fn=routes[name]||memberDashboard;return fn();
 }

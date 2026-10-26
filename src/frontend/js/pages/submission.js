@@ -1,7 +1,14 @@
-import {getState} from "../store.js?v=fcee076c";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fcee076c";
-import {scheduleSave} from "../utils/progress-sync.js?v=fcee076c";
-import {dayProgress} from "./member-progress.js?v=fcee076c";
+import {getState,setState} from "../store.js?v=b1d7cf8b";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b1d7cf8b";
+import {scheduleSave} from "../utils/progress-sync.js?v=b1d7cf8b";
+import {dayProgress} from "./member-progress.js?v=b1d7cf8b";
+import {toast} from "../utils/helpers.js?v=b1d7cf8b";
+import {activePondokId} from "../utils/program-context.js?v=b1d7cf8b";
+
+function resolvePondokId(){
+ const st=getState();
+ return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??activePondokId()??null;
+}
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -126,13 +133,49 @@ export function bindSubmission(){
   else playback.pause();
  });
 
- submitBtn?.addEventListener("click",()=>{
+ submitBtn?.addEventListener("click",async ()=>{
   if(!recordedUrl)return;
-  const fresh=getProgressContext(getState());
-  const key=week+":"+day+":merekam";
-  setProgressContextPatch({checks:{...(fresh.checks||{}),[key]:true}});
-  scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
-  cleanup();
-  location.hash="progress";
+  submitBtn.disabled=true;
+  submitBtn.textContent="Mengirim…";
+  message.textContent="Sedang mengirim setoran ke musyrif…";
+  try{
+   const st=getState();
+   const pid=resolvePondokId();
+   if(!st.authToken)throw new Error("Sesi berakhir. Silakan login ulang.");
+   const blob=new Blob(chunks,{type:mediaRecorder?.mimeType||"audio/webm"});
+   const fd=new FormData();
+   fd.append("audio",blob,"setoran.webm");
+   if(pid)fd.append("pondok_id",String(pid));
+   fd.append("week_no",String(week));
+   fd.append("day_code",day);
+   const r=await fetch("/api/setoran-submissions",{
+    method:"POST",
+    headers:{Authorization:"Bearer "+st.authToken},
+    body:fd
+   });
+   const b=await r.json().catch(()=>({}));
+    if(!r.ok||!b.success)throw new Error(b?.message||"Gagal mengirim setoran.");
+    if(!getState().activePondokId){
+     try{
+      const me=await fetch("/api/auth/me",{headers:{Authorization:"Bearer "+st.authToken,Accept:"application/json"}});
+      const mb=await me.json();
+      const user=mb?.data?.user||{};
+      const pondoks=user.pondoks||[];
+      const pondok=pondoks.find(p=>p.id===(b?.data?.pondok_id||0))||pondoks[0];
+      if(pondok)setState({authUser:user,myPondoks:pondoks,activePondokId:pondok.id});
+     }catch{}
+    }
+    const fresh=getProgressContext(getState());
+   const key=week+":"+day+":merekam";
+   setProgressContextPatch({checks:{...(fresh.checks||{}),[key]:true}});
+   scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+   toast("Setoran terkirim ke musyrif.");
+   cleanup();
+   location.hash="progress";
+  }catch(err){
+   submitBtn.disabled=false;
+   submitBtn.textContent="Kirim Setoran";
+   message.textContent=err?.message||"Gagal mengirim setoran.";
+  }
  });
 }

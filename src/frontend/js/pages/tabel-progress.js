@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=c8f4a2e6";
-import {member,progress} from "../data/dummy-data.js?v=c8f4a2e6";
-import {getProgressContext} from "../utils/progress-context.js?v=c8f4a2e6";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=c8f4a2e6";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=c8f4a2e6";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=c8f4a2e6";
+import {getState} from "../store.js?v=fcee076c";
+import {member,progress} from "../data/dummy-data.js?v=fcee076c";
+import {getProgressContext} from "../utils/progress-context.js?v=fcee076c";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=fcee076c";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=fcee076c";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=fcee076c";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -24,6 +24,33 @@ function valueCell(value){ const text=String(value??"").trim();
  return `<td>${text?escapeHtml(text):""}</td>`;
 }
 
+/** Angka target ditampilkan dengan satuan: "2 halaman/hari". */
+function formatTarget(value){
+ const text=String(value||"").trim();
+ if(!text)return "";
+ return /^\d+(\.\d+)?$/.test(text)?text+" halaman/hari":text;
+}
+
+/** Nilai target program (sekali tampil di header): hari ini dulu, lalu isian pertama yang ada. */
+function programTargetText(data,start){
+ if(!data)return "";
+ if(start&&todayDayNumber(start)){
+  const todayNum=todayDayNumber(start);
+  const week=Math.min(5,Math.floor((todayNum-1)/6)+1);
+  const day=days[(todayNum-1)%6];
+  const today=formatTarget(memberField(data,week,day,"target"));
+  if(today)return today;
+ }
+ const fields=data.fields||{};
+ for(const [key,value] of Object.entries(fields)){
+  if(key.endsWith(":target")){
+   const text=formatTarget(value);
+   if(text)return text;
+  }
+ }
+ return "";
+}
+
 function checkCell(done){
  return `<td>${done?"✓":""}</td>`;
 }
@@ -37,9 +64,11 @@ function dayDate(start,week,day){
 
 function memberReportCells(data,week,day,start){
  const date=dayDate(start,week,day);
+ const dayIndex=days.indexOf(day);
+ const dayNum=start&&dayIndex>=0?String((week-1)*6+dayIndex+1):"";
  const cells=[
   date?fmtShort(date):"",
-  memberField(data,week,day,"target"),
+  dayNum,
   memberField(data,week,day,"murajaah"),
   memberField(data,week,day,"rabth-awal"),
   memberField(data,week,day,"rabth-akhir")
@@ -69,24 +98,51 @@ function weekRows(data,showCells,start){
  }).join("");
 }
 
-/** Kartu meta report: semua nilai diturunkan dari tanggal mulai program + isian asli. */
+/** Rentang juz dari isian "Muraja'ah (juz)" yang terisi. */
+function reportJuzRange(data){
+ if(!data)return null;
+ let min=null,max=null;
+ Object.entries(data.fields||{}).forEach(([key,value])=>{
+  if(!key.endsWith(":murajaah"))return;
+  const match=String(value||"").match(/\d+/);
+  if(!match)return;
+  const n=Number(match[0]);
+  if(!n)return;
+  if(min===null||n<min)min=n;
+  if(max===null||n>max)max=n;
+ });
+ return min!==null?{min,max}:null;
+}
+
+/** Persentase isian seluruh pekan 1-5 (sama seperti halaman Progress). */
+function reportPercent(data){
+ if(!data)return 0;
+ const fieldIds=["murajaah","rabth-awal","rabth-akhir"];
+ const stepIds=["kemarin-1","kemarin-2","kemarin-3","kemarin-4","kemarin-5","istima-1","istima-2","istima-3","menghafal","merekam"];
+ for(let i=1;i<=25;i++)stepIds.push("tikrar-"+i);
+ let done=0,total=0;
+ for(let week=1;week<=5;week+=1){
+  days.forEach(day=>{
+   const prefix=week+":"+day+":";
+   fieldIds.forEach(id=>{total+=1;if(String(data.fields?.[prefix+id]??"").trim())done+=1});
+   stepIds.forEach(id=>{total+=1;if(data.checks?.[prefix+id])done+=1});
+  });
+ }
+ return total?Math.round(done/total*100):0;
+}
+
+/** Kartu meta report (read-only): halaqah, juz, start, finish, persentase isian. */
 function reportMeta(start,halaqahName,data){
  const item=(label,value)=>`<div class="progress-meta-item"><b>${label}</b><span>${escapeHtml(String(value))}</span></div>`;
  const finish=start?programDayDate(start,30):null; // Hari ke-30 = akhir Pekan 5
- const todayNum=todayDayNumber(start);
- let targetToday="";
- if(start&&todayNum){
-  const week=Math.min(5,Math.floor((todayNum-1)/6)+1);
-  const day=days[(todayNum-1)%6];
-  targetToday=memberField(data||{},week,day,"target");
- }
+ const juz=reportJuzRange(data);
+ const pct=reportPercent(data);
  return [
-  item("Halaqah",halaqahName||"-"),
-  item("Mulai program",start?fmtLong(new Date(start+"T00:00:00")):"Belum diatur"),
-  item("Hari ini",todayNum?("Hari ke-"+todayNum):"-"),
-  item("Akhir pekan 5",finish?fmtShort(finish):"-"),
-  item("Target hari ini",targetToday||"-"),
-  item("Pekan ditampilkan","1 - 5")
+  item("halaqah",halaqahName||"-"),
+  item("juz",juz?"dari "+juz.min+" sampai "+juz.max:"-"),
+  item("start",start?fmtLong(new Date(start+"T00:00:00")):"Belum diatur"),
+  item("finish",finish?fmtLong(finish):"-"),
+  item("progress",pct+" %")
  ].join("");
 }
 
@@ -174,6 +230,7 @@ export function progressTablePage(){
  }</div>`;
 
  const metaItems=reportMeta(start,selected.halaqahName,progressData);
+ const targetText=programTargetText(progressData,start);
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
@@ -200,9 +257,9 @@ export function progressTablePage(){
    <table class="progress-sheet" aria-label="Tabel progress hafalan ${escapeHtml(student.name)}">
     <thead>
      <tr>
-      <th colspan="3" rowspan="2">Target Harian</th>
-      <th colspan="13" class="progress-group-old">Hafalan lama</th>
-      <th colspan="25" class="progress-group-new">Hafalan baru</th>
+      <th colspan="3" rowspan="2" class="progress-target-head"><span>Target Harian</span>${targetText?`<b class="progress-target-value">${escapeHtml(targetText)}</b>`:""}</th>
+      <th colspan="8" class="progress-group-old">Hafalan lama</th>
+      <th colspan="30" class="progress-group-new">Hafalan baru</th>
      </tr>
      <tr>
       <th>Muraja'ah<br>(1x)</th>
@@ -216,7 +273,7 @@ export function progressTablePage(){
      <tr>
       <th>Hari</th>
       <th>Tanggal</th>
-      <th>Halaman / hari</th>
+      <th>hari ke</th>
       <th>Juz</th>
       <th>Awal</th>
       <th>Akhir</th>

@@ -1,14 +1,15 @@
-import {view,routeName} from "./router.js?v=c8f4a2e6";
-import {getState,setState} from "./store.js?v=c8f4a2e6";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c8f4a2e6";
-import {bindLogin} from "./pages/login.js?v=c8f4a2e6";
-import {bindInvite} from "./pages/terima-undangan.js?v=c8f4a2e6";
-import {toast} from "./utils/helpers.js?v=c8f4a2e6";
-import {initProgressSync} from "./utils/progress-sync.js?v=c8f4a2e6";
-import {forgetSetoran} from "./utils/setoran.js?v=c8f4a2e6";
-import {bindWaPage} from "./pages/whatsapp.js?v=c8f4a2e6";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c8f4a2e6";
-import {bindRabthAyat} from "./pages/rabth-ayat.js?v=c8f4a2e6";
+import {view,routeName} from "./router.js?v=fcee076c";
+import {getState,setState} from "./store.js?v=fcee076c";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=fcee076c";
+import {bindLogin} from "./pages/login.js?v=fcee076c";
+import {bindInvite} from "./pages/terima-undangan.js?v=fcee076c";
+import {toast} from "./utils/helpers.js?v=fcee076c";
+import {initProgressSync} from "./utils/progress-sync.js?v=fcee076c";
+import {forgetSetoran} from "./utils/setoran.js?v=fcee076c";
+import {bindWaPage} from "./pages/whatsapp.js?v=fcee076c";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=fcee076c";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=fcee076c";
+import {bindSubmission} from "./pages/submission.js?v=fcee076c";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -122,6 +123,7 @@ async function loadPendingList(role,boxId,reload){
 }
 function bindPageActions(){
  if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
+ if(routeName().split("?")[0]==="submission")bindSubmission();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
  loadInviteBanner();
@@ -528,8 +530,6 @@ document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener(
   try{await api("/api/pondok-invites/revoke",{method:"POST",body:JSON.stringify({id:Number(b.dataset.revokeInvite)})});loadMusyrifList();loadSantriList();}
   catch(err){alert(err?.message||"Gagal membatalkan.");}
  }));
- document.querySelector("#recordBtn")?.addEventListener("click",e=>{e.currentTarget.textContent="■ Sedang Merekam";toast("Rekaman demo dimulai")});
- document.querySelector("#submitDemo")?.addEventListener("click",()=>toast("Setoran demo dikirim ke musyrif"));
  document.querySelectorAll("[data-resend]").forEach(b=>b.addEventListener("click",()=>toast("Pesan dimasukkan kembali ke queue")));
  bindWaPage();
  bindAdminDashboard();
@@ -542,7 +542,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c8f4a2e6"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=fcee076c"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

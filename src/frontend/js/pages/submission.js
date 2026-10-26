@@ -1,3 +1,138 @@
-export function submissionPage(){return `<div style="margin-bottom:18px"><p class="eyebrow">Setoran</p><h1>Setor Hafalan</h1><p class="muted">Rekam dan kirim hafalan untuk direview musyrif.</p></div>
-<div class="grid-2"><div class="card"><p class="muted">Juz 30 · Hal. 12</p><h2>Surat An-Naas</h2><div style="font-family:serif;font-size:28px;line-height:2;text-align:center;padding:30px 10px">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ<br>قُلْ أَعُوذُ بِرَبِّ النَّاسِ</div></div>
-<div class="card"><h3>Rekam Hafalan</h3><div style="height:120px;display:grid;place-items:center;background:var(--surface-2);border-radius:14px;margin:12px 0"><button class="btn danger" id="recordBtn">● Mulai Rekam</button></div><div class="row"><button class="btn grow">Putar Ulang</button><button class="btn primary grow" id="submitDemo">Kirim Setoran</button></div></div></div>`}
+import {getState} from "../store.js?v=fcee076c";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fcee076c";
+import {scheduleSave} from "../utils/progress-sync.js?v=fcee076c";
+import {dayProgress} from "./member-progress.js?v=fcee076c";
+
+function escapeHtml(value=""){
+ return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+
+function query(){
+ const raw=location.hash.replace(/^#/,"");
+ return new URLSearchParams(raw.split("?")[1]||"");
+}
+
+function fieldValue(data,week,day,id){
+ return data.fields?.[week+":"+day+":"+id]||"";
+}
+
+export function submissionPage(){
+ const data=getProgressContext(getState());
+ const params=query();
+ const week=Math.min(5,Math.max(1,Number(params.get("week"))||Number(data.week)||1));
+ const day=params.get("day")||data.openDay||"sabtu";
+ const awal=fieldValue(data,week,day,"ayat_hafalan_kemaren-awal")||fieldValue(data,week,day,"rabth-awal");
+ const akhir=fieldValue(data,week,day,"ayat_hafalan_kemaren-akhir")||fieldValue(data,week,day,"rabth-akhir");
+ const title=awal&&akhir?escapeHtml(awal)+" → "+escapeHtml(akhir):"Rentang ayat belum diisi";
+ return `<section class="ayat-page" data-submission-page data-week="${week}" data-day="${escapeHtml(day)}">
+  <div class="ayat-head">
+   <button class="btn soft" type="button" data-sub-back>← Kembali</button>
+   <div class="ayat-title">
+    <p class="eyebrow">Setor Hafalan · Pekan ${week} · ${escapeHtml(day)}</p>
+    <h1>${title}</h1>
+    <small class="muted" id="subMeta">${awal&&akhir?"":"Isi Set Ayat / Rabth dulu di halaman Progress."}</small>
+   </div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+   <h3 style="margin-bottom:10px">Rekam Hafalan</h3>
+   <div style="height:120px;display:grid;place-items:center;background:var(--surface-2);border-radius:14px;margin:12px 0;gap:10px">
+    <button class="btn danger" id="recordBtn">● Mulai Rekam</button>
+    <b id="recordTimer" style="display:none;font-size:22px;font-variant-numeric:tabular-nums">00:00</b>
+   </div>
+   <audio id="recordPlayback" controls style="display:none;width:100%;margin-bottom:12px"></audio>
+   <small class="muted" id="recordMessage" style="display:block;margin-bottom:10px"></small>
+   <div class="row">
+    <button class="btn grow" id="playbackBtn" disabled>Putar Ulang</button>
+    <button class="btn primary grow" id="submitSetoran" disabled>Kirim Setoran</button>
+   </div>
+  </div>
+ </section>`;
+}
+
+export function bindSubmission(){
+ const root=document.querySelector("[data-submission-page]");
+ if(!root)return;
+ const week=Number(root.dataset.week)||1;
+ const day=root.dataset.day;
+
+ root.querySelector("[data-sub-back]")?.addEventListener("click",()=>{location.hash="progress";});
+
+ const recordBtn=document.querySelector("#recordBtn");
+ const timerEl=document.querySelector("#recordTimer");
+ const playback=document.querySelector("#recordPlayback");
+ const playbackBtn=document.querySelector("#playbackBtn");
+ const submitBtn=document.querySelector("#submitSetoran");
+ const message=document.querySelector("#recordMessage");
+
+ let mediaRecorder=null;
+ let chunks=[];
+ let recordedUrl=null;
+ let timerId=null;
+ let seconds=0;
+
+ const fmt=()=>String(Math.floor(seconds/60)).padStart(2,"0")+":"+String(seconds%60).padStart(2,"0");
+ const cleanup=()=>{
+  if(mediaRecorder&&mediaRecorder.state!=="inactive"){
+   mediaRecorder.onstop=null;
+   mediaRecorder.stop();
+  }
+  if(mediaRecorder){
+   mediaRecorder.stream.getTracks().forEach(t=>t.stop());
+   mediaRecorder=null;
+  }
+  clearInterval(timerId);timerId=null;
+  if(recordedUrl){URL.revokeObjectURL(recordedUrl);recordedUrl=null;}
+ };
+ window.addEventListener("hashchange",cleanup,{once:true});
+
+ recordBtn?.addEventListener("click",async ()=>{
+  if(mediaRecorder&&mediaRecorder.state==="recording"){
+   mediaRecorder.stop();
+   clearInterval(timerId);timerId=null;
+   recordBtn.textContent="● Mulai Rekam";
+   recordBtn.classList.remove("soft");recordBtn.classList.add("danger");
+   return;
+  }
+  message.textContent="";
+  try{
+   const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   chunks=[];
+   mediaRecorder=new MediaRecorder(stream);
+   const mime=mediaRecorder.mimeType||"audio/webm";
+   mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data);};
+   mediaRecorder.onstop=()=>{
+    stream.getTracks().forEach(t=>t.stop());
+    if(recordedUrl)URL.revokeObjectURL(recordedUrl);
+    recordedUrl=URL.createObjectURL(new Blob(chunks,{type:mime}));
+    playback.src=recordedUrl;
+    playback.style.display="";
+    playbackBtn.disabled=false;
+    submitBtn.disabled=false;
+    message.textContent="Rekaman siap diputar atau dikirim.";
+   };
+   mediaRecorder.start();
+   seconds=0;timerEl.textContent=fmt();timerEl.style.display="";
+   timerId=setInterval(()=>{seconds+=1;timerEl.textContent=fmt();},1000);
+   recordBtn.textContent="■ Berhenti";
+   message.textContent="Merekam… klik Berhenti bila selesai.";
+  }catch(err){
+   message.textContent="Mikrofon tidak bisa diakses. Izinkan akses mikrofon lalu coba lagi.";
+  }
+ });
+
+ playbackBtn?.addEventListener("click",()=>{
+  if(!recordedUrl)return;
+  if(playback.paused)playback.play();
+  else playback.pause();
+ });
+
+ submitBtn?.addEventListener("click",()=>{
+  if(!recordedUrl)return;
+  const fresh=getProgressContext(getState());
+  const key=week+":"+day+":merekam";
+  setProgressContextPatch({checks:{...(fresh.checks||{}),[key]:true}});
+  scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+  cleanup();
+  location.hash="progress";
+ });
+}

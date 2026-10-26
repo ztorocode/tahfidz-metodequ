@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=c8f4a2e6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c8f4a2e6";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=c8f4a2e6";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=c8f4a2e6";
-import {juzEntries} from "../data/quran-juz.js?v=c8f4a2e6";
+import {getState} from "../store.js?v=fcee076c";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=fcee076c";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=fcee076c";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=fcee076c";
+import {juzEntries} from "../data/quran-juz.js?v=fcee076c";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -13,7 +13,7 @@ const days=[
  {id:"rabu",name:"Rabu"},
  {id:"kamis",name:"Kamis"}
 ];
-const fieldIds=["target","murajaah","rabth-awal","rabth-akhir"];
+const fieldIds=["murajaah","rabth-awal","rabth-akhir"];
 const stepIds=[
  ...Array.from({length:5},(_,i)=>"kemarin-"+(i+1)),
  ...Array.from({length:3},(_,i)=>"istima-"+(i+1)),
@@ -47,19 +47,19 @@ export function dayProgress(data,week,day){
  return Math.round(done/(fieldIds.length+stepIds.length)*100);
 }
 
-function progressField(data,week,day,label,id,placeholder="",numeric=false){
- const numericAttr=numeric?' type="number" inputmode="decimal" min="0" step="any" data-progress-numeric="1"':'';
+function progressField(data,week,day,label,id,placeholder="",numeric=false,max=null){
+ const numericAttr=numeric?' type="number" inputmode="decimal" min="0" step="any" data-progress-numeric="1"'+(max!=null?' max="'+max+'" data-progress-max="'+max+'"':""):'';
  return '<div class="member-progress-field"><label>'+label+'</label><input class="member-progress-input"'+numericAttr+' data-progress-field="'+id+'" data-progress-day="'+day+'" value="'+escapeHtml(fieldValue(data,week,day,id))+'" placeholder="'+placeholder+'"></div>';
 }
 
 let rabthTarget=null;
 
 /** Rabth diisi lewat picker surat & ayat, bukan ketik bebas. */
-function rabthField(data,week,day,label,id){
+function rabthField(data,week,day,label,id,placeholder){
  const value=String(fieldValue(data,week,day,id)||"");
  return '<div class="member-progress-field"><label>'+label+'</label>'
   +'<button type="button" class="member-progress-input member-progress-pick'+(value?'':' empty')+'" data-rabth-pick="'+id+'" data-progress-day="'+day+'">'
-  +(value?escapeHtml(value):"Pilih surat &amp; ayat")+'</button></div>';
+  +(value?escapeHtml(value):placeholder)+'</button></div>';
 }
 
 function rabthModal(){
@@ -128,7 +128,7 @@ function openRabthModal(field,day){
  const form=document.querySelector("#rabthModalForm");
  const note=document.querySelector("#rabthModalNote");
  if(!juz){
-  note.textContent="Isi kolom Muraja'ah (juz) dulu dengan angka 1–30, lalu pilih rabth.";
+  note.textContent="Isi kolom Muraja'ah (1x) juz dulu dengan angka 1–30, lalu pilih rabth.";
   form.classList.add("hidden");
   modal.classList.remove("hidden");
   return;
@@ -193,6 +193,11 @@ document.addEventListener("click",event=>{
   location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay);
   return;
  }
+ const istima=event.target.closest("[data-istima-open]");
+ if(istima){
+  location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay);
+  return;
+ }
  const pick=event.target.closest("[data-rabth-pick]");
  if(pick){openRabthModal(pick.dataset.rabthPick,pick.dataset.progressDay);return;}
  const modal=document.querySelector("#rabthModal");
@@ -212,6 +217,13 @@ function kemarinButton(data,week,day,label,id){
  return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-kemarin-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
 }
 
+function istimaButton(data,week,day,label,id){
+ const index=Number(id.split("-")[1])||1;
+ const active=isStepDone(data,week,day,id);
+ const locked=index>1&&!isStepDone(data,week,day,"istima-"+(index-1));
+ return '<button type="button" class="member-progress-step'+(active?" active":"")+(locked?" locked":"")+'" data-istima-open="'+id+'" data-progress-day="'+day+'"'+(locked?" disabled":"")+' aria-pressed="'+String(active)+'" aria-disabled="'+String(locked)+'">'+label+'</button>';
+}
+
 function stepButton(data,week,day,label,id){
  const active=isStepDone(data,week,day,id);
  return '<button type="button" class="member-progress-step'+(active?" active":"")+'" data-progress-step="'+id+'" data-progress-day="'+day+'" aria-pressed="'+String(active)+'">'+label+'</button>';
@@ -219,24 +231,27 @@ function stepButton(data,week,day,label,id){
 
 function dayBody(data,week,day){
  const kemarin=Array.from({length:5},(_,i)=>kemarinButton(data,week,day,(i+1)+"x","kemarin-"+(i+1))).join("");
- const istima=Array.from({length:3},(_,i)=>stepButton(data,week,day,(i+1)+"x","istima-"+(i+1))).join("");
+ const istima=Array.from({length:3},(_,i)=>istimaButton(data,week,day,(i+1)+"x","istima-"+(i+1))).join("");
  const tikrar=Array.from({length:25},(_,i)=>stepButton(data,week,day,(i+1)+"x","tikrar-"+(i+1))).join("");
  return '<div class="member-progress-day-body">'+
-  '<div class="member-progress-fields">'+
-   progressField(data,week,day,"Target hal/hari","target","",true)+
-   progressField(data,week,day,"Muraja\'ah (juz)","murajaah","",true)+
-   '<div class="member-progress-rabth">'+
-    rabthField(data,week,day,"Rabth awal","rabth-awal")+
-    rabthField(data,week,day,"Rabth akhir","rabth-akhir")+
+  '<div class="member-progress-group">'+
+   '<div class="member-progress-group-title">Hafalan Lama</div>'+
+   '<div class="member-progress-fields cols-3">'+
+    progressField(data,week,day,"Muraja\'ah (1x)","murajaah","juz",true,30)+
+    rabthField(data,week,day,"Rabth (1x)","rabth-awal","awal")+
+    rabthField(data,week,day,"Rabth (1x)","rabth-akhir","akhir")+
    '</div>'+
+   '<div class="member-progress-block"><label>Hafalan kemarin</label><div class="member-progress-options cols-5">'+kemarin+'</div></div>'+
   '</div>'+
-  '<div class="member-progress-block"><label>Hafalan kemarin</label><div class="member-progress-options cols-5">'+kemarin+'</div></div>'+
-  '<div class="member-progress-block"><label>Istima\' qari mujawwad</label><div class="member-progress-options cols-3">'+istima+'</div></div>'+
-  '<div class="member-progress-block"><label>Hafalan baru</label><div class="member-progress-options cols-2">'+
-   stepButton(data,week,day,"Menghafal","menghafal")+
-   stepButton(data,week,day,"Merekam","merekam")+
-  '</div></div>'+
-  '<div class="member-progress-block"><label>Tikrar: ulang langsung hafalan yang didapat</label><div class="member-progress-options cols-7">'+tikrar+'</div></div>'+
+  '<div class="member-progress-group">'+
+   '<div class="member-progress-group-title">Hafalan Baru</div>'+
+   '<div class="member-progress-block"><label>Istima\' qari mujawwad</label><div class="member-progress-options cols-3">'+istima+'</div></div>'+
+   '<div class="member-progress-block"><label>Menghafal &amp; Merekam</label><div class="member-progress-options cols-2">'+
+    stepButton(data,week,day,"Menghafal","menghafal")+
+    stepButton(data,week,day,"Merekam","merekam")+
+   '</div></div>'+
+   '<div class="member-progress-block"><label>Tikrar: ulang langsung hafalan yang didapat</label><div class="member-progress-options cols-7">'+tikrar+'</div></div>'+
+  '</div>'+
  '</div>';
 }
 
@@ -438,6 +453,11 @@ document.addEventListener("click",event=>{
   const data=getProgressContext(getState());
   const week=stateWeek(data);
   const day=step.dataset.progressDay;
+  // Merekam → halaman rekam setoran (auto-centang saat kirim).
+  if(step.dataset.progressStep==="merekam"){
+   location.hash="submission?week="+week+"&day="+encodeURIComponent(day);
+   return;
+  }
   const key=stepKey(week,day,step.dataset.progressStep);
   const next={...(data.checks||{}),[key]:!Boolean(data.checks?.[key])};
   setProgressContextPatch({checks:next});
@@ -457,6 +477,11 @@ document.addEventListener("input",event=>{
  if(input.dataset.progressNumeric){
   const cleaned=input.value.replace(/[^0-9.,]/g,"").replace(/,/g,".");
   if(cleaned!==input.value)input.value=cleaned;
+  const max=Number(input.dataset.progressMax)||0;
+  if(max&&Number(input.value)>max){
+   alert("Maksimal "+max+".");
+   input.value=String(max);
+  }
  }
  const data=getProgressContext(getState());
  const week=stateWeek(data);

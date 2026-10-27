@@ -12,4 +12,5 @@ return static function (Router $router): void {
     $router->post('/api/progress', [$controller, 'save']);
     $router->get('/api/progress/student', [$controller, 'student']);
     $router->post('/api/progress/mentor-save', [$controller, 'mentorSave']);
+    $router->post('/api/progress/activity', [$controller, 'activity']);
 };

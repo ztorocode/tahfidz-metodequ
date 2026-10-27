@@ -285,6 +285,7 @@ final class SessionService
             'roles' => $this->activeRoles((int) $row['id']),
             'pondoks' => $this->activePondoks((int) $row['id']),
             'musyrif_type' => $this->musyrifType((int) $row['id']),
+            'musyrif_contexts' => $this->musyrifContexts((int) $row['id']),
         ];
     }
 

@@ -276,7 +276,47 @@ final class HalaqahService
             }
         }
 
-        return array_map(static function (array $row) use ($byHalaqah, $progressByUser): array {
+        $activityStatement = $this->pdo->prepare(
+            'SELECT activity.halaqah_id, activity.user_id, activity.student_name,
+                    activity.type, activity.status, activity.decision, activity.surah,
+                    activity.juz, activity.activity_at
+             FROM (
+                SELECT s.halaqah_id, s.user_id, u.name AS student_name,
+                       \'submission\' AS type, s.status, NULL AS decision,
+                       s.surah, s.juz, s.submitted_at AS activity_at
+                FROM submissions s
+                JOIN users u ON u.id = s.user_id
+                WHERE s.halaqah_id IN (' . $inList . ')
+                  AND s.deleted_at IS NULL
+                UNION ALL
+                SELECT s.halaqah_id, s.user_id, u.name AS student_name,
+                       \'review\' AS type, s.status, r.decision,
+                       s.surah, s.juz, r.reviewed_at AS activity_at
+                FROM submission_reviews r
+                JOIN submissions s ON s.id = r.submission_id
+                JOIN users u ON u.id = s.user_id
+                WHERE s.halaqah_id IN (' . $inList . ')
+                  AND s.deleted_at IS NULL
+             ) AS activity
+             ORDER BY activity.activity_at DESC
+             LIMIT 50'
+        );
+        $activityStatement->execute();
+        $activitiesByHalaqah = [];
+        foreach ($activityStatement->fetchAll(PDO::FETCH_ASSOC) as $activity) {
+            $activitiesByHalaqah[(int) $activity['halaqah_id']][] = [
+                'user_id' => (int) $activity['user_id'],
+                'student_name' => (string) $activity['student_name'],
+                'type' => (string) $activity['type'],
+                'status' => $activity['status'] !== null ? (string) $activity['status'] : null,
+                'decision' => $activity['decision'] !== null ? (string) $activity['decision'] : null,
+                'surah' => $activity['surah'] !== null ? (string) $activity['surah'] : null,
+                'juz' => $activity['juz'] !== null ? (int) $activity['juz'] : null,
+                'activity_at' => (string) $activity['activity_at'],
+            ];
+        }
+
+        return array_map(static function (array $row) use ($byHalaqah, $progressByUser, $activitiesByHalaqah): array {
             $id = (int) $row['id'];
             $students = array_map(static function (array $student) use ($progressByUser): array {
                 $progress = $progressByUser[(int) $student['id']] ?? null;
@@ -293,6 +333,7 @@ final class HalaqahService
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $students,
+                'activities' => $activitiesByHalaqah[$id] ?? [],
             ];
         }, $halaqahs);
     }

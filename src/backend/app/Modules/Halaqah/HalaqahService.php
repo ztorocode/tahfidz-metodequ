@@ -33,13 +33,64 @@ final class HalaqahService
         return $id !== false ? (int) $id : null;
     }
 
+    /**
+     * Tipe musyrif diturunkan dari pondok_memberships (sumber tunggal aturan):
+     * punya keanggotaan aktif role='musyrif' = musyrif pondok; tanpa keanggotaan
+     * = musyrif platform. Profil type='platform' lama tetap dihormati agar
+     * data platform yang sudah ada tidak berubah arti.
+     *
+     * @param array{id:int,roles:string[]} $actor
+     */
+    private function isPlatformMusyrif(array $actor): bool
+    {
+        if ($this->platformProfileId($actor) !== null) {
+            return true;
+        }
+        if (!in_array('musyrif', $actor['roles'] ?? [], true)) {
+            return false;
+        }
+
+        $statement = $this->pdo->prepare(
+            "SELECT 1 FROM pondok_memberships
+             WHERE user_id = :user_id AND role = 'musyrif' AND status = 'active' LIMIT 1"
+        );
+        $statement->execute(['user_id' => (int) $actor['id']]);
+
+        return $statement->fetchColumn() === false;
+    }
+
+    /** Profil platform milik aktor — dibuat otomatis saat ia pertama kali membuat halaqah platform. */
+    private function ensurePlatformProfile(int $userId): int
+    {
+        $existing = $this->platformProfileId(['id' => $userId, 'roles' => ['musyrif']]);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $upsert = $this->pdo->prepare(
+            "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
+             VALUES (:user_id, 'platform', NULL, 'active')
+             ON DUPLICATE KEY UPDATE type = 'platform', pondok_id = NULL, status = 'active'"
+        );
+        $upsert->execute(['user_id' => $userId]);
+
+        // Nilai id yang sama dengan hasil ON DUPLICATE KEY UPDATE.
+        $select = $this->pdo->prepare(
+            "SELECT id FROM musyrif_profiles WHERE user_id = :user_id AND type = 'platform' LIMIT 1"
+        );
+        $select->execute(['user_id' => $userId]);
+
+        return (int) $select->fetchColumn();
+    }
+
     /** @param array{id:int,roles:string[]} $actor @return list<array<string,mixed>> */
     public function list(array $actor, int $pondokId): array
     {
         // Musyrif platform tidak terikat pondok: hanya melihat halaqah yang ia buat/ampu sendiri.
-        $platformProfileId = $this->platformProfileId($actor);
-        if ($pondokId < 1 && $platformProfileId !== null) {
-            return $this->listPlatformOwn($platformProfileId);
+        // Tipenya diturunkan dari pondok_memberships (tanpa keanggotaan = platform).
+        if ($pondokId < 1 && $this->isPlatformMusyrif($actor)) {
+            $platformProfileId = $this->platformProfileId($actor);
+            return $platformProfileId !== null ? $this->listPlatformOwn($platformProfileId) : [];
         }
 
         $this->assertPondokMember($actor, $pondokId);
@@ -418,10 +469,11 @@ final class HalaqahService
     public function create(array $actor, array $input): array
     {
         $pondokId = (int) ($input['pondok_id'] ?? 0);
-        $platformProfileId = $this->platformProfileId($actor);
 
-        if ($platformProfileId !== null) {
-            return $this->createPlatformHalaqah($actor, $input, $platformProfileId, $pondokId);
+        if ($this->isPlatformMusyrif($actor)) {
+            // Profil platform dibuat otomatis saat pertama kali dipakai.
+            $profileId = $this->ensurePlatformProfile((int) $actor['id']);
+            return $this->createPlatformHalaqah($actor, $input, $profileId, $pondokId);
         }
 
         $this->assertPondokAdmin($actor, $pondokId);
@@ -459,6 +511,99 @@ final class HalaqahService
         PondokDashboard::refreshQuietly($this->pdo, $pondokId);
 
         return ['id' => $halaqahId, 'name' => $name, 'musyrif_user_id' => $musyrifUserId > 0 ? $musyrifUserId : null];
+    }
+
+    /**
+     * Edit nama halaqah dan/atau musyrif pengampu — khusus admin pondok;
+     * musyrif platform hanya boleh mengedit nama halaqah miliknya sendiri.
+     * Body: pondok_id, halaqah_id, name (wajib), musyrif_user_id (opsional;
+     * null/0 = kosongkan penugasan musyrif; diabaikan untuk halaqah platform).
+     *
+     * @param array{id:int,roles:string[]} $actor
+     * @return array<string,mixed>
+     */
+    public function update(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        // Musyrif platform (pondok_id < 1) mengedit halaqah miliknya sendiri.
+        $platformOwn = $pondokId < 1 && $this->isPlatformMusyrif($actor);
+
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        if ($platformOwn) {
+            $fetch = $this->pdo->prepare(
+                'SELECT id, name FROM halaqahs
+                 WHERE id = :id AND pondok_id IS NULL AND musyrif_profile_id = :profile_id AND deleted_at IS NULL LIMIT 1'
+            );
+            $fetch->execute(['id' => $halaqahId, 'profile_id' => $this->platformProfileId($actor)]);
+            $halaqah = $fetch->fetch(PDO::FETCH_ASSOC) ?: null;
+        } else {
+            $this->assertPondokAdmin($actor, $pondokId);
+            $halaqah = $this->halaqahRow($halaqahId, $pondokId);
+        }
+        if ($halaqah === null) {
+            throw new RegistrationException('Halaqah tidak ditemukan.', 404, ['halaqah_id' => 'Halaqah tidak ditemukan.']);
+        }
+
+        $name = trim((string) ($input['name'] ?? ''));
+        if ($name === '') {
+            throw new RegistrationException('Nama halaqah wajib diisi.', 422, ['name' => 'Nama halaqah wajib diisi.']);
+        }
+        if (mb_strlen($name) > 150) {
+            throw new RegistrationException('Nama halaqah maksimal 150 karakter.', 422, ['name' => 'Nama halaqah maksimal 150 karakter.']);
+        }
+
+        // Perubahan musyrif hanya berlaku untuk halaqah pondok;
+        // halaqah platform selalu mengabaikan field musyrif_user_id.
+        $musyrifUserId = $platformOwn ? 0 : (int) ($input['musyrif_user_id'] ?? 0);
+        if ($musyrifUserId > 0) {
+            $this->assertMusyrifOfPondok($musyrifUserId, $pondokId);
+        }
+
+        try {
+            $update = $this->pdo->prepare(
+                'UPDATE halaqahs SET name = :name WHERE id = :id'
+            );
+            $update->execute(['name' => $name, 'id' => $halaqahId]);
+        } catch (\PDOException $exception) {
+            if ((string) $exception->getCode() === '23000') {
+                throw new RegistrationException('Nama halaqah sudah dipakai di pondok ini.', 409, ['name' => 'Nama halaqah sudah dipakai.']);
+            }
+            throw $exception;
+        }
+
+        if (!$platformOwn && array_key_exists('musyrif_user_id', $input)) {
+            if ($musyrifUserId > 0) {
+                $this->assignMusyrif($halaqahId, $musyrifUserId, $pondokId);
+            } else {
+                // Pilihan "tanpa musyrif": lepas penugasan.
+                $clear = $this->pdo->prepare(
+                    'UPDATE halaqahs SET musyrif_profile_id = NULL WHERE id = :id'
+                );
+                $clear->execute(['id' => $halaqahId]);
+            }
+        }
+
+        // Dashboard ringkas hanya untuk halaqah milik pondok (bukan platform).
+        if (!$platformOwn) {
+            PondokDashboard::refreshQuietly($this->pdo, $pondokId);
+        }
+
+        $statement = $this->pdo->prepare(
+            'SELECT h.id, h.name, u.id AS musyrif_user_id, u.name AS musyrif_name
+             FROM halaqahs h
+             LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+             LEFT JOIN users u ON u.id = mp.user_id
+             WHERE h.id = :id LIMIT 1'
+        );
+        $statement->execute(['id' => $halaqahId]);
+        $row = $statement->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'id' => (int) ($row['id'] ?? $halaqahId),
+            'name' => (string) ($row['name'] ?? $name),
+            'musyrif_user_id' => isset($row['musyrif_user_id']) && $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
+            'musyrif_name' => isset($row['musyrif_name']) && $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
+        ];
     }
 
     /** @param array{id:int,roles:string[]} $actor @return array<string,mixed> */

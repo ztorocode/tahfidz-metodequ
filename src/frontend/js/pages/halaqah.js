@@ -1,7 +1,11 @@
-import {getState,setState} from "../store.js?v=hpfq5a1";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=hpfq5a1";
+import {getState,setState} from "../store.js?v=81bed469";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=81bed469";
 
 let selectedHalaqahId=null;
+/** Halaqah yang sedang diedit lewat modal edit admin pondok. */
+let editingHalaqahId=null;
+/** Halaqah platform yang sedang diedit namanya lewat musyrif platform. */
+let editingPlatformHalaqahId=null;
 /** Halaqah yang sedang dibuka pada daftar milik musyrif (undefined = belum dipilih). */
 let expandedHalaqahId;
 
@@ -39,14 +43,15 @@ function refreshSantris(force,silent){
  const st=getState();
  const pid=activePondokId();
  const token=st.authToken;
- if(!pid||!token||(!force&&st.santriSrc===pid))return Promise.resolve();
- setState({santriSrc:pid});
+ if(!pid||!token||(!force&&st.santriSrc===pid)||santriFetching)return Promise.resolve();
+ santriFetching=true;
  return fetch("/api/pondoks/santris?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
   .then(r=>r.json().then(b=>({ok:r.ok,b})))
   .then(({ok,b})=>{
-   if(ok&&Array.isArray(b.data)){setState({realSantris:b.data});if(!silent)window.dispatchEvent(new Event("app:render"));}
+   if(ok&&Array.isArray(b.data)){setState({realSantris:b.data,santriSrc:pid});if(!silent)window.dispatchEvent(new Event("app:render"));}
   })
-  .catch(()=>{});
+  .catch(()=>{})
+  .finally(()=>{santriFetching=false;});
 }
 
 function realSantriList(){
@@ -58,14 +63,15 @@ function refreshMusyrifs(force,silent){
  const st=getState();
  const pid=activePondokId();
  const token=st.authToken;
- if(!pid||!token||(!force&&st.musyrifSrc===pid))return Promise.resolve();
- setState({musyrifSrc:pid});
+ if(!pid||!token||(!force&&st.musyrifSrc===pid)||musyrifFetching)return Promise.resolve();
+ musyrifFetching=true;
  return fetch("/api/pondoks/musyrifs?pondok_id="+pid,{headers:{Accept:"application/json",Authorization:"Bearer "+token}})
   .then(r=>r.json().then(b=>({ok:r.ok,b})))
   .then(({ok,b})=>{
-   if(ok&&Array.isArray(b.data)){setState({realMusyrifs:b.data});if(!silent)window.dispatchEvent(new Event("app:render"));}
+   if(ok&&Array.isArray(b.data)){setState({realMusyrifs:b.data,musyrifSrc:pid});if(!silent)window.dispatchEvent(new Event("app:render"));}
   })
-  .catch(()=>{});
+  .catch(()=>{})
+  .finally(()=>{musyrifFetching=false;});
 }
 
 /* ====================== Halaqah (server) ====================== */
@@ -115,6 +121,8 @@ function todayInfo(startDate){
 /** Daftar di localStorage basi bila sudah lebih lama dari TTL ini. */
 const HALAQAH_TTL=20000;
 let halaqahFetching=0; // jumlah request aktif
+let musyrifFetching=false; // pengganti penanda srcKey untuk menahan fetch dobel
+let santriFetching=false;
 
 function refreshHalaqahs(force,silent){
  const st=getState();
@@ -129,7 +137,8 @@ function refreshHalaqahs(force,silent){
  if(!force&&fresh)return Promise.resolve();
  if(!force&&halaqahFetching)return Promise.resolve();
  halaqahFetching++;
- setState({halaqahSrc:srcKey});
+ // srcKey hanya diset SETELAH fetch sukses — fetch gagal (mis. 403)
+ // tidak boleh menandai data basi akun/lama tetap "sah" untuk kunci ini.
  const url=platform
   ?"/api/pondoks/halaqahs?pondok_id=0"
   :"/api/pondoks/halaqahs?pondok_id="+pid;
@@ -137,7 +146,7 @@ function refreshHalaqahs(force,silent){
   .then(b=>{
    const mapped=Array.isArray(b.data)?b.data.map(mapServer):[];
    const changed=JSON.stringify(mapped)!==JSON.stringify(getState().realHalaqahs);
-   setState({realHalaqahs:mapped,halaqahFetchedAt:Date.now()});
+   setState({realHalaqahs:mapped,halaqahSrc:srcKey,halaqahFetchedAt:Date.now()});
    if(!silent&&changed)window.dispatchEvent(new Event("app:render"));
    if(platform)return changed;
    return importLocalOnce(pid,mapped);
@@ -230,7 +239,10 @@ function adminList(items){
      <div class="row between" style="gap:8px"><b>${escapeHtml(item.name)}</b>${badge("Aktif","success")}</div>
      <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Musyrif ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
     </div>
-    <button class="btn" type="button" data-halaqah-view="${item.id}" aria-label="Lihat detail" style="font-size:22px;padding:6px 14px">›</button>
+    <div class="row" style="gap:8px;flex:0 0 auto;align-items:flex-start">
+     <button class="btn" type="button" data-halaqah-edit="${item.id}" aria-label="Edit halaqah" title="Edit halaqah" style="padding:8px 10px">${pencilIcon()}</button>
+     <button class="btn" type="button" data-halaqah-view="${item.id}" aria-label="Lihat detail" style="font-size:22px;padding:6px 14px">›</button>
+    </div>
    </div>
   </div>`).join(""):`<div class="card"><p class="muted">Belum ada halaqah. Tekan <b>+Halaqah</b> untuk membuat yang pertama.</p></div>`}
  </div>
@@ -250,7 +262,27 @@ function adminList(items){
     </div>
    </form>
   </div>
+ </div>
+ <div class="modal-backdrop hidden" id="halaqahEditModal">
+  <div class="modal-card">
+   <div><p class="eyebrow">Pondok</p><h2>Edit Halaqah</h2></div>
+   <form class="stack" id="halaqahEditForm" style="margin-top:16px">
+    <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahEditName" placeholder="Contoh: Halaqah Ali" required></div>
+    <div><label class="label">Musyrif</label><select class="input" id="halaqahEditMusyrif"></select></div>
+    <small class="muted">Satu halaqah memiliki satu musyrif. Pilih "— Tanpa musyrif —" bila penugasan musyrif ingin dikosongkan.</small>
+    <small class="muted" id="halaqahEditMessage"></small>
+    <div class="btn-joined">
+     <button class="btn" type="button" data-halaqah-edit-close>Tutup</button>
+     <button class="btn primary" type="submit">Simpan Perubahan</button>
+    </div>
+   </form>
+  </div>
  </div>`;
+}
+
+/** Ikon pensil (edit) — gaya sama dengan chevronIcon. */
+function pencilIcon(){
+ return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
 }
 
 function chevronIcon(direction){
@@ -296,6 +328,20 @@ function musyrifList(items,opts={}){
        </div>
       </form>
      </div>
+     <div class="modal-backdrop hidden" id="platformHalaqahEditModal">
+      <div class="modal-card">
+       <div><p class="eyebrow">MetodeQu Platform</p><h2>Edit Halaqah</h2></div>
+       <form class="stack" id="platformHalaqahEditForm" style="margin-top:16px">
+        <div><label class="label">Nama Halaqah</label><input class="input" id="platformHalaqahEditName" placeholder="Contoh: Halaqah Al-Ikhlas" required></div>
+        <small class="muted">Halaqah ini Anda ampu sendiri (tanpa pondok). Nama dapat diubah kapan saja.</small>
+        <small class="muted" id="platformHalaqahEditMessage"></small>
+        <div class="btn-joined">
+         <button class="btn" type="button" data-platform-halaqah-edit-close>Tutup</button>
+         <button class="btn primary" type="submit">Simpan Perubahan</button>
+        </div>
+       </form>
+      </div>
+     </div>
     </div>`
   :`<p class="eyebrow">Pondok / Halaqah</p>
     <h1>Halaqah Saya</h1>
@@ -314,7 +360,10 @@ function musyrifList(items,opts={}){
     </button>
     ${open?`<div class="halaqah-acc-body">
      <div class="halaqah-santri-list">${santriRows(item)}</div>
-     <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
+     ${opts.platform?`<div class="row" style="gap:8px">
+      <button class="btn grow" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
+      <button class="btn" type="button" data-platform-halaqah-edit="${item.id}" aria-label="Edit nama halaqah" title="Edit nama halaqah" style="padding:8px 10px">${pencilIcon()}</button>
+     </div>`:`<button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>`}
     </div>`:""}
    </div>`;
   }).join(""):empty}
@@ -435,6 +484,39 @@ document.addEventListener("click",event=>{
   return;
  }
 
+ const editBtn=event.target.closest("[data-halaqah-edit]");
+ if(editBtn){
+  if(getState().persona!=="admin"||getState().context!=="pondok")return;
+  const item=halaqahs().find(row=>row.id===editBtn.dataset.halaqahEdit);
+  if(!item)return;
+  editingHalaqahId=item.id;
+  document.querySelector("#halaqahEditName").value=item.name;
+  const fillMusyrifOptions=()=>{
+   const sel=document.querySelector("#halaqahEditMusyrif");
+   if(!sel)return;
+   const options=musyrifOptions();
+   // Musyrif terpilih yang tak lagi ada di daftar tetap ditampilkan agar pilihan tidak hilang diam-diam.
+   if(item.musyrifId&&options.length&&!options.some(opt=>opt.id===item.musyrifId)){
+    options.push({id:item.musyrifId,name:item.musyrifName||musyrifName(item.musyrifId)});
+   }
+   sel.innerHTML='<option value="">— Tanpa musyrif —</option>'+(options.length
+    ?options.map(opt=>`<option value="${opt.id}">${escapeHtml(opt.name)}</option>`).join("")
+    :'<option value="" disabled>— belum ada musyrif terdaftar —</option>');
+   sel.value=item.musyrifId||"";
+  };
+  fillMusyrifOptions();
+  document.querySelector("#halaqahEditMessage").textContent="";
+  document.querySelector("#halaqahEditModal")?.classList.remove("hidden");
+  refreshMusyrifs(true,true).then(fillMusyrifOptions);
+  return;
+ }
+
+ if(event.target.closest("[data-halaqah-edit-close]")){
+  document.querySelector("#halaqahEditModal")?.classList.add("hidden");
+  editingHalaqahId=null;
+  return;
+ }
+
  // === Musyrif platform: buat halaqah sendiri (maks 5) ===
  if(event.target.closest("[data-platform-halaqah-add]")){
   if(!isPlatformMusyrif())return;
@@ -445,6 +527,27 @@ document.addEventListener("click",event=>{
 
  if(event.target.closest("[data-platform-halaqah-close]")){
   document.querySelector("#platformHalaqahModal")?.classList.add("hidden");
+  return;
+ }
+
+ const platformEditBtn=event.target.closest("[data-platform-halaqah-edit]");
+ if(platformEditBtn){
+  if(!isPlatformMusyrif())return;
+  const item=halaqahs().find(row=>row.id===platformEditBtn.dataset.platformHalaqahEdit);
+  if(!item)return;
+  editingPlatformHalaqahId=item.id;
+  const input=document.querySelector("#platformHalaqahEditName");
+  if(input)input.value=item.name;
+  const message=document.querySelector("#platformHalaqahEditMessage");
+  if(message){message.textContent="";message.style.color="";}
+  document.querySelector("#platformHalaqahEditModal")?.classList.remove("hidden");
+  input?.focus();
+  return;
+ }
+
+ if(event.target.closest("[data-platform-halaqah-edit-close]")){
+  document.querySelector("#platformHalaqahEditModal")?.classList.add("hidden");
+  editingPlatformHalaqahId=null;
   return;
  }
 
@@ -586,6 +689,86 @@ document.addEventListener("submit",event=>{
    });
   return;
  }
+ if(event.target.id==="platformHalaqahEditForm"){
+  event.preventDefault();
+  if(!isPlatformMusyrif())return;
+
+  const item=halaqahs().find(row=>row.id===editingPlatformHalaqahId);
+  if(!item)return;
+
+  const name=document.querySelector("#platformHalaqahEditName")?.value.trim()||"";
+  const message=document.querySelector("#platformHalaqahEditMessage");
+  if(!name){
+   if(message){message.textContent="Nama halaqah wajib diisi.";message.style.color="var(--danger)";}
+   return;
+  }
+
+  const submit=event.target.querySelector('button[type="submit"]');
+  if(submit){submit.disabled=true;submit.textContent="Menyimpan…";}
+
+  halaqApi("/api/pondoks/halaqahs/update",{method:"POST",body:JSON.stringify({
+   pondok_id:0,
+   halaqah_id:Number(item.numericId||0),
+   name
+  })})
+   .then(()=>{
+    document.querySelector("#platformHalaqahEditForm")?.reset();
+    document.querySelector("#platformHalaqahEditModal")?.classList.add("hidden");
+    editingPlatformHalaqahId=null;
+    toast("Nama halaqah diperbarui.");
+    return refreshHalaqahs(true,true);
+   })
+   .then(()=>{window.dispatchEvent(new Event("app:render"));})
+   .catch(err=>{
+    if(message){message.textContent=err?.message||"Gagal menyimpan perubahan.";message.style.color="var(--danger)";}
+   })
+   .finally(()=>{
+    if(submit){submit.disabled=false;submit.textContent="Simpan Perubahan";}
+   });
+  return;
+ }
+ if(event.target.id==="halaqahEditForm"){
+  event.preventDefault();
+  if(getState().persona!=="admin"||getState().context!=="pondok")return;
+
+  const item=halaqahs().find(row=>row.id===editingHalaqahId);
+  if(!item)return;
+
+  const name=document.querySelector("#halaqahEditName")?.value.trim()||"";
+  const musyrifUserId=parseUserId(document.querySelector("#halaqahEditMusyrif")?.value||"");
+  const message=document.querySelector("#halaqahEditMessage");
+
+  if(!name){
+   if(message){message.textContent="Nama halaqah wajib diisi.";message.style.color="var(--danger)";}
+   return;
+  }
+
+  const submit=event.target.querySelector('button[type="submit"]');
+  if(submit){submit.disabled=true;submit.textContent="Menyimpan…";}
+
+  halaqApi("/api/pondoks/halaqahs/update",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId()),
+   halaqah_id:Number(item.numericId||0),
+   name,
+   musyrif_user_id:musyrifUserId
+  })})
+   .then(()=>{
+    document.querySelector("#halaqahEditForm")?.reset();
+    document.querySelector("#halaqahEditModal")?.classList.add("hidden");
+    editingHalaqahId=null;
+    toast("Halaqah diperbarui.");
+    return refreshHalaqahs(true,true);
+   })
+   .then(()=>{window.dispatchEvent(new Event("app:render"));})
+   .catch(err=>{
+    if(message){message.textContent=err?.message||"Gagal menyimpan perubahan.";message.style.color="var(--danger)";}
+   })
+   .finally(()=>{
+    if(submit){submit.disabled=false;submit.textContent="Simpan Perubahan";}
+   });
+  return;
+ }
+
  if(event.target.id!=="halaqahForm")return;
  event.preventDefault();
  if(getState().persona!=="admin"||getState().context!=="pondok")return;

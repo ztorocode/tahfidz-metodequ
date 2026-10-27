@@ -1,4 +1,4 @@
-import {setState} from "../store.js?v=hpfq5a1";
+import {setState} from "../store.js?v=81bed469";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
@@ -76,7 +76,7 @@ function loginCard(){
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=hpfq5a1">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=81bed469">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
@@ -101,10 +101,13 @@ async function postRegistration(payload){
 
 export function bindLogin(){
  const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
- const go=(persona="member",context="personal",extra={})=>{
-  setState({loggedIn:true,persona,context,musyrifType:null,...extra});
-  location.hash=homeRoute(persona);
- };
+  // Cache daftar milik akun sebelumnya: dikosongkan tiap ganti sesi agar tidak bocor
+  // (login pun memakai localStorage yang sama antar akun di satu peramban).
+  const emptyCache={realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null};
+  const go=(persona="member",context="personal",extra={})=>{
+   setState({loggedIn:true,persona,context,musyrifType:null,...emptyCache,...extra});
+   location.hash=homeRoute(persona);
+  };
 
  const goWithSession=(data)=>{
   const user=data?.user||{};
@@ -124,7 +127,10 @@ export function bindLogin(){
   const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Musyrif":"Member";
   const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
   const profileOverrides={member:profile,[persona]:profile};
-  go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId:myPondoks[0]?.id??null,musyrifType:demo?.musyrifType||null,profileOverrides});
+  // Tipe musyrif dari server (diturunkan dari pondok_memberships);
+  // fallback bila field belum ada: pondok kosong = platform.
+  const musyrifType=user.musyrif_type??(roles.includes("musyrif")?(myPondoks.length?"pondok":"platform"):null);
+  go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId:myPondoks[0]?.id??null,musyrifType,profileOverrides});
  };
 
  const renderMethod=(method)=>{

@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=hpfq5a1";
-import {pondokList,canPersonal} from "./context-switcher.js?v=hpfq5a1";
+import {getState,setState} from "../store.js?v=81bed469";
+import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -123,7 +123,7 @@ export function shell(content){
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?pondokName:s.context==="personal"?"Personal":pondokName;
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=hpfq5a1">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
@@ -150,7 +150,8 @@ export function bindShell(){
   if(token){
    fetch("/api/auth/logout",{method:"POST",headers:{"Authorization":"Bearer "+token}}).catch(()=>{});
   }
-  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null,authToken:null,authUser:null,myPondoks:[],activePondokId:null,myInvites:[]});
+  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null,authToken:null,authUser:null,myPondoks:[],activePondokId:null,myInvites:[],
+   realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null});
   location.hash="login";
  };
  document.querySelector("#logoutBtn")?.addEventListener("click",logout);

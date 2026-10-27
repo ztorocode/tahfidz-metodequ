@@ -103,6 +103,21 @@ final class HalaqahController
         }
     }
 
+    /** Edit nama halaqah dan/atau musyrif pengampu (admin pondok). */
+    public function update(Request $request): never
+    {
+        try {
+            $halaqah = $this->service()->update($this->actor($request), $request->body());
+            Response::json(['success' => true, 'message' => 'Halaqah diperbarui.', 'data' => $halaqah]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     public function members(Request $request): never
     {
         try {

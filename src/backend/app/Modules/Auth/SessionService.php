@@ -67,6 +67,7 @@ final class SessionService
                 'email_verified' => $user['email_verified_at'] !== null,
                 'roles' => $this->activeRoles((int) $user['id']),
                 'pondoks' => $this->activePondoks((int) $user['id']),
+                'musyrif_type' => $this->musyrifType((int) $user['id']),
             ],
         ];
     }
@@ -108,6 +109,7 @@ final class SessionService
                 'email_verified' => ($user['email_verified_at'] ?? null) !== null,
                 'roles' => $this->activeRoles((int) $user['id']),
                 'pondoks' => $this->activePondoks((int) $user['id']),
+                'musyrif_type' => $this->musyrifType((int) $user['id']),
             ],
         ];
     }
@@ -173,6 +175,26 @@ final class SessionService
         );
     }
 
+    /**
+     * Tipe musyrif — diturunkan dari pondok_memberships (sumber tunggal aturan):
+     * 'pondok' bila punya keanggotaan musyrif aktif, 'platform' bila tanpa
+     * keanggotaan pondok sama sekali, null bila bukan musyrif.
+     */
+    private function musyrifType(int $userId): ?string
+    {
+        if (!in_array('musyrif', $this->activeRoles($userId), true)) {
+            return null;
+        }
+
+        $statement = $this->pdo->prepare(
+            "SELECT 1 FROM pondok_memberships
+             WHERE user_id = :user_id AND role = 'musyrif' AND status = 'active' LIMIT 1"
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return $statement->fetchColumn() === false ? 'platform' : 'pondok';
+    }
+
     public function userFromToken(string $token): ?array
     {
         $token = trim($token);
@@ -205,6 +227,7 @@ final class SessionService
             'email_verified' => $row['email_verified_at'] !== null,
             'roles' => $this->activeRoles((int) $row['id']),
             'pondoks' => $this->activePondoks((int) $row['id']),
+            'musyrif_type' => $this->musyrifType((int) $row['id']),
         ];
     }
 

@@ -11,6 +11,7 @@ return static function (Router $router): void {
     $router->get('/api/pondoks/halaqahs', [$controller, 'index']);
     $router->get('/api/pondoks/halaqahs/mine', [$controller, 'mine']);
     $router->post('/api/pondoks/halaqahs', [$controller, 'store']);
+    $router->post('/api/pondoks/halaqahs/update', [$controller, 'update']);
     $router->post('/api/pondoks/halaqahs/members', [$controller, 'members']);
     $router->post('/api/pondoks/halaqahs/start-date', [$controller, 'startDate']);
 };

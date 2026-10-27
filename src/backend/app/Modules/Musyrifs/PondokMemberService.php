@@ -58,11 +58,10 @@ final class PondokMemberService
             $this->pdo->prepare(
                 "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
                  VALUES (:user_id, 'pondok', :pondok_id, 'active')
-                 ON DUPLICATE KEY UPDATE pondok_id = :pondok_id2, status = 'active'"
+                 ON DUPLICATE KEY UPDATE status = 'active'"
             )->execute([
                 'user_id' => (int) $row['user_id'],
                 'pondok_id' => (int) $row['pondok_id'],
-                'pondok_id2' => (int) $row['pondok_id'],
             ]);
         }
 

@@ -19,7 +19,7 @@ const demoAccounts={
 function navItems(){
  const s=getState();
  if(s.persona==="super_admin")return superAdminNav;
- if(s.persona==="musyrif")return s.musyrifType==="platform"?platformMusyrifNav:musyrifNav;
+ if(s.persona==="musyrif")return s.context==="platform"?platformMusyrifNav:musyrifNav;
  if(s.context==="personal")return memberNav;
  return s.persona==="admin"?adminNav:memberNav;
 }
@@ -61,16 +61,19 @@ function notifBell(){
 
 function currentAccount(){
  const s=getState();
- const accountKey=s.persona==="musyrif"&&s.musyrifType==="platform"?"musyrif_platform":s.persona;
+ const accountKey=s.persona==="musyrif"&&s.context==="platform"?"musyrif_platform":s.persona;
  const base=demoAccounts[accountKey]||demoAccounts.member;
  const overrides=s.profileOverrides?.[s.persona]||{};
  return {...base,...overrides};
 }
 
 function pondokChoices(){
- const list=pondokList();
- const active=list.find(p=>p.id===(getState().activePondokId??list[0]?.id))||list[0];
- return list.map(p=>`<button class="account-choice ${getState().context==="pondok"&&active?.id===p.id?"active":""}" data-switch-context="pondok" data-pondok-id="${p.id}" type="button"><span class="avatar">P</span><span><b>${p.name}</b><small class="muted" style="display:block">Konteks pondok</small></span></button>`).join("");
+ const s=getState();
+ const allowed=s.persona==="musyrif"&&Array.isArray(s.musyrifContexts?.pondoks)
+  ?s.musyrifContexts.pondoks
+  :pondokList();
+ const active=allowed.find(p=>p.id===(s.activePondokId??allowed[0]?.id))||allowed[0];
+ return allowed.map(p=>`<button class="account-choice ${s.context==="pondok"&&active?.id===p.id?"active":""}" data-switch-context="pondok" data-pondok-id="${p.id}" type="button"><span class="avatar">P</span><span><b>${p.name}</b><small class="muted" style="display:block">Musyrif pondok</small></span></button>`).join("");
 }
 
 function accountMenu(){
@@ -85,10 +88,11 @@ function accountMenu(){
     <div class="grow"><b>${account.name}</b><small class="muted" style="display:block">${account.role} · ${account.email}</small></div>
    </div>
    <button class="account-action" id="editProfileBtn" type="button">Edit Profil</button>
-   ${["super_admin","musyrif"].includes(getState().persona)?"":`<button class="account-action" id="switchAccountBtn" type="button">Switch Akun</button>
+   ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Ganti Konteks</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
-    ${canPersonal()?`<button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>`:""}
+    ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform MetodeQu</b><small class="muted" style="display:block">Musyrif platform</small></span></button>`:""}
+    ${getState().persona!=="musyrif"&&canPersonal()?`<button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>`:""}
     ${pondokChoices()}
    </div>`}
    <button class="account-action danger-text" id="logoutTopBtn" type="button">Logout</button>
@@ -123,7 +127,7 @@ export function shell(content){
  const myPondoks=s.myPondoks||[];
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
- const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?pondokName:s.context==="personal"?"Personal":pondokName;
+ const activeContext=s.persona==="super_admin"?"Platform MetodeQu":s.persona==="musyrif"?(s.context==="platform"?"Platform MetodeQu":pondokName):s.context==="personal"?"Personal":pondokName;
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
@@ -171,7 +175,12 @@ export function bindShell(){
   const patch={context};
   if(context==="pondok"&&button.dataset.pondokId!==undefined){
    patch.activePondokId=isNaN(Number(button.dataset.pondokId))?button.dataset.pondokId:Number(button.dataset.pondokId);
+  }else if(context==="platform"){
+   patch.activePondokId=null;
   }
+  patch.realHalaqahs=[];
+  patch.halaqahSrc=null;
+  patch.halaqahFetchedAt=0;
   setState(patch);
   menu?.classList.add("hidden");
   if(context==="personal")location.hash="dashboard";

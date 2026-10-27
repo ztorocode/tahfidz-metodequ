@@ -58,3 +58,8 @@
 .halaqah-santri-row .chev{display:inline-flex;justify-self:end;color:var(--muted)}
 .halaqah-acc-empty{padding:16px 2px}
 @media(max-width:620px){.halaqah-acc-head{padding:16px}.halaqah-acc-head h3{font-size:17px}.halaqah-acc-body{padding:0 16px 16px}.halaqah-santri-row{grid-template-columns:minmax(0,1fr) auto 40px 16px;gap:8px}.halaqah-santri-day,.halaqah-santri-pct{font-size:12px}}
+@media (max-width: 620px) {
+ .halaqah-acc-body{padding:0}
+ .halaqah-acc{padding:0 !important}
+ .halaqah-santri-row{padding:17px 15px}
+}

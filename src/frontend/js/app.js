@@ -1,17 +1,17 @@
-import {view,routeName} from "./router.js?v=9a4e6d38";
-import {getState,setState} from "./store.js?v=9a4e6d38";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=9a4e6d38";
-import {bindLogin} from "./pages/login.js?v=9a4e6d38";
-import {bindInvite} from "./pages/terima-undangan.js?v=9a4e6d38";
-import {toast} from "./utils/helpers.js?v=9a4e6d38";
-import {initProgressSync} from "./utils/progress-sync.js?v=9a4e6d38";
-import {forgetSetoran} from "./utils/setoran.js?v=9a4e6d38";
-import {bindWaPage} from "./pages/whatsapp.js?v=9a4e6d38";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=9a4e6d38";
-import {bindRabthAyat} from "./pages/rabth-ayat.js?v=9a4e6d38";
-import {bindSubmission} from "./pages/submission.js?v=9a4e6d38";
-import {bindPlatformMusyrif} from "./pages/super-admin.js?v=9a4e6d38";
-import {bindReview} from "./pages/review.js?v=9a4e6d38";
+import {view,routeName} from "./router.js?v=b2f7d510";
+import {getState,setState} from "./store.js?v=b2f7d510";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b2f7d510";
+import {bindLogin} from "./pages/login.js?v=b2f7d510";
+import {bindInvite} from "./pages/terima-undangan.js?v=b2f7d510";
+import {toast} from "./utils/helpers.js?v=b2f7d510";
+import {initProgressSync} from "./utils/progress-sync.js?v=b2f7d510";
+import {forgetSetoran} from "./utils/setoran.js?v=b2f7d510";
+import {bindWaPage} from "./pages/whatsapp.js?v=b2f7d510";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=b2f7d510";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=b2f7d510";
+import {bindSubmission} from "./pages/submission.js?v=b2f7d510";
+import {bindPlatformMusyrif} from "./pages/super-admin.js?v=b2f7d510";
+import {bindReview} from "./pages/review.js?v=b2f7d510";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -546,7 +546,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=9a4e6d38"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b2f7d510"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

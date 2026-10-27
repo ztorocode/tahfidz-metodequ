@@ -10,6 +10,9 @@ use PDO;
 
 final class HalaqahService
 {
+    /** Urutan hari program (Jum'at libur). */
+    private const PROGRESS_DAYS = ['sabtu', 'ahad', 'senin', 'selasa', 'rabu', 'kamis'];
+
     public function __construct(private readonly PDO $pdo)
     {
     }
@@ -69,15 +72,47 @@ final class HalaqahService
             ];
         }
 
-        return array_map(static function (array $row) use ($byHalaqah): array {
+        // Ringkasan progress terakhir tiap santri (hari ke-N + persen isian),
+        // dipakai daftar santri pada kartu halaqah musyrif.
+        $progressStatement = $this->pdo->prepare(
+            'SELECT user_id, week_no, day_code, completion_percent, updated_at
+             FROM member_progress
+             WHERE pondok_id = :pondok_id AND deleted_at IS NULL
+             ORDER BY user_id, updated_at DESC'
+        );
+        $progressStatement->execute(['pondok_id' => $pondokId]);
+        $progressByUser = [];
+        foreach ($progressStatement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $studentId = (int) $row['user_id'];
+            if (isset($progressByUser[$studentId])) {
+                continue; // baris pertama = isian paling baru
+            }
+            $week = max(1, min(5, (int) $row['week_no']));
+            $dayIndex = array_search((string) $row['day_code'], self::PROGRESS_DAYS, true);
+            $progressByUser[$studentId] = [
+                'day' => ($week - 1) * 6 + ($dayIndex === false ? 0 : (int) $dayIndex) + 1,
+                'percent' => max(0, min(100, (int) $row['completion_percent'])),
+                'updated_at' => (string) $row['updated_at'],
+            ];
+        }
+
+        return array_map(static function (array $row) use ($byHalaqah, $progressByUser): array {
             $id = (int) $row['id'];
+            $students = array_map(static function (array $student) use ($progressByUser): array {
+                $progress = $progressByUser[(int) $student['id']] ?? null;
+                $student['progress_day'] = $progress !== null ? $progress['day'] : null;
+                $student['progress_percent'] = $progress !== null ? $progress['percent'] : null;
+                $student['progress_updated_at'] = $progress !== null ? $progress['updated_at'] : null;
+                return $student;
+            }, $byHalaqah[$id] ?? []);
+
             return [
                 'id' => $id,
                 'name' => (string) $row['name'],
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
-                'students' => $byHalaqah[$id] ?? [],
+                'students' => $students,
             ];
         }, $halaqahs);
     }

@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=e5c9a3d1";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e5c9a3d1";
-import {scheduleSave} from "../utils/progress-sync.js?v=e5c9a3d1";
-import {SURAHS} from "../data/quran-juz.js?v=e5c9a3d1";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=e5c9a3d1";
-import {dayProgress} from "./member-progress.js?v=e5c9a3d1";
+import {getState} from "../store.js?v=3f9d7c21";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=3f9d7c21";
+import {scheduleSave} from "../utils/progress-sync.js?v=3f9d7c21";
+import {SURAHS} from "../data/quran-juz.js?v=3f9d7c21";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=3f9d7c21";
+import {dayProgress} from "./member-progress.js?v=3f9d7c21";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 

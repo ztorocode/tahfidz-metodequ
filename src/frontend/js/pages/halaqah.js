@@ -1,7 +1,9 @@
-import {getState,setState} from "../store.js?v=e5c9a3d1";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=e5c9a3d1";
+import {getState,setState} from "../store.js?v=3f9d7c21";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=3f9d7c21";
 
 let selectedHalaqahId=null;
+/** Halaqah yang sedang dibuka pada daftar milik musyrif (undefined = belum dipilih). */
+let expandedHalaqahId;
 
 const demoMusyrifOptions=[];
 
@@ -72,7 +74,9 @@ function mapServer(h){
    santriUserId:String(s.id),
    mutqin:Number(s.mutqin)||0,
    pending:Number(s.pending)||0,
-   status:s.status||"Aktif"
+   status:s.status||"Aktif",
+   dayNumber:s.progress_day!=null?Number(s.progress_day):null,
+   percent:s.progress_percent!=null?Number(s.progress_percent):null
   }))
  };
 }
@@ -232,17 +236,48 @@ function adminList(items){
  </div>`;
 }
 
+function chevronIcon(direction){
+ if(direction==="right"){
+  return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+ }
+ return direction==="up"
+  ?'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>'
+  :'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+}
+
+function santriRows(item){
+ if(!item.students.length)return '<p class="muted halaqah-acc-empty">Belum ada santri di halaqah ini.</p>';
+ return item.students.map(student=>`<button class="halaqah-santri-row" type="button" data-student-progress="${escapeHtml(student.name)}" data-halaqah-id="${item.id}">
+   <b>${escapeHtml(student.name)}</b>
+   <span class="halaqah-santri-day">${student.dayNumber?`hari ke-${student.dayNumber}`:"—"}</span>
+   <span class="halaqah-santri-pct">${student.percent!=null?student.percent+"%":"—"}</span>
+   <span class="chev">${chevronIcon("right")}</span>
+  </button>`).join("");
+}
+
 function musyrifList(items){
+ // undefined = belum dipilih (buka halaqah pertama); null = pengguna menutup semua.
+ if(expandedHalaqahId===undefined&&items.length)expandedHalaqahId=items[0].id;
  return `<div style="margin-bottom:18px">
   <p class="eyebrow">Pondok / Halaqah</p>
   <h1>Halaqah Saya</h1>
   <p class="muted">Halaqah yang menjadi tanggung jawab Anda di ${escapeHtml(pondokName())}.</p>
  </div>
- <div class="halaqah-grid" style="--cols:${halaqahCols(items)}">
-  ${items.length?items.map(item=>`<div class="card stack">
-   <div class="row between"><div><h3>${escapeHtml(item.name)}</h3><small class="muted">${item.students.length} santri</small></div>${badge("Musyrif","success")}</div>
-   <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Santri</button>
-  </div>`).join(""):`<div class="card"><h3>Belum ada halaqah</h3><p class="muted">Admin Pondok belum menugaskan halaqah ke akun Musyrif ini.</p></div>`}
+ <div class="halaqah-acc-list">
+  ${items.length?items.map(item=>{
+   const open=item.id===expandedHalaqahId;
+   return `<div class="card halaqah-acc${open?" open":""}">
+    <button class="halaqah-acc-head" type="button" data-halaqah-toggle="${item.id}" aria-expanded="${open}">
+     <h3>${escapeHtml(item.name)}</h3>
+     <span class="halaqah-acc-meta">${item.students.length} santri ${chevronIcon(open?"up":"down")}</span>
+    </button>
+    ${open?`<div class="halaqah-acc-body">
+     <small class="halaqah-acc-label">Santri</small>
+     <div class="halaqah-santri-list">${santriRows(item)}</div>
+     <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
+    </div>`:""}
+   </div>`;
+  }).join(""):`<div class="card"><h3>Belum ada halaqah</h3><p class="muted">Admin Pondok belum menugaskan halaqah ke akun Musyrif ini.</p></div>`}
  </div>`;
 }
 
@@ -322,6 +357,13 @@ export function halaqahPage(){
 }
 
 document.addEventListener("click",event=>{
+ const toggle=event.target.closest("[data-halaqah-toggle]");
+ if(toggle){
+  expandedHalaqahId=expandedHalaqahId===toggle.dataset.halaqahToggle?null:toggle.dataset.halaqahToggle;
+  window.dispatchEvent(new Event("app:render"));
+  return;
+ }
+
  const view=event.target.closest("[data-halaqah-view]");
  if(view){
   selectedHalaqahId=view.dataset.halaqahView;

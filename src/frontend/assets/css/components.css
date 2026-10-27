@@ -42,3 +42,21 @@
 .setoran-actions .btn{min-height:38px}
 .setoran-actions .btn.playing{background:var(--brand);border-color:var(--brand);color:#fff}
 @media(max-width:620px){.setoran-item{align-items:flex-start}.setoran-actions{width:100%}.setoran-actions .btn{flex:1 1 0;min-width:0}}
+.halaqah-acc-list{display:grid;gap:12px}
+.halaqah-acc{padding:0;overflow:hidden}
+.halaqah-acc-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border:0;background:transparent;color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.halaqah-acc-head h3{margin:0;font-size:18px;font-weight:800;line-height:1.25}
+.halaqah-acc-meta{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);white-space:nowrap}
+.halaqah-acc-meta svg{display:block;flex:none}
+.halaqah-acc-body{border-top:1px solid var(--border);padding:14px 20px 18px}
+.halaqah-acc-label{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.halaqah-santri-list{display:grid;margin-bottom:14px}
+.halaqah-santri-row{display:grid;grid-template-columns:minmax(0,1fr) auto 48px 18px;align-items:center;gap:12px;width:100%;padding:12px 2px;border:0;border-bottom:1px solid var(--border);background:transparent;color:var(--text);text-align:left;cursor:pointer;font:inherit}
+.halaqah-santri-row:first-child{border-top:1px solid var(--border)}
+.halaqah-santri-row:hover{background:var(--surface-2)}
+.halaqah-santri-row b{font-size:14px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.halaqah-santri-day{font-size:13px;font-weight:700;color:var(--text)}
+.halaqah-santri-pct{font-size:13px;font-weight:700;color:var(--text);text-align:right}
+.halaqah-santri-row .chev{display:inline-flex;justify-self:end;color:var(--muted)}
+.halaqah-acc-empty{padding:6px 2px 14px}
+@media(max-width:620px){.halaqah-acc-head{padding:16px}.halaqah-acc-head h3{font-size:17px}.halaqah-acc-body{padding:12px 16px 16px}.halaqah-santri-row{grid-template-columns:minmax(0,1fr) auto 40px 16px;gap:8px}.halaqah-santri-day,.halaqah-santri-pct{font-size:12px}}

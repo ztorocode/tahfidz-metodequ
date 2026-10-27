@@ -1,6 +1,4 @@
-import {getState,setState} from "../store.js?v=81bed469";
-import {students as demoStudents} from "../data/dummy-data.js?v=81bed469";
-import {badge,statusTone} from "../utils/helpers.js?v=81bed469";
+import {getState} from "../store.js?v=81bed469";
 
 
 function esc(value){
@@ -28,10 +26,27 @@ function activityTime(value){
  return [get("day"),get("month"),get("year")].filter(Boolean).join(" ")+" "+get("hour")+":"+get("minute");
 }
 
-function demoDashboard(){
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Musyrif · Halaqah 1</p><h1>Ust. Rahmat Hidayat</h1><p class="muted">Prioritaskan setoran yang perlu keputusan hari ini.</p></div><a class="btn primary" href="#review">Review setoran</a></div>
-<div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>12</b><span class="muted">Santri aktif</span></div><div class="kpi"><b>4</b><span class="muted">Setoran pending</span></div><div class="kpi"><b>38</b><span class="muted">Mutqin pekan ini</span></div><div class="kpi"><b>6</b><span class="muted">Perlu penguatan</span></div></div>
-<div class="card"><div class="row between"><h3>Santri Halaqah</h3><a href="#halaqah" class="muted">Lihat semua</a></div><div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${demoStudents.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${Number(s.mutqin)||0} halaman</td><td>${Number(s.pending)||0}</td><td>${badge(s.status,statusTone(s.status))}</td><td><button class="btn" type="button" data-musyrif-table-progress="${esc(s.name)}">Tabel Progress</button></td></tr>`).join("")}</tbody></table></div></div>`;
+function pondokName(){
+ const s=getState();
+ const list=s.myPondoks||[];
+ return list.find(p=>Number(p.id)===Number(s.activePondokId))?.name||s.pondokProfile?.name||"Pondok";
+}
+
+function pondokSkeleton(){
+ return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
+  <div><p class="eyebrow">Musyrif · ${esc(pondokName())}</p><h1>${esc(accountName())}</h1><p class="muted">Ringkasan halaqah yang Anda ampu di pondok ini.</p></div>
+  <a class="btn primary" href="#review">Review setoran</a>
+ </div>
+ <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px" id="pondokDashKpis">
+  <div class="kpi"><b>…</b><span class="muted">Halaqah aktif</span></div>
+  <div class="kpi"><b>…</b><span class="muted">Santri aktif</span></div>
+  <div class="kpi"><b>…</b><span class="muted">Setoran pending</span></div>
+  <div class="kpi"><b>…</b><span class="muted">Mutqin total</span></div>
+ </div>
+ <div class="card">
+  <div class="row between"><div><h3>Santri Halaqah</h3><small class="muted" id="pondokDashStatus">Memuat data…</small></div><a href="#halaqah" class="muted">Lihat semua</a></div>
+  <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Santri</th><th>Halaqah</th><th>Mutqin</th><th>Pending</th></tr></thead><tbody id="pondokDashStudents"><tr><td colspan="4"><span class="muted">Memuat santri…</span></td></tr></tbody></table></div>
+ </div>`;
 }
 
 function platformSkeleton(){
@@ -51,7 +66,54 @@ function platformSkeleton(){
 }
 
 export function musyrifDashboard(){
- return isPlatformMusyrif()?platformSkeleton():demoDashboard();
+ return isPlatformMusyrif()?platformSkeleton():pondokSkeleton();
+}
+
+async function loadPondokDashboard(){
+ if(isPlatformMusyrif())return;
+ const s=getState();
+ const token=s.authToken;
+ const pondokId=Number(s.activePondokId||0);
+ const userId=Number(s.authUser?.id||0);
+ const status=document.querySelector("#pondokDashStatus");
+ const tbody=document.querySelector("#pondokDashStudents");
+ const kpis=document.querySelector("#pondokDashKpis");
+ if(!token||!pondokId||!tbody||!kpis){
+  if(status){status.textContent="Konteks pondok belum tersedia.";status.style.color="var(--danger)";}
+  return;
+ }
+ try{
+  const response=await fetch("/api/pondoks/halaqahs?pondok_id="+pondokId+"&t="+Date.now(),{headers:{Accept:"application/json",Authorization:"Bearer "+token},cache:"no-store"});
+  let body={};try{body=await response.json()}catch{}
+  if(!response.ok)throw new Error(body?.message||"Gagal memuat dashboard.");
+  const all=Array.isArray(body.data)?body.data:[];
+  const halaqahs=all.filter(h=>Number(h.musyrif_user_id||0)===userId);
+  const rows=[];
+  const seen=new Set();
+  let pending=0,mutqin=0;
+  halaqahs.forEach(h=>(h.students||[]).forEach(student=>{
+   pending+=Number(student.pending)||0;
+   mutqin+=Number(student.mutqin)||0;
+   seen.add(String(student.id));
+   rows.push({
+    name:student.name||"Santri",
+    halaqah:h.name||"Halaqah",
+    mutqin:Number(student.mutqin)||0,
+    pending:Number(student.pending)||0
+   });
+  }));
+  kpis.innerHTML=`<div class="kpi"><b>${halaqahs.length}</b><span class="muted">Halaqah aktif</span></div>
+   <div class="kpi"><b>${seen.size}</b><span class="muted">Santri aktif</span></div>
+   <div class="kpi"><b>${pending}</b><span class="muted">Setoran pending</span></div>
+   <div class="kpi"><b>${mutqin}</b><span class="muted">Mutqin total</span></div>`;
+  tbody.innerHTML=rows.length?rows.map(row=>`<tr><td><b>${esc(row.name)}</b></td><td>${esc(row.halaqah)}</td><td>${row.mutqin}</td><td>${row.pending}</td></tr>`).join("")
+   :'<tr><td colspan="4"><span class="muted">Belum ada santri pada halaqah yang Anda ampu.</span></td></tr>';
+  if(status)status.textContent=halaqahs.length?`${halaqahs.length} halaqah · ${seen.size} santri`:"Belum ada halaqah yang diampu.";
+ }catch(error){
+  if(status){status.textContent=error?.message||"Gagal memuat dashboard.";status.style.color="var(--danger)";}
+  tbody.innerHTML='<tr><td colspan="4"><span class="muted">Data dashboard tidak dapat dimuat.</span></td></tr>';
+  kpis.innerHTML='<div class="kpi"><b>—</b><span class="muted">Halaqah aktif</span></div><div class="kpi"><b>—</b><span class="muted">Santri aktif</span></div><div class="kpi"><b>—</b><span class="muted">Setoran pending</span></div><div class="kpi"><b>—</b><span class="muted">Mutqin total</span></div>';
+ }
 }
 
 async function loadPlatformDashboard(){
@@ -111,22 +173,6 @@ async function loadPlatformDashboard(){
 }
 
 export function bindMusyrifDashboard(){
- if(!isPlatformMusyrif())return;
- loadPlatformDashboard();
+ if(isPlatformMusyrif())loadPlatformDashboard();
+ else loadPondokDashboard();
 }
-
-document.addEventListener("click",event=>{
- if(isPlatformMusyrif())return;
- const button=event.target.closest("[data-musyrif-table-progress]");
- if(!button)return;
- const student=demoStudents.find(item=>item.name===button.dataset.musyrifTableProgress);
- if(!student)return;
- const state=getState();
- setState({selectedStudentProgress:{
-  student:{...student},
-  halaqahId:"halaqah-1",
-  halaqahName:student.halaqah||"Halaqah 1",
-  musyrifName:state.profileOverrides?.musyrif?.name||"Ust. Rahmat Hidayat"
- }});
- location.hash="tabel-progress";
-});

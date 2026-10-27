@@ -1,16 +1,16 @@
-import {view,routeName} from "./router.js?v=b1d7cf8b";
-import {getState,setState} from "./store.js?v=b1d7cf8b";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b1d7cf8b";
-import {bindLogin} from "./pages/login.js?v=b1d7cf8b";
-import {bindInvite} from "./pages/terima-undangan.js?v=b1d7cf8b";
-import {toast} from "./utils/helpers.js?v=b1d7cf8b";
-import {initProgressSync} from "./utils/progress-sync.js?v=b1d7cf8b";
-import {forgetSetoran} from "./utils/setoran.js?v=b1d7cf8b";
-import {bindWaPage} from "./pages/whatsapp.js?v=b1d7cf8b";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=b1d7cf8b";
-import {bindRabthAyat} from "./pages/rabth-ayat.js?v=b1d7cf8b";
-import {bindSubmission} from "./pages/submission.js?v=b1d7cf8b";
-import {loadPlatformMusyrif} from "./pages/super-admin.js?v=b1d7cf8b";
+import {view,routeName} from "./router.js?v=dae8efdc";
+import {getState,setState} from "./store.js?v=dae8efdc";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=dae8efdc";
+import {bindLogin} from "./pages/login.js?v=dae8efdc";
+import {bindInvite} from "./pages/terima-undangan.js?v=dae8efdc";
+import {toast} from "./utils/helpers.js?v=dae8efdc";
+import {initProgressSync} from "./utils/progress-sync.js?v=dae8efdc";
+import {forgetSetoran} from "./utils/setoran.js?v=dae8efdc";
+import {bindWaPage} from "./pages/whatsapp.js?v=dae8efdc";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=dae8efdc";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=dae8efdc";
+import {bindSubmission} from "./pages/submission.js?v=dae8efdc";
+import {bindPlatformMusyrif} from "./pages/super-admin.js?v=dae8efdc";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -125,7 +125,7 @@ async function loadPendingList(role,boxId,reload){
 function bindPageActions(){
  if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
  if(routeName().split("?")[0]==="submission")bindSubmission();
- if(routeName().split("?")[0]==="platform-musyrif")loadPlatformMusyrif();
+ if(routeName().split("?")[0]==="platform-musyrif")bindPlatformMusyrif();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
  loadInviteBanner();
@@ -544,7 +544,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b1d7cf8b"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=dae8efdc"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

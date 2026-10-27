@@ -1,5 +1,5 @@
-import {badge,toast} from "../utils/helpers.js?v=b1d7cf8b";
-import {getState} from "../store.js?v=b1d7cf8b";
+import {badge,toast} from "../utils/helpers.js?v=dae8efdc";
+import {getState} from "../store.js?v=dae8efdc";
 
 const TABS=[["device","Device"],["template","Template Pesan"],["history","Riwayat Pengiriman"]];
 const HEADLINE={

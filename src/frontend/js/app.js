@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=d91f3c28";
+import {view,routeName} from "./router.js?v=f28a6c10";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e31c7b42";
 import {bindLogin} from "./pages/login.js?v=81bed469";
@@ -12,7 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=81bed469";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=81bed469";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=d91f3c28";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=f28a6c10";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -548,7 +548,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d91f3c28"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f28a6c10"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

@@ -46,7 +46,7 @@ function platformSkeleton(){
  </div>
  <div class="card">
   <div><h3>Aktivitas Santri</h3><small class="muted" id="platformDashStatus">Memuat aktivitas…</small></div>
-  <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Aktivitas</th><th>Waktu</th></tr></thead><tbody id="platformDashActivities"><tr><td colspan="2"><span class="muted">Memuat aktivitas…</span></td></tr></tbody></table></div>
+  <div class="platform-activity-wrap" style="margin-top:12px"><table class="platform-activity-table"><thead><tr><th>Aktivitas</th><th>Waktu</th></tr></thead><tbody id="platformDashActivities"><tr><td colspan="2"><span class="muted">Memuat aktivitas…</span></td></tr></tbody></table></div>
  </div>`;
 }
 

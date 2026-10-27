@@ -342,7 +342,18 @@ function musyrifList(items,opts={}){
         </div>
        </form>
       </div>
-     </div>`
+     </div>
+    <div class="modal-backdrop hidden" id="platformSantriActionModal">
+     <div class="modal-card" style="width:min(520px,100%)">
+      <h2 style="margin-bottom:20px">Undang Santri</h2>
+      <p class="muted" style="font-size:16px;line-height:1.45;margin-bottom:18px">Undang banyak santri sekaligus lewat email &amp; WhatsApp, mereka buat akun sendiri.</p>
+      <div class="stack" style="gap:16px">
+       <button class="btn primary full" type="button" data-platform-santri-invite>Kirim Undangan</button>
+       <button class="btn full" type="button" data-platform-santri-copy>Salin Link Undangan</button>
+       <button class="btn full" type="button" data-platform-santri-form>Form +Santri</button>
+      </div>
+     </div>
+    </div>`
   :`<p class="eyebrow">Pondok / Halaqah</p>
     <h1>Halaqah Saya</h1>
     <p class="muted">Halaqah yang menjadi tanggung jawab Anda di ${escapeHtml(pondokName())}.</p>`;
@@ -534,7 +545,19 @@ document.addEventListener("click",event=>{
  const platformSantriBtn=event.target.closest("[data-platform-halaqah-santri]");
  if(platformSantriBtn){
   if(!isPlatformMusyrif())return;
-  toast("Tambah santri untuk halaqah platform belum tersedia.");
+  const item=halaqahs().find(row=>row.id===platformSantriBtn.dataset.platformHalaqahSantri);
+  if(!item)return;
+  const modal=document.querySelector("#platformSantriActionModal");
+  if(!modal)return;
+  modal.dataset.halaqahId=String(item.numericId||0);
+  modal.dataset.halaqahName=item.name||"";
+  modal.classList.remove("hidden");
+  return;
+ }
+
+ const platformSantriModal=document.querySelector("#platformSantriActionModal");
+ if(platformSantriModal&&event.target===platformSantriModal){
+  platformSantriModal.classList.add("hidden");
   return;
  }
 

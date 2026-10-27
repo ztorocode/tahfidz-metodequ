@@ -36,9 +36,8 @@ final class HalaqahController
     {
         try {
             $pondokId = (int) ($request->query['pondok_id'] ?? 0);
-            if ($pondokId < 1) {
-                throw new RegistrationException('Pondok wajib dipilih.', 422, ['pondok_id' => 'Pondok wajib dipilih.']);
-            }
+            // pondok_id = 0 dibolehkan khusus musyrif platform (lihat halaqahnya sendiri);
+            // HalaqahService::list() yang memutuskan 403 untuk kombinasi lain.
             $list = $this->service()->list($this->actor($request), $pondokId);
             Response::json(['success' => true, 'data' => $list]);
         } catch (RegistrationException $exception) {

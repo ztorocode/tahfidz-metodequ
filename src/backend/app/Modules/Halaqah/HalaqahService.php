@@ -13,13 +13,35 @@ final class HalaqahService
     /** Urutan hari program (Jum'at libur). */
     private const PROGRESS_DAYS = ['sabtu', 'ahad', 'senin', 'selasa', 'rabu', 'kamis'];
 
+    /** Batas halaqah yang boleh dibuat sendiri oleh satu musyrif platform. */
+    private const PLATFORM_HALAQAH_LIMIT = 5;
+
     public function __construct(private readonly PDO $pdo)
     {
+    }
+
+    /** Id profil musyrif platform milik aktor, atau null bila bukan musyrif platform. */
+    private function platformProfileId(array $actor): ?int
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT id FROM musyrif_profiles
+             WHERE user_id = :user_id AND type = 'platform' AND status = 'active'
+             LIMIT 1"
+        );
+        $statement->execute(['user_id' => (int) $actor['id']]);
+        $id = $statement->fetchColumn();
+        return $id !== false ? (int) $id : null;
     }
 
     /** @param array{id:int,roles:string[]} $actor @return list<array<string,mixed>> */
     public function list(array $actor, int $pondokId): array
     {
+        // Musyrif platform tidak terikat pondok: hanya melihat halaqah yang ia buat/ampu sendiri.
+        $platformProfileId = $this->platformProfileId($actor);
+        if ($pondokId < 1 && $platformProfileId !== null) {
+            return $this->listPlatformOwn($platformProfileId);
+        }
+
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
@@ -94,6 +116,113 @@ final class HalaqahService
                 'percent' => max(0, min(100, (int) $row['completion_percent'])),
                 'updated_at' => (string) $row['updated_at'],
             ];
+        }
+
+        return array_map(static function (array $row) use ($byHalaqah, $progressByUser): array {
+            $id = (int) $row['id'];
+            $students = array_map(static function (array $student) use ($progressByUser): array {
+                $progress = $progressByUser[(int) $student['id']] ?? null;
+                $student['progress_day'] = $progress !== null ? $progress['day'] : null;
+                $student['progress_percent'] = $progress !== null ? $progress['percent'] : null;
+                $student['progress_updated_at'] = $progress !== null ? $progress['updated_at'] : null;
+                return $student;
+            }, $byHalaqah[$id] ?? []);
+
+            return [
+                'id' => $id,
+                'name' => (string) $row['name'],
+                'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
+                'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
+                'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
+                'students' => $students,
+            ];
+        }, $halaqahs);
+    }
+
+    /**
+     * Daftar halaqah yang dibuat/diampu sendiri oleh musyrif platform
+     * (halaqah tanpa pondok: pondok_id NULL).
+     */
+    private function listPlatformOwn(int $profileId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT h.id, h.name, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
+             FROM halaqahs h
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+             LEFT JOIN users u ON u.id = mp.user_id
+             WHERE h.musyrif_profile_id = :profile_id AND h.status = 'active' AND h.deleted_at IS NULL
+             ORDER BY h.id"
+        );
+        $statement->execute(['profile_id' => $profileId]);
+        $halaqahs = $statement->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!$halaqahs) {
+            return [];
+        }
+
+        $ids = array_map(static fn (array $row): int => (int) $row['id'], $halaqahs);
+        $inList = implode(',', array_map('intval', $ids));
+
+        $memberStatement = $this->pdo->prepare(
+            'SELECT hm.halaqah_id, u.id, u.name, u.email,
+                    (SELECT COUNT(*)
+                     FROM submission_reviews r
+                     JOIN submissions s ON s.id = r.submission_id
+                     WHERE s.user_id = u.id AND s.halaqah_id = hm.halaqah_id
+                       AND r.decision = \'mutqin\' AND s.deleted_at IS NULL) AS mutqin,
+                    (SELECT COUNT(*)
+                     FROM submissions sp
+                     WHERE sp.user_id = u.id AND sp.halaqah_id = hm.halaqah_id
+                       AND sp.status = \'pending\' AND sp.deleted_at IS NULL) AS pending
+             FROM halaqah_memberships hm
+             JOIN users u ON u.id = hm.user_id
+             JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+             WHERE hm.status = \'active\' AND hm.halaqah_id IN (' . $inList . ')
+             ORDER BY u.name'
+        );
+        $memberStatement->execute();
+        $byHalaqah = [];
+        foreach ($memberStatement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $byHalaqah[(int) $row['halaqah_id']][] = [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+                'email' => (string) $row['email'],
+                'mutqin' => (int) $row['mutqin'],
+                'pending' => (int) $row['pending'],
+                'status' => 'Aktif',
+            ];
+        }
+
+        // Ringkasan progress terakhir tiap santri dalam halaqah milik musyrif ini.
+        $progressByUser = [];
+        $memberUserIds = [];
+        foreach ($byHalaqah as $students) {
+            foreach ($students as $student) {
+                $memberUserIds[(int) $student['id']] = true;
+            }
+        }
+        if ($memberUserIds !== []) {
+            $userIn = implode(',', array_map('intval', array_keys($memberUserIds)));
+            $progressStatement = $this->pdo->prepare(
+                'SELECT user_id, week_no, day_code, completion_percent, updated_at
+                 FROM member_progress
+                 WHERE user_id IN (' . $userIn . ') AND deleted_at IS NULL
+                 ORDER BY user_id, updated_at DESC'
+            );
+            $progressStatement->execute();
+            foreach ($progressStatement->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                $studentId = (int) $row['user_id'];
+                if (isset($progressByUser[$studentId])) {
+                    continue; // baris pertama = isian paling baru
+                }
+                $week = max(1, min(5, (int) $row['week_no']));
+                $dayIndex = array_search((string) $row['day_code'], self::PROGRESS_DAYS, true);
+                $progressByUser[$studentId] = [
+                    'day' => ($week - 1) * 6 + ($dayIndex === false ? 0 : (int) $dayIndex) + 1,
+                    'percent' => max(0, min(100, (int) $row['completion_percent'])),
+                    'updated_at' => (string) $row['updated_at'],
+                ];
+            }
         }
 
         return array_map(static function (array $row) use ($byHalaqah, $progressByUser): array {
@@ -225,10 +354,76 @@ final class HalaqahService
         throw new RegistrationException('Hanya admin pondok atau musyrif halaqah ini yang boleh mengatur tanggal mulai.', 403);
     }
 
+    /**
+     * Musyrif platform membuat halaqah sendiri: tanpa pondok, ia otomatis jadi
+     * pengampu, dan maksimal PLATFORM_HALAQAH_LIMIT halaqah miliknya.
+     */
+    private function createPlatformHalaqah(array $actor, array $input, int $profileId, int $pondokId): array
+    {
+        if ($pondokId > 0) {
+            throw new RegistrationException(
+                'Musyrif platform tidak terikat pondok. Halaqah platform dibuat tanpa pondok.',
+                403,
+                ['pondok_id' => 'Musyrif platform tidak dapat membuat halaqah milik pondok tertentu.'],
+            );
+        }
+
+        $name = trim((string) ($input['name'] ?? ''));
+        if ($name === '') {
+            throw new RegistrationException('Nama halaqah wajib diisi.', 422, ['name' => 'Nama halaqah wajib diisi.']);
+        }
+        if (mb_strlen($name) > 150) {
+            throw new RegistrationException('Nama halaqah maksimal 150 karakter.', 422, ['name' => 'Nama halaqah maksimal 150 karakter.']);
+        }
+
+        // Musyrif platform hanya boleh membuat halaqah untuk dirinya sendiri.
+        $musyrifUserId = (int) ($input['musyrif_user_id'] ?? 0);
+        if ($musyrifUserId > 0 && $musyrifUserId !== (int) $actor['id']) {
+            throw new RegistrationException(
+                'Musyrif platform hanya dapat mengampu halaqah yang ia buat sendiri.',
+                403,
+                ['musyrif_user_id' => 'Musyrif platform tidak boleh menugaskan musyrif lain.'],
+            );
+        }
+
+        $count = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM halaqahs
+             WHERE musyrif_profile_id = :profile_id AND status = 'active' AND deleted_at IS NULL"
+        );
+        $count->execute(['profile_id' => $profileId]);
+        if ((int) $count->fetchColumn() >= self::PLATFORM_HALAQAH_LIMIT) {
+            throw new RegistrationException(
+                'Anda sudah membuat ' . self::PLATFORM_HALAQAH_LIMIT . ' halaqah — batas maksimal tercapai.',
+                403,
+                ['halaqah' => 'Maksimal ' . self::PLATFORM_HALAQAH_LIMIT . ' halaqah per musyrif platform.'],
+            );
+        }
+
+        $statement = $this->pdo->prepare(
+            'INSERT INTO halaqahs (pondok_id, name, musyrif_profile_id) VALUES (NULL, :name, :profile_id)'
+        );
+        $statement->execute(['name' => $name, 'profile_id' => $profileId]);
+
+        $halaqahId = (int) $this->pdo->lastInsertId();
+
+        return [
+            'id' => $halaqahId,
+            'name' => $name,
+            'musyrif_user_id' => (int) $actor['id'],
+            'platform_halaqah' => true,
+        ];
+    }
+
     /** @param array{id:int,roles:string[]} $actor @return array<string,mixed> */
     public function create(array $actor, array $input): array
     {
         $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $platformProfileId = $this->platformProfileId($actor);
+
+        if ($platformProfileId !== null) {
+            return $this->createPlatformHalaqah($actor, $input, $platformProfileId, $pondokId);
+        }
+
         $this->assertPondokAdmin($actor, $pondokId);
 
         $name = trim((string) ($input['name'] ?? ''));

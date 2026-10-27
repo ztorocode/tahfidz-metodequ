@@ -1,7 +1,7 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {students as demoStudents} from "../data/dummy-data.js?v=81bed469";
 import {badge,statusTone} from "../utils/helpers.js?v=81bed469";
-import {fmtWib} from "../utils/program-context.js?v=81bed469";
+
 
 function esc(value){
  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -15,6 +15,17 @@ function isPlatformMusyrif(){
 function accountName(){
  const s=getState();
  return s.authUser?.name||s.profileOverrides?.musyrif?.name||"Musyrif";
+}
+
+function activityTime(value){
+ if(!value)return "-";
+ const date=new Date(String(value).replace(" ","T")+"Z");
+ if(isNaN(date.getTime()))return "-";
+ const parts=new Intl.DateTimeFormat("id-ID",{
+  timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false
+ }).formatToParts(date);
+ const get=type=>parts.find(part=>part.type===type)?.value||"";
+ return [get("day"),get("month"),get("year")].filter(Boolean).join(" ")+" "+get("hour")+":"+get("minute");
 }
 
 function demoDashboard(){
@@ -89,7 +100,7 @@ async function loadPlatformDashboard(){
    <div class="kpi"><b>${mutqin}</b><span class="muted">Mutqin total</span></div>`;
   tbody.innerHTML=activities.length?activities.slice(0,20).map(row=>`<tr>
    <td>${esc(activityText(row))}</td>
-   <td style="white-space:nowrap">${esc(fmtWib(row.activity_at))}</td>
+   <td style="white-space:nowrap">${esc(activityTime(row.activity_at))}</td>
   </tr>`).join(""):'<tr><td colspan="2"><span class="muted">Belum ada aktivitas hafalan dari santri.</span></td></tr>';
   if(status)status.textContent=activities.length?`${Math.min(20,activities.length)} aktivitas terbaru`:"Belum ada aktivitas.";
  }catch(error){

@@ -1,23 +1,23 @@
-const CACHE='metodequ-d4b8e2f6';
+const CACHE='metodequ-e5c9a3d1';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
-  './assets/css/variables.css?v=d4b8e2f6','./assets/css/base.css?v=d4b8e2f6','./assets/css/layout.css?v=d4b8e2f6',
-  './assets/css/components.css?v=d4b8e2f6','./assets/css/responsive.css?v=d4b8e2f6',
-  './assets/images/icon.svg?v=d4b8e2f6',
-  './js/app.js?v=d4b8e2f6','./js/router.js?v=d4b8e2f6','./js/store.js?v=d4b8e2f6',
-  './js/data/dummy-data.js?v=d4b8e2f6','./js/data/quran-juz.js?v=d4b8e2f6','./js/components/app-shell.js?v=d4b8e2f6',
-  './js/components/context-switcher.js?v=d4b8e2f6','./js/layouts/app-layout.js?v=d4b8e2f6',
-  './js/utils/helpers.js?v=d4b8e2f6','./js/utils/progress-context.js?v=d4b8e2f6',
- './js/utils/progress-sync.js?v=d4b8e2f6','./js/utils/student-progress.js?v=d4b8e2f6',
- './js/utils/setoran.js?v=d4b8e2f6',
- './js/utils/quran-text.js?v=d4b8e2f6',
- './js/utils/program-context.js?v=d4b8e2f6',
-  './js/pages/login.js?v=d4b8e2f6','./js/pages/member-progress.js?v=d4b8e2f6','./js/pages/member-dashboard.js?v=d4b8e2f6','./js/pages/program.js?v=d4b8e2f6',
-  './js/pages/activity.js?v=d4b8e2f6','./js/pages/submission.js?v=d4b8e2f6','./js/pages/murajaah.js?v=d4b8e2f6',
-  './js/pages/notifications.js?v=d4b8e2f6','./js/pages/musyrif-dashboard.js?v=d4b8e2f6',
-  './js/pages/review.js?v=d4b8e2f6','./js/pages/admin-dashboard.js?v=d4b8e2f6','./js/pages/halaqah.js?v=d4b8e2f6','./js/pages/santri-progress.js?v=d4b8e2f6','./js/pages/tabel-progress.js?v=d4b8e2f6',
-  './js/pages/rabth-ayat.js?v=d4b8e2f6',
- './js/pages/whatsapp.js?v=d4b8e2f6','./js/pages/super-admin.js?v=d4b8e2f6'
+  './assets/css/variables.css?v=e5c9a3d1','./assets/css/base.css?v=e5c9a3d1','./assets/css/layout.css?v=e5c9a3d1',
+  './assets/css/components.css?v=e5c9a3d1','./assets/css/responsive.css?v=e5c9a3d1',
+  './assets/images/icon.svg?v=e5c9a3d1',
+  './js/app.js?v=e5c9a3d1','./js/router.js?v=e5c9a3d1','./js/store.js?v=e5c9a3d1',
+  './js/data/dummy-data.js?v=e5c9a3d1','./js/data/quran-juz.js?v=e5c9a3d1','./js/components/app-shell.js?v=e5c9a3d1',
+  './js/components/context-switcher.js?v=e5c9a3d1','./js/layouts/app-layout.js?v=e5c9a3d1',
+  './js/utils/helpers.js?v=e5c9a3d1','./js/utils/progress-context.js?v=e5c9a3d1',
+ './js/utils/progress-sync.js?v=e5c9a3d1','./js/utils/student-progress.js?v=e5c9a3d1',
+ './js/utils/setoran.js?v=e5c9a3d1',
+ './js/utils/quran-text.js?v=e5c9a3d1',
+ './js/utils/program-context.js?v=e5c9a3d1',
+  './js/pages/login.js?v=e5c9a3d1','./js/pages/member-progress.js?v=e5c9a3d1','./js/pages/member-dashboard.js?v=e5c9a3d1','./js/pages/program.js?v=e5c9a3d1',
+  './js/pages/activity.js?v=e5c9a3d1','./js/pages/submission.js?v=e5c9a3d1','./js/pages/murajaah.js?v=e5c9a3d1',
+  './js/pages/notifications.js?v=e5c9a3d1','./js/pages/musyrif-dashboard.js?v=e5c9a3d1',
+  './js/pages/review.js?v=e5c9a3d1','./js/pages/admin-dashboard.js?v=e5c9a3d1','./js/pages/halaqah.js?v=e5c9a3d1','./js/pages/santri-progress.js?v=e5c9a3d1','./js/pages/tabel-progress.js?v=e5c9a3d1',
+  './js/pages/rabth-ayat.js?v=e5c9a3d1',
+ './js/pages/whatsapp.js?v=e5c9a3d1','./js/pages/super-admin.js?v=e5c9a3d1'
 ];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));

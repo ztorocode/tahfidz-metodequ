@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=d4b8e2f6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=d4b8e2f6";
-import {scheduleSave} from "../utils/progress-sync.js?v=d4b8e2f6";
-import {SURAHS} from "../data/quran-juz.js?v=d4b8e2f6";
-import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=d4b8e2f6";
-import {dayProgress} from "./member-progress.js?v=d4b8e2f6";
+import {getState} from "../store.js?v=e5c9a3d1";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e5c9a3d1";
+import {scheduleSave} from "../utils/progress-sync.js?v=e5c9a3d1";
+import {SURAHS} from "../data/quran-juz.js?v=e5c9a3d1";
+import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=e5c9a3d1";
+import {dayProgress} from "./member-progress.js?v=e5c9a3d1";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -113,9 +113,11 @@ export function bindRabthAyat(){
  root.querySelector("[data-ayat-back]")?.addEventListener("click",()=>{
   const player=document.querySelector("#ayatAudio");
   if(player){player.pause();player.removeAttribute("src");}
-  location.hash="progress";
+  location.hash=backRoute;
  });
 
+ // Kembali ke halaman asal: #progress (santri) atau #review-progress (musyrif).
+ const backRoute=query().get("from")==="review-progress"?"review-progress":"progress";
  const data=getProgressContext(getState());
  const week=Number(root.dataset.week)||1;
  const day=root.dataset.day;
@@ -211,7 +213,7 @@ export function bindRabthAyat(){
   list.innerHTML='<div class="card"><b>Selesaikan '+(stepIndex-1)+'x dulu.</b>'
    +'<p class="muted" style="margin-top:8px">'+stepLabel+' harus berurutan: '+sequence+'. Tandai '+(stepIndex-1)+'x sebagai selesai dulu, baru '+(stepIndex)+'x bisa dibuka.</p></div>';
   actions.innerHTML='<button class="btn" type="button" data-ayat-back2>Kembali</button>';
-  actions.querySelector("[data-ayat-back2]")?.addEventListener("click",()=>{location.hash="progress";});
+  actions.querySelector("[data-ayat-back2]")?.addEventListener("click",()=>{location.hash=backRoute;});
   return;
  }
 
@@ -261,7 +263,7 @@ export function bindRabthAyat(){
   setProgressContextPatch({checks:nextChecks});
   scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
   stopAudio();
-  location.hash="progress";
+  location.hash=backRoute;
  };
  actions.innerHTML='<button class="btn" type="button" data-ayat-cancel>Batal</button>'
   +'<button class="btn primary" type="button" data-ayat-save>Simpan</button>';

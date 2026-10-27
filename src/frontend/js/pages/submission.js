@@ -1,9 +1,9 @@
-import {getState,setState} from "../store.js?v=d4b8e2f6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=d4b8e2f6";
-import {scheduleSave} from "../utils/progress-sync.js?v=d4b8e2f6";
-import {dayProgress} from "./member-progress.js?v=d4b8e2f6";
-import {toast} from "../utils/helpers.js?v=d4b8e2f6";
-import {activePondokId} from "../utils/program-context.js?v=d4b8e2f6";
+import {getState,setState} from "../store.js?v=e5c9a3d1";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e5c9a3d1";
+import {scheduleSave} from "../utils/progress-sync.js?v=e5c9a3d1";
+import {dayProgress} from "./member-progress.js?v=e5c9a3d1";
+import {toast} from "../utils/helpers.js?v=e5c9a3d1";
+import {activePondokId} from "../utils/program-context.js?v=e5c9a3d1";
 
 function resolvePondokId(){
  const st=getState();
@@ -62,7 +62,9 @@ export function bindSubmission(){
  const week=Number(root.dataset.week)||1;
  const day=root.dataset.day;
 
- root.querySelector("[data-sub-back]")?.addEventListener("click",()=>{location.hash="progress";});
+ // Kembali ke halaman asal: #progress (santri) atau #review-progress (musyrif).
+ const backRoute=query().get("from")==="review-progress"?"review-progress":"progress";
+ root.querySelector("[data-sub-back]")?.addEventListener("click",()=>{location.hash=backRoute;});
 
  const recordBtn=document.querySelector("#recordBtn");
  const timerEl=document.querySelector("#recordTimer");
@@ -171,7 +173,7 @@ export function bindSubmission(){
    scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
    toast("Setoran terkirim ke musyrif.");
    cleanup();
-   location.hash="progress";
+   location.hash=backRoute;
   }catch(err){
    submitBtn.disabled=false;
    submitBtn.textContent="Kirim Setoran";

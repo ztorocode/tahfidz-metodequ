@@ -1,8 +1,8 @@
-import {getState,setState} from "../store.js?v=d4b8e2f6";
-import {pondokList,canPersonal} from "./context-switcher.js?v=d4b8e2f6";
+import {getState,setState} from "../store.js?v=e5c9a3d1";
+import {pondokList,canPersonal} from "./context-switcher.js?v=e5c9a3d1";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
-const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
+const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
 const adminNav=[["admin","Dashboard"],["kelola-musyrif","Musyrif"],["kelola-santri","Santri"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
 const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Musyrif Platform"],["platform-settings","Pengaturan"]];
 const memberMobileNav=memberNav;
@@ -44,7 +44,7 @@ function mobileIcon(route){
   "platform-musyrif":`<svg ${common}><circle cx="9" cy="7" r="3"/><path d="M3.5 20v-1.5A5.5 5.5 0 0 1 9 13h1a5.5 5.5 0 0 1 5.5 5.5V20"/><path d="m16 10 2 2 3-4"/></svg>`,
   "platform-settings":`<svg ${common}><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a6 6 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a6 6 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a6 6 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a6 6 0 0 0-.7 1.7L0 10.5v3l2.3.7a6 6 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a6 6 0 0 0 1.7.7l.7 2.3h3l.7-2.3a6 6 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a6 6 0 0 0 .7-1.7z"/></svg>`
  };
- return icons[route]||icons.dashboard;
+ return icons[route]||icons[String(route).replace(/^review-/,"")]||icons.dashboard;
 }
 
 function mobileNavItems(){
@@ -123,7 +123,7 @@ export function shell(content){
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
  const activeContext=(s.persona==="super_admin"||(s.persona==="musyrif"&&s.musyrifType==="platform"))?"Platform MetodeQu":s.persona==="musyrif"?pondokName:s.context==="personal"?"Personal":pondokName;
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=d4b8e2f6">MetodeQu</div><nav class="nav">${nav}</nav>
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=e5c9a3d1">MetodeQu</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>

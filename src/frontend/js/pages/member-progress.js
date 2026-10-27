@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=d4b8e2f6";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=d4b8e2f6";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=d4b8e2f6";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=d4b8e2f6";
-import {juzEntries} from "../data/quran-juz.js?v=d4b8e2f6";
+import {getState} from "../store.js?v=e5c9a3d1";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e5c9a3d1";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=e5c9a3d1";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=e5c9a3d1";
+import {juzEntries} from "../data/quran-juz.js?v=e5c9a3d1";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -13,6 +13,16 @@ const days=[
  {id:"rabu",name:"Rabu"},
  {id:"kamis",name:"Kamis"}
 ];
+/** Halaman ini dipakai dua rute: #progress (santri) dan #review-progress (musyrif). */
+function progressRoute(){
+ const name=location.hash.replace(/^#/,"").split("?")[0];
+ return name==="review-progress"?"review-progress":"progress";
+}
+function onProgressPage(){
+ const name=location.hash.replace(/^#/,"").split("?")[0];
+ return name==="progress"||name==="review-progress";
+}
+
 const fieldIds=["murajaah","rabth-awal","rabth-akhir"];
 const stepIds=[
  ...Array.from({length:5},(_,i)=>"kemarin-"+(i+1)),
@@ -187,20 +197,20 @@ function saveRabth(){
 }
 
 document.addEventListener("click",event=>{
- if(location.hash!=="#progress")return;
+ if(!onProgressPage())return;
  const kemarin=event.target.closest("[data-kemarin-open]");
  if(kemarin){
-  location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay);
+  location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
  const istima=event.target.closest("[data-istima-open]");
  if(istima){
-  location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay);
+  location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
  const tikrar=event.target.closest("[data-tikrar-open]");
  if(tikrar){
-  location.hash="rabth-ayat?step="+encodeURIComponent(tikrar.dataset.tikrarOpen)+"&day="+encodeURIComponent(tikrar.dataset.progressDay);
+  location.hash="rabth-ayat?step="+encodeURIComponent(tikrar.dataset.tikrarOpen)+"&day="+encodeURIComponent(tikrar.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
  const pick=event.target.closest("[data-rabth-pick]");
@@ -211,7 +221,7 @@ document.addEventListener("click",event=>{
  if(event.target.closest("[data-rabth-save]"))saveRabth();
 });
 document.addEventListener("change",event=>{
- if(location.hash!=="#progress")return;
+ if(!onProgressPage())return;
  if(event.target.id==="rabthSurah")fillRabthAyahs();
 });
 
@@ -407,7 +417,7 @@ function updatePercent(day){
 }
 
 document.addEventListener("click",event=>{
- if(location.hash!=="#progress")return;
+ if(!onProgressPage())return;
 
  if(event.target.closest("[data-start-open]")){
   document.querySelector("#startModal")?.classList.remove("hidden");
@@ -467,7 +477,7 @@ document.addEventListener("click",event=>{
   const day=step.dataset.progressDay;
   // Merekam → halaman rekam setoran (auto-centang saat kirim).
   if(step.dataset.progressStep==="merekam"){
-   location.hash="submission?week="+week+"&day="+encodeURIComponent(day);
+   location.hash="submission?week="+week+"&day="+encodeURIComponent(day)+"&from="+progressRoute();
    return;
   }
   const key=stepKey(week,day,step.dataset.progressStep);
@@ -482,7 +492,7 @@ document.addEventListener("click",event=>{
 });
 
 document.addEventListener("input",event=>{
- if(location.hash!=="#progress")return;
+ if(!onProgressPage())return;
  const input=event.target.closest("[data-progress-field]");
  if(!input)return;
  // Kolom angka: buang karakter selain digit dan satu pemisah desimal.

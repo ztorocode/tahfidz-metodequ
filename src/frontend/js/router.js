@@ -1,28 +1,28 @@
-import {getState} from "./store.js?v=d4b8e2f6";
-import {loginPage} from "./pages/login.js?v=d4b8e2f6";
-import {memberDashboard} from "./pages/member-dashboard.js?v=d4b8e2f6";
-import {programPage} from "./pages/program.js?v=d4b8e2f6";
-import {activityPage} from "./pages/activity.js?v=d4b8e2f6";
-import {submissionPage} from "./pages/submission.js?v=d4b8e2f6";
-import {murajaahPage} from "./pages/murajaah.js?v=d4b8e2f6";
-import {notificationsPage} from "./pages/notifications.js?v=d4b8e2f6";
-import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=d4b8e2f6";
-import {reviewPage} from "./pages/review.js?v=d4b8e2f6";
-import {acceptInvitePage} from "./pages/terima-undangan.js?v=d4b8e2f6";
-import {adminSantriPage} from "./pages/admin-santri.js?v=d4b8e2f6";
-import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=d4b8e2f6";
-import {adminDashboard} from "./pages/admin-dashboard.js?v=d4b8e2f6";
-import {halaqahPage} from "./pages/halaqah.js?v=d4b8e2f6";
-import {studentProgressPage} from "./pages/santri-progress.js?v=d4b8e2f6";
-import {memberProgressPage} from "./pages/member-progress.js?v=d4b8e2f6";
-import {progressTablePage} from "./pages/tabel-progress.js?v=d4b8e2f6";
-import {rabthAyatPage} from "./pages/rabth-ayat.js?v=d4b8e2f6";
-import {whatsappPage} from "./pages/whatsapp.js?v=d4b8e2f6";
-import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=d4b8e2f6";
+import {getState} from "./store.js?v=e5c9a3d1";
+import {loginPage} from "./pages/login.js?v=e5c9a3d1";
+import {memberDashboard} from "./pages/member-dashboard.js?v=e5c9a3d1";
+import {programPage} from "./pages/program.js?v=e5c9a3d1";
+import {activityPage} from "./pages/activity.js?v=e5c9a3d1";
+import {submissionPage} from "./pages/submission.js?v=e5c9a3d1";
+import {murajaahPage} from "./pages/murajaah.js?v=e5c9a3d1";
+import {notificationsPage} from "./pages/notifications.js?v=e5c9a3d1";
+import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=e5c9a3d1";
+import {reviewPage} from "./pages/review.js?v=e5c9a3d1";
+import {acceptInvitePage} from "./pages/terima-undangan.js?v=e5c9a3d1";
+import {adminSantriPage} from "./pages/admin-santri.js?v=e5c9a3d1";
+import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=e5c9a3d1";
+import {adminDashboard} from "./pages/admin-dashboard.js?v=e5c9a3d1";
+import {halaqahPage} from "./pages/halaqah.js?v=e5c9a3d1";
+import {studentProgressPage} from "./pages/santri-progress.js?v=e5c9a3d1";
+import {memberProgressPage} from "./pages/member-progress.js?v=e5c9a3d1";
+import {progressTablePage} from "./pages/tabel-progress.js?v=e5c9a3d1";
+import {rabthAyatPage} from "./pages/rabth-ayat.js?v=e5c9a3d1";
+import {whatsappPage} from "./pages/whatsapp.js?v=e5c9a3d1";
+import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=e5c9a3d1";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,
- progress:memberProgressPage,"rabth-ayat":rabthAyatPage,report:progressTablePage,
+ progress:memberProgressPage,"review-progress":memberProgressPage,"rabth-ayat":rabthAyatPage,report:progressTablePage,
  musyrif:musyrifDashboard,review:reviewPage,admin:adminDashboard,"kelola-musyrif":adminMusyrifPage,"kelola-santri":adminSantriPage,"terima-undangan":acceptInvitePage,halaqah:halaqahPage,"santri-progress":studentProgressPage,"tabel-progress":progressTablePage,whatsapp:whatsappPage,
  "super-admin":superAdminDashboard,users:userManagementPage,pondoks:platformPondoksPage,"platform-musyrif":platformMusyrifPage,"platform-settings":platformSettingsPage
 };
@@ -40,6 +40,8 @@ export function view(){
  if(s.loggedIn&&name==="login"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(platformRoutes.includes(name)&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(adminRoutes.includes(name)&&s.persona!=="admin"&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
+ // Halaman progress versi musyrif hanya untuk musyrif.
+ if(name==="review-progress"&&s.persona!=="musyrif"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
  const fn=routes[name]||memberDashboard;return fn();
 }

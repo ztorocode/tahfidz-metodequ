@@ -558,15 +558,17 @@ if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){
 }
 // Sesi lama tanpa pondok aktif (mis. member yang pondoknya diturunkan dari halaqah):
 // ambil ulang profil sekali supaya activePondokId terisi untuk sinkronisasi progress.
-if(getState().loggedIn&&getState().authToken&&!getState().activePondokId){
+if(getState().loggedIn&&getState().authToken&&!getState().activePondokId&&getState().context!=="platform"){
  (async()=>{
   try{
    const r=await fetch("/api/auth/me",{headers:{Authorization:"Bearer "+getState().authToken,Accept:"application/json"}});
    const b=await r.json();
    const user=b?.data?.user||{};
    const pondoks=user.pondoks||[];
-   const pondok=pondoks[0];
-   if(pondok)setState({authUser:user,myPondoks:pondoks,activePondokId:pondok.id});
+   const musyrifContexts=user.musyrif_contexts||getState().musyrifContexts;
+   const allowed=getState().persona==="musyrif"&&Array.isArray(musyrifContexts?.pondoks)?musyrifContexts.pondoks:pondoks;
+   const pondok=allowed[0]||pondoks[0];
+   setState({authUser:user,myPondoks:pondoks,musyrifContexts,activePondokId:pondok?.id??null});
   }catch{}
  })();
 }

@@ -48,7 +48,7 @@ function applySession(info,rb,user,profile){
  location.hash="dashboard";
 }
 
-function acceptLabel(info){return info?.transfer?"Terima & Pindah Halaqah":"Terima & Buat Akun";}
+function acceptLabel(info,mode){if(info?.transfer)return "Terima & Pindah Halaqah";return mode==="member"?"Terima Undangan":"Terima & Buat Akun";}
 
 export function acceptInvitePage(){
  return `<section class="auth">
@@ -85,10 +85,10 @@ function inviteForm(info,mode){
   ${emailRow}
   ${accountRow}
   ${transferRow}
-  <div><label class="label">Nomor WhatsApp</label><input class="input" id="invitePhone" inputmode="tel" placeholder="+62 ..." ${info.phone?`value="${info.phone}" disabled`:""}></div>
-  <div><label class="label">Buat password</label><input class="input" id="invitePassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+  ${isMember?"":`<div><label class="label">Nomor WhatsApp</label><input class="input" id="invitePhone" inputmode="tel" placeholder="+62 ..." ${info.phone?`value="${info.phone}" disabled`:""}></div>
+  <div><label class="label">Buat password</label><input class="input" id="invitePassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>`}
   <small class="muted" id="inviteMessage">${blocked?escT(t.blocked):""}</small>
-  <button class="btn primary full" id="acceptInviteBtn" type="button"${blocked?" disabled":""}>${acceptLabel(info)}</button>
+  <button class="btn primary full" id="acceptInviteBtn" type="button"${blocked?" disabled":""}>${acceptLabel(info,mode)}</button>
  </div>`;
 }
 
@@ -154,7 +154,7 @@ export function bindInvite(){
       applySession(info,rb,user,profile);
     }catch(err){
      if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
-     btn.disabled=false;btn.textContent=acceptLabel(info);
+     btn.disabled=false;btn.textContent=acceptLabel(info,mode);
     }
    });
    function bindInviteSubmit(){
@@ -175,7 +175,7 @@ export function bindInvite(){
        applySession(info,rb,user,profile);
      }catch(err){
       if(msg)msg.textContent=err?.message||"Gagal menerima undangan.";
-      btn.disabled=false;btn.textContent=acceptLabel(info);
+      btn.disabled=false;btn.textContent=acceptLabel(info,mode);
      }
     });
    }

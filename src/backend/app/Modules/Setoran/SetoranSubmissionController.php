@@ -123,7 +123,15 @@ final class SetoranSubmissionController
             if (!is_dir($dir)) {
                 mkdir($dir, 0755, true);
             }
-            $filename = sprintf('%d_%d_%s_%d.%s', $weekNo, $pondokId, $dayCode, time(), $ext);
+            $filename = sprintf(
+                '%d_%d_%s_%d_%s.%s',
+                $weekNo,
+                $pondokId,
+                $dayCode,
+                time(),
+                bin2hex(random_bytes(3)),
+                $ext
+            );
             $dest = $dir . '/' . $filename;
             if (!move_uploaded_file($file['tmp_name'], $dest)) {
                 throw new RegistrationException('Gagal menyimpan rekaman.', 500, []);
@@ -220,10 +228,48 @@ final class SetoranSubmissionController
             Response::json(['success' => false, 'message' => 'File tidak ditemukan.'], 404);
         }
 
+        $size = (int) filesize($file);
+        $start = 0;
+        $end = $size - 1;
+        $range = (string) ($_SERVER['HTTP_RANGE'] ?? '');
+        if ($range !== '' && preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $match) === 1) {
+            if ($match[1] !== '') {
+                $start = (int) $match[1];
+            }
+            if ($match[2] !== '') {
+                $end = (int) $match[2];
+            }
+            if ($start > $end || $start >= $size) {
+                http_response_code(416);
+                header('Content-Range: bytes */' . $size);
+                exit;
+            }
+            $end = min($end, $size - 1);
+            http_response_code(206);
+            header('Content-Range: bytes ' . $start . '-' . $end . '/' . $size);
+        }
+
         header('Content-Type: ' . $row['mime_type']);
-        header('Content-Length: ' . filesize($file));
+        header('Accept-Ranges: bytes');
+        header('Content-Length: ' . ($end - $start + 1));
         header('Content-Disposition: inline; filename="' . basename($file) . '"');
-        readfile($file);
+        header('Cache-Control: private, max-age=0, must-revalidate');
+
+        $handle = fopen($file, 'rb');
+        if ($handle === false) {
+            exit;
+        }
+        fseek($handle, $start);
+        $remaining = $end - $start + 1;
+        while ($remaining > 0 && !feof($handle)) {
+            $chunk = fread($handle, (int) min(65536, $remaining));
+            if ($chunk === false || $chunk === '') {
+                break;
+            }
+            echo $chunk;
+            $remaining -= strlen($chunk);
+        }
+        fclose($handle);
         exit;
     }
 
@@ -251,8 +297,24 @@ final class SetoranSubmissionController
                 $params['week'] = $weekNo;
             }
 
+            $status = (string) ($request->query['status'] ?? '');
+            if (in_array($status, ['pending', 'reviewed'], true)) {
+                $sql .= ' AND s.status = :status';
+                $params['status'] = $status;
+            }
+
             $isSuperAdmin = in_array('super_admin', $actor['roles'] ?? [], true);
-            if (!$isSuperAdmin) {
+            // Admin pondok ikut melihat semua setoran di pondoknya.
+            $isAdmin = in_array('admin', $actor['roles'] ?? [], true);
+            if (!$isAdmin && !$isSuperAdmin) {
+                $adminCheck = $this->pdo->prepare(
+                    'SELECT 1 FROM pondok_memberships
+                     WHERE pondok_id = :pid AND user_id = :uid AND role = "admin" AND status = "active" LIMIT 1'
+                );
+                $adminCheck->execute(['pid' => $pondokId, 'uid' => (int) $actor['id']]);
+                $isAdmin = $adminCheck->fetchColumn() !== false;
+            }
+            if (!$isSuperAdmin && !$isAdmin) {
                 $isMusyrif = in_array('musyrif', $actor['roles'] ?? [], true);
                 if ($isMusyrif) {
                     $sql .= ' AND s.halaqah_id IN (
@@ -283,6 +345,8 @@ final class SetoranSubmissionController
                 'file_size' => (int) $row['file_size'],
                 'status' => (string) $row['status'],
                 'created_at' => (string) $row['created_at'],
+                'reviewed_at' => $row['reviewed_at'] !== null ? (string) $row['reviewed_at'] : null,
+                'reviewed_by' => $row['reviewed_by'] !== null ? (int) $row['reviewed_by'] : null,
             ], $rows);
 
             Response::json(['success' => true, 'data' => $out]);

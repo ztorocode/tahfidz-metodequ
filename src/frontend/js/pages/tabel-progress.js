@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=dae8efdc";
-import {member,progress} from "../data/dummy-data.js?v=dae8efdc";
-import {getProgressContext} from "../utils/progress-context.js?v=dae8efdc";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=dae8efdc";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=dae8efdc";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=dae8efdc";
+import {getState} from "../store.js?v=d4b8e2f6";
+import {member,progress} from "../data/dummy-data.js?v=d4b8e2f6";
+import {getProgressContext} from "../utils/progress-context.js?v=d4b8e2f6";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=d4b8e2f6";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=d4b8e2f6";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=d4b8e2f6";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));

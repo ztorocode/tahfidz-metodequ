@@ -102,24 +102,72 @@ final class SetoranService
         }
 
         $halaqahId = $this->requireReviewerHalaqah($actor, $pondokId, $userId);
+        $submissionId = (int) ($input['submission_id'] ?? 0);
 
-        $statement = $this->pdo->prepare(
-            'INSERT INTO setoran_reviews (user_id, pondok_id, halaqah_id, ref, page_no, decision, notes, created_by)
-             VALUES (:user_id, :pondok_id, :halaqah_id, :ref, :page_no, :decision, :notes, :created_by)'
-        );
-        $statement->execute([
-            'user_id' => $userId,
-            'pondok_id' => $pondokId,
-            'halaqah_id' => $halaqahId,
-            'ref' => $ref,
-            'page_no' => $pageNo,
-            'decision' => $decision,
-            'notes' => $notes === '' ? null : $notes,
-            'created_by' => (int) $actor['id'],
-        ]);
+        // Penilaian boleh menempel pada satu rekaman setoran (menandai sudah dinilai).
+        if ($submissionId > 0) {
+            $check = $this->pdo->prepare(
+                'SELECT id FROM setoran_submissions
+                 WHERE id = :id AND user_id = :user_id AND pondok_id = :pondok_id AND deleted_at IS NULL
+                 LIMIT 1'
+            );
+            $check->execute([
+                'id' => $submissionId,
+                'user_id' => $userId,
+                'pondok_id' => $pondokId,
+            ]);
+            if ($check->fetchColumn() === false) {
+                throw new RegistrationException('Rekaman setoran tidak ditemukan.', 404, [
+                    'submission_id' => 'Rekaman setoran tidak ditemukan.',
+                ]);
+            }
+        }
+
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            $statement = $this->pdo->prepare(
+                'INSERT INTO setoran_reviews (user_id, pondok_id, halaqah_id, ref, page_no, decision, notes, created_by)
+                 VALUES (:user_id, :pondok_id, :halaqah_id, :ref, :page_no, :decision, :notes, :created_by)'
+            );
+            $statement->execute([
+                'user_id' => $userId,
+                'pondok_id' => $pondokId,
+                'halaqah_id' => $halaqahId,
+                'ref' => $ref,
+                'page_no' => $pageNo,
+                'decision' => $decision,
+                'notes' => $notes === '' ? null : $notes,
+                'created_by' => (int) $actor['id'],
+            ]);
+            $reviewId = (int) $this->pdo->lastInsertId();
+
+            if ($submissionId > 0) {
+                $this->pdo->prepare(
+                    "UPDATE setoran_submissions
+                        SET status = 'reviewed',
+                            reviewed_by = :reviewed_by,
+                            reviewed_at = CURRENT_TIMESTAMP(3)
+                      WHERE id = :id"
+                )->execute(['reviewed_by' => (int) $actor['id'], 'id' => $submissionId]);
+            }
+
+            if ($ownsTransaction) {
+                $this->pdo->commit();
+            }
+        } catch (\Throwable $exception) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $exception;
+        }
 
         return [
-            'id' => (int) $this->pdo->lastInsertId(),
+            'id' => $reviewId,
+            'submission_id' => $submissionId > 0 ? $submissionId : null,
             'ref' => $ref,
             'page_no' => $pageNo,
             'decision' => $decision,

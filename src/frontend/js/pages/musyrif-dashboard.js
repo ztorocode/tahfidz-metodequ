@@ -9,7 +9,7 @@ function esc(value){
 
 function isPlatformMusyrif(){
  const s=getState();
- return s.persona==="musyrif"&&(s.musyrifType==="platform"||(s.context==="personal"&&(s.myPondoks||[]).length===0));
+ return s.persona==="musyrif"&&s.context==="platform";
 }
 
 function accountName(){

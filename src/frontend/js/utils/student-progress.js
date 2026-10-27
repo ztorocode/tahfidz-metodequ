@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=3e8c6a91";
+import {getState} from "../store.js?v=7a5d9b42";
 
 /**
  * Isian progress harian seorang santri (dibaca musyrif/admin dari server).

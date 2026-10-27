@@ -554,15 +554,16 @@ final class PlatformMusyrifService
         $profile->execute(['user_id' => $userId]);
         $type = $profile->fetchColumn();
 
-        if ($type !== false && $type !== 'platform') {
-            throw new RegistrationException('Akun ini sudah menjadi musyrif pondok.', 422);
-        }
-
         if ($type === false) {
             $this->insertPlatformProfile($userId, $status);
         } else {
+            // Satu profile row menjadi identity musyrif. Scope pondok tetap
+            // berasal dari pondok_memberships, jadi mengaktifkan platform tidak
+            // menghapus konteks pondok yang sudah dimiliki.
             $this->pdo->prepare(
-                "UPDATE musyrif_profiles SET status = :status WHERE user_id = :user_id AND type = 'platform'"
+                "UPDATE musyrif_profiles
+                 SET type = 'platform', pondok_id = NULL, status = :status
+                 WHERE user_id = :user_id"
             )->execute(['status' => $status, 'user_id' => $userId]);
         }
 

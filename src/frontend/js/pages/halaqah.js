@@ -16,13 +16,10 @@ function activePondokId(){
  return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
 }
 
-/** Musyrif platform: tidak terikat pondok (tidak punya keanggotaan pondok). */
+/** Konteks platform dipilih eksplisit; akun musyrif dapat sekaligus punya konteks pondok. */
 function isPlatformMusyrif(){
  const st=getState();
- if(st.persona!=="musyrif")return false;
- if(st.musyrifType==="platform")return true;
- // Login nyata: musyrif platform tidak punya keanggotaan pondok → context "personal".
- return st.context==="personal"&&(st.myPondoks||[]).length===0;
+ return st.persona==="musyrif"&&st.context==="platform";
 }
 
 function musyrifOptions(){

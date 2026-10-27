@@ -24,18 +24,28 @@ const apiBase=()=>{
 
 function applySession(info,rb,user,profile){
  if(info.platform_santri){
-  setState({loggedIn:true,persona:"member",context:"personal",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:["member"],pondoks:[]},myPondoks:[],activePondokId:null,profileOverrides:{member:profile}});
+  setState({loggedIn:true,persona:"member",context:"personal",musyrifType:null,musyrifContexts:{platform:false,pondoks:[]},authToken:rb.data.token,authUser:user,myPondoks:user.pondoks||[],activePondokId:null,profileOverrides:{member:profile}});
   location.hash="dashboard";
   return;
  }
- if(info.platform){
-  setState({loggedIn:true,persona:"musyrif",context:"personal",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:["musyrif"],pondoks:[]},myPondoks:[],activePondokId:null,profileOverrides:{member:profile,musyrif:profile}});
+ const persona=info.platform||info.role==="musyrif"?"musyrif":"member";
+ if(persona==="musyrif"){
+  const myPondoks=Array.isArray(user.pondoks)?user.pondoks:[];
+  const contexts=user.musyrif_contexts||{
+   platform:!!info.platform,
+   pondoks:myPondoks.filter(p=>p.role==="musyrif")
+  };
+  const context=info.platform?"platform":"pondok";
+  const activePondokId=context==="pondok"
+   ?(Number(info.pondok_id)||contexts.pondoks?.[0]?.id||null)
+   :null;
+  const musyrifType=user.musyrif_type??(contexts.platform&&contexts.pondoks?.length?"dual":contexts.platform?"platform":"pondok");
+  setState({loggedIn:true,persona:"musyrif",context,musyrifType,musyrifContexts:contexts,authToken:rb.data.token,authUser:user,myPondoks,activePondokId,profileOverrides:{member:profile,musyrif:profile}});
   location.hash="musyrif";
   return;
  }
- const persona=info.role==="musyrif"?"musyrif":"member";
- setState({loggedIn:true,persona,context:"pondok",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:info.role==="musyrif"?["musyrif"]:["member"],pondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}]},myPondoks:[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile,[persona]:profile}});
- location.hash=persona==="musyrif"?"musyrif":"dashboard";
+ setState({loggedIn:true,persona:"member",context:"pondok",musyrifType:null,musyrifContexts:{platform:false,pondoks:[]},authToken:rb.data.token,authUser:user,myPondoks:user.pondoks||[{id:info.pondok_id,name:info.pondok_name,role:info.role}],activePondokId:info.pondok_id,profileOverrides:{member:profile}});
+ location.hash="dashboard";
 }
 
 function acceptLabel(info){return info?.transfer?"Terima & Pindah Halaqah":"Terima & Buat Akun";}

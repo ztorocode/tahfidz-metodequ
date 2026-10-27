@@ -1,8 +1,8 @@
-import {view,routeName} from "./router.js?v=c84e2a61";
+import {view,routeName} from "./router.js?v=e7b314d2";
 import {getState,setState} from "./store.js?v=81bed469";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e31c7b42";
-import {bindLogin} from "./pages/login.js?v=81bed469";
-import {bindInvite} from "./pages/terima-undangan.js?v=81bed469";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e7b314d2";
+import {bindLogin} from "./pages/login.js?v=e7b314d2";
+import {bindInvite} from "./pages/terima-undangan.js?v=e7b314d2";
 import {toast} from "./utils/helpers.js?v=81bed469";
 import {initProgressSync} from "./utils/progress-sync.js?v=81bed469";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
@@ -12,7 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=81bed469";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=81bed469";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=f28a6c10";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=e7b314d2";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -87,10 +87,11 @@ async function loadInviteBanner(){
    let b={};try{b=await r.json()}catch{}
    if(!r.ok)throw new Error(b?.message||"Gagal menerima.");
    const user=b.data.user||{};
-   const pondok=(user.pondoks||[])[0];
-   const myPondoks=[...(s.myPondoks||[])];
-   if(pondok&&!myPondoks.some(p=>p.id===pondok.id))myPondoks.push(pondok);
-   setState({authToken:b.data.token,authUser:user,myPondoks,activePondokId:pondok?.id??s.activePondokId,myInvites:(s.myInvites||[]).filter(v=>v.id!==Number(btn.dataset.acceptInvite))});
+   const myPondoks=Array.isArray(user.pondoks)?user.pondoks:[...(s.myPondoks||[])];
+   const musyrifContexts=user.musyrif_contexts||s.musyrifContexts;
+   const pondokList=s.persona==="musyrif"&&Array.isArray(musyrifContexts?.pondoks)?musyrifContexts.pondoks:myPondoks;
+   const pondok=pondokList.find(p=>!s.activePondokId||p.id===s.activePondokId)||pondokList[0]||null;
+   setState({authToken:b.data.token,authUser:user,myPondoks,musyrifContexts,activePondokId:s.context==="platform"?null:(pondok?.id??s.activePondokId),myInvites:(s.myInvites||[]).filter(v=>v.id!==Number(btn.dataset.acceptInvite))});
    window.dispatchEvent(new Event("app:render"));
   }catch(err){
    alert(err?.message||"Gagal menerima.");
@@ -548,7 +549,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c84e2a61"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e7b314d2"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){
@@ -558,15 +559,17 @@ if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){
 }
 // Sesi lama tanpa pondok aktif (mis. member yang pondoknya diturunkan dari halaqah):
 // ambil ulang profil sekali supaya activePondokId terisi untuk sinkronisasi progress.
-if(getState().loggedIn&&getState().authToken&&!getState().activePondokId){
+if(getState().loggedIn&&getState().authToken&&!getState().activePondokId&&getState().context!=="platform"){
  (async()=>{
   try{
    const r=await fetch("/api/auth/me",{headers:{Authorization:"Bearer "+getState().authToken,Accept:"application/json"}});
    const b=await r.json();
    const user=b?.data?.user||{};
    const pondoks=user.pondoks||[];
-   const pondok=pondoks[0];
-   if(pondok)setState({authUser:user,myPondoks:pondoks,activePondokId:pondok.id});
+   const musyrifContexts=user.musyrif_contexts||getState().musyrifContexts;
+   const allowed=getState().persona==="musyrif"&&Array.isArray(musyrifContexts?.pondoks)?musyrifContexts.pondoks:pondoks;
+   const pondok=allowed[0]||pondoks[0];
+   setState({authUser:user,myPondoks:pondoks,musyrifContexts,activePondokId:pondok?.id??null});
   }catch{}
  })();
 }

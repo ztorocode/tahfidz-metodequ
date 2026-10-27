@@ -121,16 +121,30 @@ export function bindLogin(){
   let persona="member", context="personal";
   if(roles.includes("super_admin")){persona="super_admin";context="platform";}
   else if(roles.includes("admin")){persona="admin";context=myPondoks.length?"pondok":"personal";}
-  else if(roles.includes("musyrif")){persona="musyrif";context=myPondoks.length?"pondok":"personal";}
+  else if(roles.includes("musyrif")){persona="musyrif";}
+  const rawMusyrifContexts=user.musyrif_contexts||null;
+  const legacyPondoks=myPondoks.filter(p=>p.role==="musyrif");
+  const musyrifContexts=roles.includes("musyrif")
+   ?{
+      platform:rawMusyrifContexts?Boolean(rawMusyrifContexts.platform):user.musyrif_type!=="pondok",
+      pondoks:Array.isArray(rawMusyrifContexts?.pondoks)?rawMusyrifContexts.pondoks:legacyPondoks
+    }
+   :{platform:false,pondoks:[]};
+  if(persona==="musyrif"){
+   context=musyrifContexts.platform?"platform":"pondok";
+  }
   const displayName=user.name||email;
   const initials=displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
   const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Musyrif":"Member";
   const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
   const profileOverrides={member:profile,[persona]:profile};
-  // Tipe musyrif dari server (diturunkan dari pondok_memberships);
-  // fallback bila field belum ada: pondok kosong = platform.
-  const musyrifType=user.musyrif_type??(roles.includes("musyrif")?(myPondoks.length?"pondok":"platform"):null);
-  go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId:myPondoks[0]?.id??null,musyrifType,profileOverrides});
+  const musyrifType=user.musyrif_type??(roles.includes("musyrif")
+   ?(musyrifContexts.platform&&musyrifContexts.pondoks.length?"dual":musyrifContexts.platform?"platform":"pondok")
+   :null);
+  const activePondokId=persona==="musyrif"
+   ?(context==="pondok"?(musyrifContexts.pondoks[0]?.id??null):null)
+   :(myPondoks[0]?.id??null);
+  go(persona,context,{authToken:data.token,authUser:user,myPondoks,activePondokId,musyrifType,musyrifContexts,profileOverrides});
  };
 
  const renderMethod=(method)=>{

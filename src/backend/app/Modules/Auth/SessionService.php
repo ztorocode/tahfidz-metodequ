@@ -68,6 +68,7 @@ final class SessionService
                 'roles' => $this->activeRoles((int) $user['id']),
                 'pondoks' => $this->activePondoks((int) $user['id']),
                 'musyrif_type' => $this->musyrifType((int) $user['id']),
+                'musyrif_contexts' => $this->musyrifContexts((int) $user['id']),
             ],
         ];
     }
@@ -110,6 +111,7 @@ final class SessionService
                 'roles' => $this->activeRoles((int) $user['id']),
                 'pondoks' => $this->activePondoks((int) $user['id']),
                 'musyrif_type' => $this->musyrifType((int) $user['id']),
+                'musyrif_contexts' => $this->musyrifContexts((int) $user['id']),
             ],
         ];
     }
@@ -175,24 +177,79 @@ final class SessionService
         );
     }
 
+    /** @return array<int,array{id:int,name:string,slug:string,role:string}> */
+    private function activeMusyrifPondoks(int $userId): array
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT p.id, p.name, p.slug, 'musyrif' AS role
+             FROM pondok_memberships m
+             JOIN pondoks p ON p.id = m.pondok_id
+             WHERE m.user_id = :user_id
+               AND m.role = 'musyrif'
+               AND m.status = 'active'
+               AND p.status = 'active'
+             ORDER BY p.name"
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return array_map(
+            static fn(array $row) => [
+                'id' => (int) $row['id'],
+                'name' => (string) $row['name'],
+                'slug' => (string) $row['slug'],
+                'role' => 'musyrif',
+            ],
+            $statement->fetchAll(PDO::FETCH_ASSOC)
+        );
+    }
+
+    private function hasPlatformMusyrifProfile(int $userId): bool
+    {
+        $statement = $this->pdo->prepare(
+            "SELECT 1 FROM musyrif_profiles
+             WHERE user_id = :user_id AND type = 'platform' AND status = 'active'
+             LIMIT 1"
+        );
+        $statement->execute(['user_id' => $userId]);
+        return $statement->fetchColumn() !== false;
+    }
+
     /**
-     * Tipe musyrif — diturunkan dari pondok_memberships (sumber tunggal aturan):
-     * 'pondok' bila punya keanggotaan musyrif aktif, 'platform' bila tanpa
-     * keanggotaan pondok sama sekali, null bila bukan musyrif.
+     * Capability konteks musyrif.
+     *
+     * Platform tersedia bila akun punya profil platform aktif. Untuk akun legacy
+     * musyrif tanpa pondok dan tanpa profil platform, platform tetap dianggap
+     * tersedia agar perilaku lama tidak putus.
+     *
+     * @return array{platform:bool,pondoks:array<int,array{id:int,name:string,slug:string,role:string}>}
      */
+    private function musyrifContexts(int $userId): array
+    {
+        if (!in_array('musyrif', $this->activeRoles($userId), true)) {
+            return ['platform' => false, 'pondoks' => []];
+        }
+
+        $pondoks = $this->activeMusyrifPondoks($userId);
+        $platform = $this->hasPlatformMusyrifProfile($userId) || $pondoks === [];
+
+        return ['platform' => $platform, 'pondoks' => $pondoks];
+    }
+
+    /** Legacy hint; keputusan UI baru memakai musyrif_contexts. */
     private function musyrifType(int $userId): ?string
     {
         if (!in_array('musyrif', $this->activeRoles($userId), true)) {
             return null;
         }
 
-        $statement = $this->pdo->prepare(
-            "SELECT 1 FROM pondok_memberships
-             WHERE user_id = :user_id AND role = 'musyrif' AND status = 'active' LIMIT 1"
-        );
-        $statement->execute(['user_id' => $userId]);
+        $contexts = $this->musyrifContexts($userId);
+        $hasPlatform = $contexts['platform'] === true;
+        $hasPondok = $contexts['pondoks'] !== [];
 
-        return $statement->fetchColumn() === false ? 'platform' : 'pondok';
+        if ($hasPlatform && $hasPondok) {
+            return 'dual';
+        }
+        return $hasPondok ? 'pondok' : 'platform';
     }
 
     public function userFromToken(string $token): ?array
@@ -228,6 +285,7 @@ final class SessionService
             'roles' => $this->activeRoles((int) $row['id']),
             'pondoks' => $this->activePondoks((int) $row['id']),
             'musyrif_type' => $this->musyrifType((int) $row['id']),
+            'musyrif_contexts' => $this->musyrifContexts((int) $row['id']),
         ];
     }
 

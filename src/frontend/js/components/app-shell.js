@@ -3,6 +3,7 @@ import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
+const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"]];
 const adminNav=[["admin","Dashboard"],["kelola-musyrif","Musyrif"],["kelola-santri","Santri"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
 const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Musyrif Platform"],["platform-settings","Pengaturan"]];
 const memberMobileNav=memberNav;
@@ -18,7 +19,7 @@ const demoAccounts={
 function navItems(){
  const s=getState();
  if(s.persona==="super_admin")return superAdminNav;
- if(s.persona==="musyrif")return musyrifNav;
+ if(s.persona==="musyrif")return s.musyrifType==="platform"?platformMusyrifNav:musyrifNav;
  if(s.context==="personal")return memberNav;
  return s.persona==="admin"?adminNav:memberNav;
 }

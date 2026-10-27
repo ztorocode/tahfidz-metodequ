@@ -19,24 +19,25 @@ final class StudentActivityLog
     public function ensureTable(): void
     {
         $this->pdo->exec(
-            "CREATE TABLE IF NOT EXISTS student_learning_activities (
+            "CREATE TABLE IF NOT EXISTS student_activities (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
                 event_key VARCHAR(190) NOT NULL,
                 user_id BIGINT UNSIGNED NOT NULL,
                 halaqah_id BIGINT UNSIGNED NOT NULL,
                 week_no TINYINT UNSIGNED NOT NULL,
                 day_code ENUM('sabtu','ahad','senin','selasa','rabu','kamis') NOT NULL,
-                step_id VARCHAR(50) NOT NULL,
-                activity_key VARCHAR(50) NOT NULL,
-                activity_count SMALLINT UNSIGNED NULL,
-                occurred_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                activity_type ENUM('hafalan_kemarin','istima','menghafal','merekam','tikrar') NOT NULL,
+                activity_step TINYINT UNSIGNED NULL,
                 created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
                 PRIMARY KEY (id),
                 UNIQUE KEY uq_student_learning_activity_event (event_key),
-                KEY idx_student_learning_activity_halaqah (halaqah_id, occurred_at),
-                KEY idx_student_learning_activity_user (user_id, occurred_at),
-                CONSTRAINT fk_student_learning_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                CONSTRAINT fk_student_learning_activity_halaqah FOREIGN KEY (halaqah_id) REFERENCES halaqahs(id) ON DELETE CASCADE
+                KEY idx_student_activities_halaqah_time (halaqah_id, created_at),
+                KEY idx_student_activities_user_time (user_id, created_at),
+                KEY idx_student_activities_halaqah_user (halaqah_id, user_id),
+                CONSTRAINT chk_student_activities_week CHECK (week_no BETWEEN 1 AND 5),
+                CONSTRAINT chk_student_activities_step CHECK (activity_step IS NULL OR activity_step BETWEEN 1 AND 25),
+                CONSTRAINT fk_student_activities_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                CONSTRAINT fk_student_activities_halaqah FOREIGN KEY (halaqah_id) REFERENCES halaqahs(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
         );
     }
@@ -63,10 +64,10 @@ final class StudentActivityLog
 
         $eventKey = implode(':', [$userId, $halaqahId, $week, $day, $step]);
         $insert = $this->pdo->prepare(
-            'INSERT IGNORE INTO student_learning_activities
-                (event_key, user_id, halaqah_id, week_no, day_code, step_id, activity_key, activity_count)
+            'INSERT IGNORE INTO student_activities
+                (event_key, user_id, halaqah_id, activity_type, activity_step, week_no, day_code)
              VALUES
-                (:event_key, :user_id, :halaqah_id, :week_no, :day_code, :step_id, :activity_key, :activity_count)'
+                (:event_key, :user_id, :halaqah_id, :activity_type, :activity_step, :week_no, :day_code)'
         );
         $insert->execute([
             'event_key' => $eventKey,
@@ -74,14 +75,13 @@ final class StudentActivityLog
             'halaqah_id' => $halaqahId,
             'week_no' => $week,
             'day_code' => $day,
-            'step_id' => $step,
-            'activity_key' => $activityKey,
-            'activity_count' => $count,
+            'activity_type' => $activityKey,
+            'activity_step' => $count,
         ]);
 
         $select = $this->pdo->prepare(
-            'SELECT id, event_key, step_id, activity_key, activity_count, occurred_at
-             FROM student_learning_activities
+            'SELECT id, event_key, activity_type, activity_step, created_at
+             FROM student_activities
              WHERE event_key = :event_key
              LIMIT 1'
         );
@@ -94,10 +94,10 @@ final class StudentActivityLog
         return [
             'id' => (int) $row['id'],
             'event_key' => (string) $row['event_key'],
-            'step_id' => (string) $row['step_id'],
-            'activity_key' => (string) $row['activity_key'],
-            'activity_count' => $row['activity_count'] !== null ? (int) $row['activity_count'] : null,
-            'occurred_at' => (string) $row['occurred_at'],
+            'step_id' => $step,
+            'activity_key' => (string) $row['activity_type'],
+            'activity_count' => $row['activity_step'] !== null ? (int) $row['activity_step'] : null,
+            'occurred_at' => (string) $row['created_at'],
         ];
     }
 

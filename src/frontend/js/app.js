@@ -1,8 +1,8 @@
-import {view,routeName} from "./router.js?v=f3c921ab";
+import {view,routeName} from "./router.js?v=a61d4f20";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e7b314d2";
 import {bindLogin} from "./pages/login.js?v=e7b314d2";
-import {bindInvite} from "./pages/terima-undangan.js?v=f3c921ab";
+import {bindInvite} from "./pages/terima-undangan.js?v=a61d4f20";
 import {toast} from "./utils/helpers.js?v=81bed469";
 import {initProgressSync} from "./utils/progress-sync.js?v=81bed469";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
@@ -549,7 +549,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f3c921ab"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a61d4f20"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

@@ -171,7 +171,10 @@ final class InviteController
     public function info(Request $request): never
     {
         try {
-            $info = $this->service()->info((string) ($request->query['token'] ?? ''));
+            $info = $this->service()->info(
+                (string) ($request->query['token'] ?? ''),
+                isset($request->query['email']) ? (string) $request->query['email'] : null
+            );
             Response::json(['success' => true, 'data' => $info]);
         } catch (RegistrationException $exception) {
             Response::json([

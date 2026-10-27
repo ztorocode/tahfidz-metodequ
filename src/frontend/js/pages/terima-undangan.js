@@ -112,6 +112,41 @@ export function bindInvite(){
    const roleLabel=info.role==="musyrif"?"Musyrif":"Santri";
    let mode=info.registered?"member":"new";
    card.innerHTML=inviteForm(info,mode);
+
+   function bindEmailLookup(){
+    const input=document.querySelector("#inviteEmail");
+    if(!input)return;
+    input.addEventListener("blur",async ()=>{
+     const email=input.value.trim().toLowerCase();
+     if(!email)return;
+     if(!input.checkValidity()){
+      const msg=document.querySelector("#inviteMessage");
+      if(msg)msg.textContent="Email tidak valid.";
+      return;
+     }
+     const msg=document.querySelector("#inviteMessage");
+     if(msg)msg.textContent="Memeriksa email...";
+     try{
+      const r=await fetch(apiBase()+"/info?token="+encodeURIComponent(token)+"&email="+encodeURIComponent(email),{headers:{Accept:"application/json"},cache:"no-store"});
+      let b={};try{b=await r.json()}catch{}
+      if(!r.ok)throw new Error(b?.message||"Gagal memeriksa email.");
+      if(b.data?.registered){
+       mode="member";
+       info.registered=true;
+       info.registered_name=b.data.registered_name||email;
+       info.email=email;
+       card.innerHTML=inviteForm(info,mode);
+       bindInviteSubmit();
+       return;
+      }
+      if(msg)msg.textContent="";
+     }catch(err){
+      if(msg)msg.textContent=err?.message||"Gagal memeriksa email.";
+     }
+    });
+   }
+   bindEmailLookup();
+
    document.querySelector("#acceptInviteBtn")?.addEventListener("click",async e=>{
     const btn=e.currentTarget,msg=document.querySelector("#inviteMessage");
     const payload={token};
@@ -134,15 +169,6 @@ export function bindInvite(){
       const r=await fetch(apiBase()+"/accept",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(payload)});
      let rb={};try{rb=await r.json()}catch{}
      if(!r.ok){
-      if(r.status===401&&rb?.errors?.login_password&&info.generic){
-       mode="member";
-       info.registered=true;info.registered_name=payload.email;info.email=payload.email;
-       card.innerHTML=inviteForm(info,mode);
-       const em=document.querySelector("#inviteEmail");
-       if(em){em.value=payload.email;}
-       bindInviteSubmit();
-       return;
-      }
       throw new Error(rb?.message||"Gagal menerima undangan.");
      }
      if(!rb?.data?.token)throw new Error(rb?.message||"Gagal menerima undangan.");

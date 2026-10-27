@@ -363,7 +363,7 @@ final class PlatformSantriService
         }
     }
 
-    public function info(string $token): array
+    public function info(string $token, ?string $emailInput = null): array
     {
         $invite = $this->findValid($token);
         if ($invite === null) {
@@ -371,10 +371,20 @@ final class PlatformSantriService
         }
 
         $email = $invite['invited_email'] !== null ? (string) $invite['invited_email'] : null;
+        $lookupEmail = $email;
+        if ($email === null && $emailInput !== null) {
+            $candidate = strtolower(trim($emailInput));
+            if ($candidate !== '') {
+                if (!filter_var($candidate, FILTER_VALIDATE_EMAIL) || mb_strlen($candidate) > 190) {
+                    throw new RegistrationException('Email tidak valid.', 422, ['email' => 'Email tidak valid.']);
+                }
+                $lookupEmail = $candidate;
+            }
+        }
         $registeredName = null;
-        if ($email !== null) {
+        if ($lookupEmail !== null) {
             $statement = $this->pdo->prepare('SELECT name FROM users WHERE email = :email LIMIT 1');
-            $statement->execute(['email' => $email]);
+            $statement->execute(['email' => $lookupEmail]);
             $value = $statement->fetchColumn();
             $registeredName = is_string($value) ? $value : null;
         }

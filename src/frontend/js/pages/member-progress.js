@@ -5,6 +5,7 @@ import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHa
 import {juzEntries} from "../data/quran-juz.js?v=81bed469";
 import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=81bed469";
 import {toast} from "../utils/helpers.js?v=81bed469";
+import {logLearningActivity} from "../utils/activity-log.js?v=81bed469";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -677,6 +678,7 @@ document.addEventListener("click",event=>{
   step.setAttribute("aria-pressed",String(active));
   updatePercent(day);
   scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+  if(active)logLearningActivity(step.dataset.progressStep,week,day);
  }
 });
 

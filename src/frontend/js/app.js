@@ -1,8 +1,8 @@
-import {view,routeName} from "./router.js?v=a61d4f20";
+import {view,routeName} from "./router.js?v=d4b8f631";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e7b314d2";
 import {bindLogin} from "./pages/login.js?v=b9f2d4e1";
-import {bindInvite} from "./pages/terima-undangan.js?v=a61d4f20";
+import {bindInvite} from "./pages/terima-undangan.js?v=d4b8f631";
 import {toast} from "./utils/helpers.js?v=81bed469";
 import {initProgressSync} from "./utils/progress-sync.js?v=81bed469";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
@@ -12,7 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=81bed469";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=81bed469";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=e7b314d2";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=d4b8f631";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -549,7 +549,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b9f2d4e1"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d4b8f631"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

@@ -549,7 +549,9 @@ final class InviteService
                     throw new RegistrationException('Password akun Anda salah.', 401, ['password' => 'Password akun Anda salah.', 'login_password' => 'Password akun Anda salah.']);
                 }
                 $userId = (int) $existingUser['id'];
-                $memberStatus = $invite['invited_email'] === null ? 'invited' : 'active';
+                // Existing account sudah membuktikan kepemilikan lewat password,
+                // jadi generic invite dapat langsung mengaktifkan membership.
+                $memberStatus = 'active';
                 $this->linkMembership($userId, (int) $invite['pondok_id'], $invite['role'], $memberStatus);
                 $this->placeInHalaqah($userId, $invite);
                 if ($invite['invited_email'] !== null) {

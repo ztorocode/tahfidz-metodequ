@@ -30,17 +30,26 @@ function applySession(info,rb,user,profile){
  }
  const persona=info.platform||info.role==="musyrif"?"musyrif":"member";
  if(persona==="musyrif"){
-  const myPondoks=Array.isArray(user.pondoks)?user.pondoks:[];
-  const contexts=user.musyrif_contexts||{
-   platform:!!info.platform,
-   pondoks:myPondoks.filter(p=>p.role==="musyrif")
+  const targetPondok=info.platform?null:{
+   id:Number(info.pondok_id)||null,
+   name:info.pondok_name||"Pondok",
+   slug:"",
+   role:"musyrif"
   };
+  const sessionPondoks=Array.isArray(user.pondoks)?user.pondoks:[];
+  const myPondoks=[...sessionPondoks];
+  if(targetPondok?.id&&!myPondoks.some(p=>Number(p.id)===targetPondok.id))myPondoks.push(targetPondok);
+  const rawContexts=user.musyrif_contexts||{platform:!!info.platform,pondoks:sessionPondoks.filter(p=>p.role==="musyrif")};
+  const pondokContexts=Array.isArray(rawContexts.pondoks)?[...rawContexts.pondoks]:[];
+  if(targetPondok?.id&&!pondokContexts.some(p=>Number(p.id)===targetPondok.id))pondokContexts.push(targetPondok);
+  const contexts={platform:Boolean(rawContexts.platform),pondoks:pondokContexts};
   const context=info.platform?"platform":"pondok";
   const activePondokId=context==="pondok"
-   ?(Number(info.pondok_id)||contexts.pondoks?.[0]?.id||null)
+   ?(targetPondok?.id||contexts.pondoks?.[0]?.id||null)
    :null;
-  const musyrifType=user.musyrif_type??(contexts.platform&&contexts.pondoks?.length?"dual":contexts.platform?"platform":"pondok");
-  setState({loggedIn:true,persona:"musyrif",context,musyrifType,musyrifContexts:contexts,authToken:rb.data.token,authUser:user,myPondoks,activePondokId,profileOverrides:{member:profile,musyrif:profile}});
+  const authUser={...user,pondoks:myPondoks,musyrif_contexts:contexts};
+  const musyrifType=user.musyrif_type??(contexts.platform&&contexts.pondoks.length?"dual":contexts.platform?"platform":"pondok");
+  setState({loggedIn:true,persona:"musyrif",context,musyrifType,musyrifContexts:contexts,authToken:rb.data.token,authUser,myPondoks,activePondokId,realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,profileOverrides:{member:profile,musyrif:profile}});
   location.hash="musyrif";
   return;
  }

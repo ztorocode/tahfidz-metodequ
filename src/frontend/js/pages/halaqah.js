@@ -328,8 +328,9 @@ function musyrifList(items,opts={}){
        </div>
       </form>
      </div>
-     <div class="modal-backdrop hidden" id="platformHalaqahEditModal">
-      <div class="modal-card">
+    </div>
+    <div class="modal-backdrop hidden" id="platformHalaqahEditModal">
+     <div class="modal-card">
        <div><p class="eyebrow">MetodeQu Platform</p><h2>Edit Halaqah</h2></div>
        <form class="stack" id="platformHalaqahEditForm" style="margin-top:16px">
         <div><label class="label">Nama Halaqah</label><input class="input" id="platformHalaqahEditName" placeholder="Contoh: Halaqah Al-Ikhlas" required></div>
@@ -341,8 +342,7 @@ function musyrifList(items,opts={}){
         </div>
        </form>
       </div>
-     </div>
-    </div>`
+     </div>`
   :`<p class="eyebrow">Pondok / Halaqah</p>
     <h1>Halaqah Saya</h1>
     <p class="muted">Halaqah yang menjadi tanggung jawab Anda di ${escapeHtml(pondokName())}.</p>`;

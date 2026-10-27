@@ -4,7 +4,6 @@ import {scheduleSave} from "../utils/progress-sync.js?v=81bed469";
 import {dayProgress} from "./member-progress.js?v=81bed469";
 import {toast} from "../utils/helpers.js?v=81bed469";
 import {activePondokId} from "../utils/program-context.js?v=81bed469";
-import {logLearningActivity} from "../utils/activity-log.js?v=81bed469";
 
 function resolvePondokId(){
  const st=getState();
@@ -170,9 +169,7 @@ export function bindSubmission(){
     }
     const fresh=getProgressContext(getState());
    const key=week+":"+day+":merekam";
-   const wasDone=Boolean(fresh.checks?.[key]);
    setProgressContextPatch({checks:{...(fresh.checks||{}),[key]:true}});
-   if(!wasDone)logLearningActivity("merekam",week,day);
    scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
    toast("Setoran terkirim ke musyrif.");
    cleanup();

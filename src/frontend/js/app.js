@@ -12,6 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=81bed469";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=81bed469";
 import {bindReview} from "./pages/review.js?v=81bed469";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=f6a24c91";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -127,6 +128,7 @@ function bindPageActions(){
  if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
  if(routeName().split("?")[0]==="submission")bindSubmission();
  if(routeName().split("?")[0]==="review")bindReview();
+ if(routeName().split("?")[0]==="musyrif")bindMusyrifDashboard();
  if(routeName().split("?")[0]==="platform-musyrif")bindPlatformMusyrif();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));
  loadMusyrifList();
@@ -546,7 +548,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e31c7b42"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f6a24c91"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

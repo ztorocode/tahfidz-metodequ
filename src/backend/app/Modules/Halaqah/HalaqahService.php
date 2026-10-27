@@ -280,11 +280,13 @@ final class HalaqahService
         (new StudentActivityLog($this->pdo))->ensureTable();
         $activityStatement = $this->pdo->prepare(
             'SELECT a.halaqah_id, a.user_id, u.name AS student_name,
-                    a.activity_key, a.activity_count, a.occurred_at
-             FROM student_learning_activities a
+                    a.activity_type AS activity_key,
+                    a.activity_step AS activity_count,
+                    a.created_at AS occurred_at
+             FROM student_activities a
              JOIN users u ON u.id = a.user_id
              WHERE a.halaqah_id IN (' . $inList . ')
-             ORDER BY a.occurred_at DESC, a.id DESC
+             ORDER BY a.created_at DESC, a.id DESC
              LIMIT 50'
         );
         $activityStatement->execute();

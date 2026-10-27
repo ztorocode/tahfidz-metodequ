@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=7a1d56f0";
+import {view,routeName} from "./router.js?v=c4b91a72";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=81bed469";
 import {bindLogin} from "./pages/login.js?v=81bed469";
@@ -546,7 +546,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=7a1d56f0"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c4b91a72"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

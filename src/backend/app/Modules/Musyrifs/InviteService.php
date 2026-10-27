@@ -402,7 +402,7 @@ final class InviteService
      * @return array{pondok_id:int,pondok_name:string,role:string,email:string,name_hint:string,
      *               expires_at:string,transfer:?array<string,mixed>}
      */
-    public function info(string $token): array
+    public function info(string $token, ?string $emailInput = null): array
     {
         $row = $this->findValid($token);
         if ($row === null) {
@@ -417,9 +417,19 @@ final class InviteService
         $registeredName = null;
         $email = $row['invited_email'] !== null ? (string) $row['invited_email'] : null;
         $isGeneric = $email === null;
-        if (!$isGeneric) {
+        $lookupEmail = $email;
+        if ($isGeneric && $emailInput !== null) {
+            $candidate = strtolower(trim($emailInput));
+            if ($candidate !== '') {
+                if (!filter_var($candidate, FILTER_VALIDATE_EMAIL) || mb_strlen($candidate) > 190) {
+                    throw new RegistrationException('Email tidak valid.', 422, ['email' => 'Email tidak valid.']);
+                }
+                $lookupEmail = $candidate;
+            }
+        }
+        if ($lookupEmail !== null) {
             $registeredStmt = $this->pdo->prepare('SELECT name FROM users WHERE email = :email LIMIT 1');
-            $registeredStmt->execute(['email' => $email]);
+            $registeredStmt->execute(['email' => $lookupEmail]);
             $registeredName = $registeredStmt->fetchColumn();
             $registered = $registeredName !== false;
         }

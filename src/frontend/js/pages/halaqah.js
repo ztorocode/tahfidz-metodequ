@@ -360,9 +360,10 @@ function musyrifList(items,opts={}){
     </button>
     ${open?`<div class="halaqah-acc-body">
      <div class="halaqah-santri-list">${santriRows(item)}</div>
-     ${opts.platform?`<div class="row" style="gap:8px">
-      <button class="btn grow" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
-      <button class="btn" type="button" data-platform-halaqah-edit="${item.id}" aria-label="Edit nama halaqah" title="Edit nama halaqah" style="padding:8px 10px">${pencilIcon()}</button>
+     ${opts.platform?`<div class="btn-joined" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <button class="btn primary" type="button" data-platform-halaqah-santri="${item.id}">+ Santri</button>
+      <button class="btn" type="button" data-halaqah-view="${item.id}">Detail</button>
+      <button class="btn" type="button" data-platform-halaqah-edit="${item.id}" aria-label="Edit nama halaqah" title="Edit nama halaqah" style="display:grid;place-items:center;padding:8px 10px">${pencilIcon()}</button>
      </div>`:`<button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>`}
     </div>`:""}
    </div>`;
@@ -527,6 +528,13 @@ document.addEventListener("click",event=>{
 
  if(event.target.closest("[data-platform-halaqah-close]")){
   document.querySelector("#platformHalaqahModal")?.classList.add("hidden");
+  return;
+ }
+
+ const platformSantriBtn=event.target.closest("[data-platform-halaqah-santri]");
+ if(platformSantriBtn){
+  if(!isPlatformMusyrif())return;
+  toast("Tambah santri untuk halaqah platform belum tersedia.");
   return;
  }
 

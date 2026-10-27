@@ -4,6 +4,7 @@ import {scheduleSave} from "../utils/progress-sync.js?v=81bed469";
 import {SURAHS} from "../data/quran-juz.js?v=81bed469";
 import {parseVerseRef,versesBetween} from "../utils/quran-text.js?v=81bed469";
 import {dayProgress} from "./member-progress.js?v=81bed469";
+import {logLearningActivity} from "../utils/activity-log.js?v=81bed469";
 
 const BISMILLAH="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ";
 
@@ -275,8 +276,10 @@ export function bindRabthAyat(){
  });
  actions.querySelector("[data-ayat-save]")?.addEventListener("click",()=>{
   const fresh=getProgressContext(getState());
+  const wasDone=Boolean(fresh.checks?.[key]);
   const checks={...(fresh.checks||{})};
   checks[key]=true;
+  if(!wasDone)logLearningActivity(step,week,day);
   saveChecks(checks);
  });
 

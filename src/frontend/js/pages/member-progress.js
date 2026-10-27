@@ -1,8 +1,8 @@
-import {getState} from "../store.js?v=b2f7d510";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=b2f7d510";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=b2f7d510";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=b2f7d510";
-import {juzEntries} from "../data/quran-juz.js?v=b2f7d510";
+import {getState} from "../store.js?v=c1d8e4a7";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=c1d8e4a7";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=c1d8e4a7";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=c1d8e4a7";
+import {juzEntries} from "../data/quran-juz.js?v=c1d8e4a7";
 
 const weeks=[1,2,3,4,5];
 const days=[

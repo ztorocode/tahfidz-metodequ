@@ -63,3 +63,8 @@
  .halaqah-acc{padding:0 !important}
  .halaqah-santri-row{padding:17px 15px}
 }
+@media (max-width: 620px) {
+ .halaqah-santri-list{margin-bottom:0}
+ /* Hanya tombol Lihat Detail — baris santri juga elemen <button>, jangan ikut menyempit. */
+ .halaqah-acc-body>.btn{width:calc(100% - 30px);margin:15px}
+}

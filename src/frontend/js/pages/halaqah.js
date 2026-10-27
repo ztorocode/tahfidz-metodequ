@@ -353,6 +353,35 @@ function musyrifList(items,opts={}){
        <button class="btn full" type="button" data-platform-santri-form>Form +Santri</button>
       </div>
      </div>
+    </div>
+    <div class="modal-backdrop hidden" id="platformSantriInviteModal">
+     <div class="modal-card">
+      <div><p class="eyebrow">Undangan Santri</p><h2>Kirim Undangan</h2></div>
+      <div class="stack" style="margin-top:16px">
+       <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="platformSantriEmails" rows="5" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
+       <small class="muted" id="platformSantriInviteMessage">Santri menerima link untuk membuat akun sendiri.</small>
+       <div class="btn-joined">
+        <button class="btn" type="button" data-platform-santri-invite-close>Tutup</button>
+        <button class="btn primary" type="button" data-platform-santri-invite-send>Kirim</button>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="modal-backdrop hidden" id="platformSantriFormModal">
+     <div class="modal-card">
+      <div><p class="eyebrow">Santri Platform</p><h2>Tambah Santri</h2></div>
+      <div class="stack" style="margin-top:16px">
+       <div><label class="label">Nama lengkap</label><input class="input" id="platformSantriName" autocomplete="off" placeholder="Nama lengkap"></div>
+       <div><label class="label">Email</label><input class="input" id="platformSantriEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
+       <div><label class="label">Nomor WhatsApp</label><input class="input" id="platformSantriPhone" inputmode="tel" placeholder="+62 ..."></div>
+       <div><label class="label">Password awal</label><input class="input" id="platformSantriPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+       <small class="muted" id="platformSantriFormMessage"></small>
+       <div class="btn-joined">
+        <button class="btn" type="button" data-platform-santri-form-close>Tutup</button>
+        <button class="btn primary" type="button" data-platform-santri-form-save>Simpan Santri</button>
+       </div>
+      </div>
+     </div>
     </div>`
   :`<p class="eyebrow">Pondok / Halaqah</p>
     <h1>Halaqah Saya</h1>
@@ -558,6 +587,137 @@ document.addEventListener("click",event=>{
  const platformSantriModal=document.querySelector("#platformSantriActionModal");
  if(platformSantriModal&&event.target===platformSantriModal){
   platformSantriModal.classList.add("hidden");
+  return;
+ }
+
+ const platformInviteOpen=event.target.closest("[data-platform-santri-invite]");
+ if(platformInviteOpen){
+  const source=document.querySelector("#platformSantriActionModal");
+  const target=document.querySelector("#platformSantriInviteModal");
+  if(!source||!target)return;
+  target.dataset.halaqahId=source.dataset.halaqahId||"";
+  target.dataset.halaqahName=source.dataset.halaqahName||"";
+  source.classList.add("hidden");
+  const emails=document.querySelector("#platformSantriEmails");if(emails)emails.value="";
+  const msg=document.querySelector("#platformSantriInviteMessage");
+  if(msg){msg.textContent="Santri menerima link untuk membuat akun sendiri.";msg.style.color="";}
+  target.classList.remove("hidden");
+  emails?.focus();
+  return;
+ }
+
+ if(event.target.closest("[data-platform-santri-invite-close]")){
+  document.querySelector("#platformSantriInviteModal")?.classList.add("hidden");
+  return;
+ }
+
+ const platformInviteModal=document.querySelector("#platformSantriInviteModal");
+ if(platformInviteModal&&event.target===platformInviteModal){
+  platformInviteModal.classList.add("hidden");
+  return;
+ }
+
+ const platformInviteSend=event.target.closest("[data-platform-santri-invite-send]");
+ if(platformInviteSend){
+  const modal=document.querySelector("#platformSantriInviteModal");
+  const msg=document.querySelector("#platformSantriInviteMessage");
+  const halaqahId=Number(modal?.dataset?.halaqahId||0);
+  const emails=(document.querySelector("#platformSantriEmails")?.value||"").split(/[\n,;]+/).map(v=>v.trim()).filter(Boolean);
+  if(!halaqahId||!emails.length){
+   if(msg){msg.textContent="Isi minimal satu email.";msg.style.color="var(--danger)";}
+   return;
+  }
+  const label=platformInviteSend.textContent;
+  platformInviteSend.disabled=true;platformInviteSend.textContent="Mengirim…";
+  halaqApi("/api/platform/santri-invites",{method:"POST",body:JSON.stringify({halaqah_id:halaqahId,emails})})
+   .then(b=>{
+    const sent=b.data?.sent?.length||0;
+    const failed=b.data?.failed||[];
+    if(msg){
+     msg.textContent=(sent?sent+" undangan diproses":"")+(sent&&failed.length?"; ":"")+failed.map(x=>x.email+" ("+x.message+")").join("; ");
+     msg.style.color=failed.length?"var(--danger)":"var(--brand)";
+    }
+    if(!failed.length){
+     toast("Undangan santri dikirim.");
+     setTimeout(()=>modal?.classList.add("hidden"),700);
+    }
+   })
+   .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal mengirim undangan.";msg.style.color="var(--danger)";}})
+   .finally(()=>{platformInviteSend.disabled=false;platformInviteSend.textContent=label;});
+  return;
+ }
+
+ const platformCopy=event.target.closest("[data-platform-santri-copy]");
+ if(platformCopy){
+  const modal=document.querySelector("#platformSantriActionModal");
+  const halaqahId=Number(modal?.dataset?.halaqahId||0);
+  if(!halaqahId)return;
+  const label=platformCopy.textContent;
+  platformCopy.disabled=true;platformCopy.textContent="Menyalin…";
+  halaqApi("/api/platform/santri-invites/standing-link",{method:"POST",body:JSON.stringify({halaqah_id:halaqahId})})
+   .then(async b=>{
+    const link=b.data?.link||"";
+    if(!link)throw new Error("Link tidak tersedia.");
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+    else{
+     const ta=document.createElement("textarea");ta.value=link;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+    }
+    toast("Link undangan santri tersalin.");
+   })
+   .catch(err=>{toast(err?.message||"Gagal menyalin link.");})
+   .finally(()=>{platformCopy.disabled=false;platformCopy.textContent=label;});
+  return;
+ }
+
+ const platformFormOpen=event.target.closest("[data-platform-santri-form]");
+ if(platformFormOpen){
+  const source=document.querySelector("#platformSantriActionModal");
+  const target=document.querySelector("#platformSantriFormModal");
+  if(!source||!target)return;
+  target.dataset.halaqahId=source.dataset.halaqahId||"";
+  target.dataset.halaqahName=source.dataset.halaqahName||"";
+  source.classList.add("hidden");
+  ["#platformSantriName","#platformSantriEmail","#platformSantriPhone","#platformSantriPassword"].forEach(sel=>{const el=document.querySelector(sel);if(el)el.value="";});
+  const msg=document.querySelector("#platformSantriFormMessage");if(msg){msg.textContent="";msg.style.color="";}
+  target.classList.remove("hidden");
+  document.querySelector("#platformSantriName")?.focus();
+  return;
+ }
+
+ if(event.target.closest("[data-platform-santri-form-close]")){
+  document.querySelector("#platformSantriFormModal")?.classList.add("hidden");
+  return;
+ }
+
+ const platformFormModal=document.querySelector("#platformSantriFormModal");
+ if(platformFormModal&&event.target===platformFormModal){
+  platformFormModal.classList.add("hidden");
+  return;
+ }
+
+ const platformFormSave=event.target.closest("[data-platform-santri-form-save]");
+ if(platformFormSave){
+  const modal=document.querySelector("#platformSantriFormModal");
+  const msg=document.querySelector("#platformSantriFormMessage");
+  const payload={
+   halaqah_id:Number(modal?.dataset?.halaqahId||0),
+   name:(document.querySelector("#platformSantriName")?.value||"").trim(),
+   email:(document.querySelector("#platformSantriEmail")?.value||"").trim(),
+   phone:(document.querySelector("#platformSantriPhone")?.value||"").trim(),
+   password:document.querySelector("#platformSantriPassword")?.value||""
+  };
+  if(msg){msg.textContent="";msg.style.color="";}
+  const label=platformFormSave.textContent;
+  platformFormSave.disabled=true;platformFormSave.textContent="Menyimpan…";
+  halaqApi("/api/platform/santris",{method:"POST",body:JSON.stringify(payload)})
+   .then(b=>{
+    toast("Santri "+(b.data?.name||"")+" ditambahkan.");
+    modal?.classList.add("hidden");
+    return refreshHalaqahs(true,true);
+   })
+   .then(()=>window.dispatchEvent(new Event("app:render")))
+   .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal menambahkan santri.";msg.style.color="var(--danger)";}})
+   .finally(()=>{platformFormSave.disabled=false;platformFormSave.textContent=label;});
   return;
  }
 

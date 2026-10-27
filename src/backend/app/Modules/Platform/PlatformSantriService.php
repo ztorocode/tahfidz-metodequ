@@ -163,30 +163,48 @@ final class PlatformSantriService
         $pending = $this->pdo->prepare(
             "SELECT id FROM platform_santri_invites
              WHERE halaqah_id = :halaqah_id AND invited_email = :email
-               AND status = 'pending' AND expires_at > CURRENT_TIMESTAMP(3)
+               AND status = 'pending'
+             ORDER BY id DESC
              LIMIT 1"
         );
         $pending->execute(['halaqah_id' => $halaqah['id'], 'email' => $email]);
-        if ($pending->fetchColumn() !== false) {
-            throw new RegistrationException('Masih ada undangan pending untuk email ini.', 409);
-        }
+        $pendingId = $pending->fetchColumn();
 
         $token = bin2hex(random_bytes(32));
-        $this->pdo->prepare(
-            'INSERT INTO platform_santri_invites
-                (halaqah_id, token_hash, invite_token_plain, invited_email, created_by, expires_at)
-             VALUES
-                (:halaqah_id, :token_hash, :token_plain, :email, :created_by,
-                 DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ' . self::EXPIRY_DAYS . ' DAY))'
-        )->execute([
-            'halaqah_id' => $halaqah['id'],
-            'token_hash' => hash('sha256', $token),
-            'token_plain' => $token,
-            'email' => $email,
-            'created_by' => (int) $actor['id'],
-        ]);
+        $tokenHash = hash('sha256', $token);
 
-        $id = (int) $this->pdo->lastInsertId();
+        if ($pendingId !== false) {
+            $this->pdo->prepare(
+                'UPDATE platform_santri_invites
+                    SET token_hash = :token_hash,
+                        invite_token_plain = :token_plain,
+                        created_by = :created_by,
+                        expires_at = DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ' . self::EXPIRY_DAYS . ' DAY)
+                  WHERE id = :id AND status = \'pending\''
+            )->execute([
+                'token_hash' => $tokenHash,
+                'token_plain' => $token,
+                'created_by' => (int) $actor['id'],
+                'id' => (int) $pendingId,
+            ]);
+            $id = (int) $pendingId;
+        } else {
+            $this->pdo->prepare(
+                'INSERT INTO platform_santri_invites
+                    (halaqah_id, token_hash, invite_token_plain, invited_email, created_by, expires_at)
+                 VALUES
+                    (:halaqah_id, :token_hash, :token_plain, :email, :created_by,
+                     DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ' . self::EXPIRY_DAYS . ' DAY))'
+            )->execute([
+                'halaqah_id' => $halaqah['id'],
+                'token_hash' => $tokenHash,
+                'token_plain' => $token,
+                'email' => $email,
+                'created_by' => (int) $actor['id'],
+            ]);
+
+            $id = (int) $this->pdo->lastInsertId();
+        }
         $link = $this->inviteLink($token);
         $emailSent = $this->tryEmail(
             $email,

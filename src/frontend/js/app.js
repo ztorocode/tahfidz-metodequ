@@ -10,7 +10,7 @@ import {bindWaPage} from "./pages/whatsapp.js?v=7a5d9b42";
 import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=7a5d9b42";
 import {bindRabthAyat} from "./pages/rabth-ayat.js?v=7a5d9b42";
 import {bindSubmission} from "./pages/submission.js?v=7a5d9b42";
-import {bindPlatformMusyrif} from "./pages/super-admin.js?v=7a5d9b42";
+import {bindPlatformMusyrif} from "./pages/super-admin.js?v=c8f14a2e";
 import {bindReview} from "./pages/review.js?v=7a5d9b42";
 let deferredPrompt=null;
 function render(){
@@ -546,7 +546,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=7a5d9b42"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c8f14a2e"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

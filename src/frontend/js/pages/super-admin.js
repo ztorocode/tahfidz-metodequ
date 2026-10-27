@@ -112,7 +112,7 @@ function inviteListBody(){
   const actions=row.status==="pending"
    ?`<div class="btn-joined" style="flex:0 0 auto"><button class="btn" data-plat-regen="${row.id}" type="button">Salin</button><button class="btn" data-plat-revoke="${row.id}" type="button">Batal</button></div>`
    :"";
-  return `<div class="list-item"><span class="dot"></span><div class="grow"><b>${title}</b><small class="muted" style="display:block">${sub}</small></div>${actions}${badge}</div>`;
+  return `<div class="list-item platform-invite-item"><span class="dot"></span><div class="grow platform-invite-main"><b>${title}</b><small class="muted" style="display:block">${sub}</small></div>${actions?`<div class="platform-invite-actions">${actions}</div>`:""}<div class="platform-invite-status">${badge}</div></div>`;
  }).join("");
 }
 
@@ -124,23 +124,23 @@ export function platformMusyrifPage(){
   :(d.error?"Gagal memuat":`${d.total??"0"} musyrif (${d.platform_active??0} platform · ${d.pondok_active??0} pondok)`);
  let body;
  if(!d){
-  body='<tr><td colspan="6"><span class="muted">Memuat musyrif…</span></td></tr>';
+  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Memuat musyrif…</span></td></tr>';
  }else if(d.error){
-  body=`<tr><td colspan="6"><span class="muted">${esc(d.error)} Muat ulang halaman untuk mencoba lagi.</span></td></tr>`;
+  body=`<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">${esc(d.error)} Muat ulang halaman untuk mencoba lagi.</span></td></tr>`;
  }else if(!items.length){
-  body='<tr><td colspan="6"><span class="muted">Belum ada musyrif terdaftar.</span></td></tr>';
+  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Belum ada musyrif terdaftar.</span></td></tr>';
  }else{
-  body=items.map(item=>`<tr><td><b>${esc(item.name)}</b></td><td>${esc(item.email)}</td><td>${item.dampingan}</td><td>${item.type==="platform"?"Platform":"Pondok"}</td><td>${esc(item.scope)}</td><td>${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
+  body=items.map(item=>`<tr><td data-label="Musyrif"><b>${esc(item.name)}</b></td><td data-label="Email">${esc(item.email)}</td><td data-label="User dampingan">${item.dampingan}</td><td data-label="Tipe">${item.type==="platform"?"Platform":"Pondok"}</td><td data-label="Scope">${esc(item.scope)}</td><td data-label="Status">${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
  }
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Musyrif Platform</h1><p class="muted">Musyrif yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge ${d&&!d.error?"success":""}">${badge}</span></div>
- <div class="grid-2"><div class="card"><h3>Undang Musyrif</h3><div class="stack">
+ return `<div class="platform-musyrif-page"><div class="row between platform-musyrif-head" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Musyrif Platform</h1><p class="muted">Musyrif yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge platform-musyrif-summary ${d&&!d.error?"success":""}">${badge}</span></div>
+ <div class="grid-2 platform-musyrif-grid"><div class="card platform-musyrif-invite-card"><h3>Undang Musyrif</h3><div class="stack">
  <p class="muted" style="margin:0">Undang musyrif platform lewat email — mereka buat password sendiri.</p>
  <button class="btn primary full" id="platInviteBtn" type="button">Kirim Undangan</button>
  <button class="btn full" id="platCopyLinkBtn" type="button">Salin Link Undangan</button>
  <button class="btn full" id="platAddBtn" type="button">Form +Musyrif</button>
  <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="platInviteList">${inviteListBody()}</div>
  </div></div>
- <div class="card"><h3>Daftar Musyrif</h3><div class="table-wrap"><table class="table"><thead><tr><th>Musyrif</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
+ <div class="card platform-musyrif-list-card"><h3>Daftar Musyrif</h3><div class="table-wrap platform-musyrif-table-wrap"><table class="table platform-musyrif-table"><thead><tr><th>Musyrif</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
  <div class="modal-backdrop hidden" id="platInviteModal">
   <div class="modal-card">
    <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
@@ -169,7 +169,7 @@ export function platformMusyrifPage(){
     </div>
    </div>
   </div>
- </div>`;
+ </div></div>`;
 }
 
 export function bindPlatformMusyrif(){

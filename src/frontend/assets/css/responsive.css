@@ -7,3 +7,38 @@
  .week-metrics>.wm-3{order:4}
  .week-metrics>.wm-4{order:3}
 }
+
+
+/* Super Admin · Musyrif Platform */
+.platform-musyrif-page,.platform-musyrif-grid,.platform-musyrif-grid>*{min-width:0}
+@media(max-width:620px){
+ .platform-musyrif-head{align-items:flex-start;flex-direction:column;gap:10px}
+ .platform-musyrif-head>div{min-width:0;width:100%}
+ .platform-musyrif-summary{max-width:100%;white-space:normal;line-height:1.35;overflow-wrap:anywhere}
+ .platform-musyrif-grid{gap:12px}
+ .platform-musyrif-invite-card,.platform-musyrif-list-card{min-width:0;overflow:hidden}
+ #platInviteList .platform-invite-item{display:grid;grid-template-columns:10px minmax(0,1fr);align-items:start;gap:10px 12px}
+ #platInviteList .platform-invite-item>.dot{margin-top:5px}
+ .platform-invite-main{min-width:0}
+ .platform-invite-main b,.platform-invite-main small{overflow-wrap:anywhere;word-break:break-word}
+ .platform-invite-actions{grid-column:2;min-width:0;width:100%}
+ .platform-invite-actions .btn-joined{width:100%;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .platform-invite-status{grid-column:2;justify-self:start}
+ .platform-musyrif-table-wrap{margin:0;width:100%;padding:0;overflow:visible}
+ .platform-musyrif-table{width:100%;min-width:0;border-collapse:separate;border-spacing:0}
+ .platform-musyrif-table thead{display:none}
+ .platform-musyrif-table tbody{display:grid;gap:10px}
+ .platform-musyrif-table tr{display:grid;grid-template-columns:1fr;border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:var(--surface)}
+ .platform-musyrif-table td{display:grid;grid-template-columns:minmax(96px,.8fr) minmax(0,1.2fr);align-items:start;gap:10px;min-width:0;padding:8px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere}
+ .platform-musyrif-table td::before{content:attr(data-label);color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+ .platform-musyrif-table td:last-child{border-bottom:0}
+ .platform-musyrif-table .platform-musyrif-empty{display:block;padding:0}
+ .platform-musyrif-table .platform-musyrif-empty td{display:block;padding:12px;border:0}
+ .platform-musyrif-table .platform-musyrif-empty td::before{content:none}
+ .platform-musyrif-page .modal-card{max-height:calc(100dvh - 36px);overflow:auto}
+}
+@media(max-width:390px){
+ .platform-musyrif-table td{grid-template-columns:1fr;gap:4px}
+ .platform-musyrif-page .modal-card .btn-joined{grid-template-columns:1fr;gap:8px}
+ .platform-musyrif-page .modal-card .btn-joined .btn{border-radius:11px}
+}

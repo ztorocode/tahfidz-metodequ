@@ -1,12 +1,12 @@
-const CACHE='metodequ-d72e4f31';
+const CACHE='metodequ-e31c7b42';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
   './assets/css/components.css?v=81bed469','./assets/css/responsive.css?v=81bed469',
   './assets/images/icon.svg?v=81bed469',
-  './js/app.js?v=d72e4f31','./js/router.js?v=d72e4f31','./js/store.js?v=81bed469',
-  './js/data/dummy-data.js?v=81bed469','./js/data/quran-juz.js?v=81bed469','./js/components/app-shell.js?v=81bed469',
-  './js/components/context-switcher.js?v=81bed469','./js/layouts/app-layout.js?v=81bed469',
+  './js/app.js?v=e31c7b42','./js/router.js?v=d72e4f31','./js/store.js?v=81bed469',
+  './js/data/dummy-data.js?v=81bed469','./js/data/quran-juz.js?v=81bed469','./js/components/app-shell.js?v=e31c7b42',
+  './js/components/context-switcher.js?v=81bed469','./js/layouts/app-layout.js?v=e31c7b42',
   './js/utils/helpers.js?v=81bed469','./js/utils/progress-context.js?v=81bed469',
  './js/utils/progress-sync.js?v=81bed469','./js/utils/student-progress.js?v=81bed469',
  './js/utils/setoran.js?v=81bed469',

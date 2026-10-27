@@ -88,7 +88,7 @@ final class PlatformSantriController
     public function inviteInfo(Request $request): never
     {
         try {
-            $result = $this->service()->info((string) ($request->query['token'] ?? ''));
+            $result = $this->service()->info((string) ($request->query['token'] ?? ''), isset($request->query['email']) ? (string) $request->query['email'] : null);
             Response::json(['success' => true, 'data' => $result]);
         } catch (RegistrationException $exception) {
             Response::json(['success' => false, 'message' => $exception->getMessage()], $exception->statusCode);

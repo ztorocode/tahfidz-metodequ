@@ -1,10 +1,10 @@
-const CACHE='metodequ-9c6b27d1';
+const CACHE='metodequ-4f7a31c2';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
   './assets/css/components.css?v=81bed469','./assets/css/responsive.css?v=81bed469',
   './assets/images/icon.svg?v=81bed469',
-  './js/app.js?v=9c6b27d1','./js/router.js?v=9c6b27d1','./js/store.js?v=81bed469',
+  './js/app.js?v=4f7a31c2','./js/router.js?v=4f7a31c2','./js/store.js?v=81bed469',
   './js/data/dummy-data.js?v=81bed469','./js/data/quran-juz.js?v=81bed469','./js/components/app-shell.js?v=81bed469',
   './js/components/context-switcher.js?v=81bed469','./js/layouts/app-layout.js?v=81bed469',
   './js/utils/helpers.js?v=81bed469','./js/utils/progress-context.js?v=81bed469',
@@ -15,7 +15,7 @@ const SHELL=[
   './js/pages/login.js?v=81bed469','./js/pages/member-progress.js?v=81bed469','./js/pages/member-dashboard.js?v=81bed469','./js/pages/program.js?v=81bed469',
   './js/pages/activity.js?v=81bed469','./js/pages/submission.js?v=81bed469','./js/pages/murajaah.js?v=81bed469',
   './js/pages/notifications.js?v=81bed469','./js/pages/musyrif-dashboard.js?v=81bed469',
-  './js/pages/review.js?v=81bed469','./js/pages/admin-dashboard.js?v=81bed469','./js/pages/halaqah.js?v=9c6b27d1','./js/pages/santri-progress.js?v=81bed469','./js/pages/tabel-progress.js?v=81bed469',
+  './js/pages/review.js?v=81bed469','./js/pages/admin-dashboard.js?v=81bed469','./js/pages/halaqah.js?v=4f7a31c2','./js/pages/santri-progress.js?v=81bed469','./js/pages/tabel-progress.js?v=81bed469',
   './js/pages/rabth-ayat.js?v=81bed469',
  './js/pages/whatsapp.js?v=81bed469','./js/pages/super-admin.js?v=81bed469'
 ];

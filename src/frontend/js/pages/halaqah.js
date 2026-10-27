@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=3f9d7c21";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=3f9d7c21";
+import {getState,setState} from "../store.js?v=9a4e6d38";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=9a4e6d38";
 
 let selectedHalaqahId=null;
 /** Halaqah yang sedang dibuka pada daftar milik musyrif (undefined = belum dipilih). */
@@ -272,7 +272,6 @@ function musyrifList(items){
      <span class="halaqah-acc-meta">${item.students.length} santri ${chevronIcon(open?"up":"down")}</span>
     </button>
     ${open?`<div class="halaqah-acc-body">
-     <small class="halaqah-acc-label">Santri</small>
      <div class="halaqah-santri-list">${santriRows(item)}</div>
      <button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>
     </div>`:""}

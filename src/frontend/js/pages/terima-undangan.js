@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=3f9d7c21";
-import {toast} from "../utils/helpers.js?v=3f9d7c21";
+import {getState,setState} from "../store.js?v=9a4e6d38";
+import {toast} from "../utils/helpers.js?v=9a4e6d38";
 
 function inviteToken(){
  const hash=(location.hash||"").replace(/^#/,"");
@@ -30,7 +30,7 @@ function acceptLabel(info){return info?.transfer?"Terima & Pindah Halaqah":"Teri
 
 export function acceptInvitePage(){
  return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=3f9d7c21">MetodeQu</div></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=9a4e6d38">MetodeQu</div></div>
 <div><p class="eyebrow" style="color:#86e5bd" id="inviteEyebrow">Undangan Pondok</p><h1 style="font-size:40px;max-width:520px">Satu langkah lagi bergabung.</h1></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="inviteCard"><p class="muted">Memuat undangan...</p></div></div></section>`;
 }

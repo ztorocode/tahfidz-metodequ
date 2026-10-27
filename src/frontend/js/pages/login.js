@@ -37,7 +37,7 @@ function loginForm(method="whatsapp"){
   ${whatsapp
    ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" value="+62 812 3456 7890"></div>`
    : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" value="member@metodequ.id"></div>
-      <div><label class="label">Password</label><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="member123"></div>`}
+      <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="member123"><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
  </div>
  <small class="muted" id="loginMessage"></small>
  <button class="btn primary full" id="loginBtn">${whatsapp?"Kirim kode OTP":"Masuk"}</button>`;
@@ -152,6 +152,7 @@ export function bindLogin(){
   if(!form)return;
   form.innerHTML=loginForm(method);
   bindLoginActions(method);
+  if(method==="email")bindPasswordToggle();
  };
 
  const showOtp=(phone)=>{
@@ -244,6 +245,20 @@ export function bindLogin(){
     if(info){info.textContent=error?.message||"Gagal mengirim ulang link verifikasi.";info.style.color="var(--danger)";}
    }
    btn.disabled=false;btn.textContent="Kirim ulang email verifikasi";
+  });
+ };
+
+ const bindPasswordToggle=()=>{
+  const input=document.querySelector("#loginPassword");
+  const button=document.querySelector("#loginPasswordToggle");
+  if(!input||!button)return;
+  button.addEventListener("click",()=>{
+   const showing=input.type==="text";
+   input.type=showing?"password":"text";
+   button.setAttribute("aria-pressed",showing?"false":"true");
+   button.setAttribute("aria-label",showing?"Tampilkan password":"Sembunyikan password");
+   button.querySelector("span").textContent=showing?"◉":"◎";
+   input.focus();
   });
  };
 

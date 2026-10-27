@@ -1,10 +1,10 @@
-const CACHE='metodequ-f28a6c10';
+const CACHE='metodequ-c84e2a61';
 const SHELL=[
   './','./index.html','./manifest.webmanifest',
   './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
   './assets/css/components.css?v=81bed469','./assets/css/responsive.css?v=f28a6c10',
   './assets/images/icon.svg?v=81bed469',
-  './js/app.js?v=f28a6c10','./js/router.js?v=f28a6c10','./js/store.js?v=81bed469',
+  './js/app.js?v=c84e2a61','./js/router.js?v=c84e2a61','./js/store.js?v=81bed469',
   './js/data/dummy-data.js?v=81bed469','./js/data/quran-juz.js?v=81bed469','./js/components/app-shell.js?v=e31c7b42',
   './js/components/context-switcher.js?v=81bed469','./js/layouts/app-layout.js?v=e31c7b42',
   './js/utils/helpers.js?v=81bed469','./js/utils/progress-context.js?v=81bed469',

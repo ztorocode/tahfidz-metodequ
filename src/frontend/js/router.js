@@ -38,10 +38,11 @@ export function view(){
  const publicRoutes=["login","terima-undangan"];
  if(!s.loggedIn&&!publicRoutes.includes(name)){location.hash="login";return loginPage();}
  if(s.loggedIn&&name==="login"){name=homeRoute(s);location.hash=name;return routes[name]();}
+ if(s.loggedIn&&name==="dashboard"&&s.persona!=="member"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(platformRoutes.includes(name)&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(adminRoutes.includes(name)&&s.persona!=="admin"&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
  // Halaman progress versi musyrif hanya untuk musyrif.
  if(name==="review-progress"&&s.persona!=="musyrif"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
- const fn=routes[name]||memberDashboard;return fn();
+ const fn=routes[name]||routes[homeRoute(s)]||memberDashboard;return fn();
 }

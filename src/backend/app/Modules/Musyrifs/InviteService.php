@@ -658,8 +658,8 @@ final class InviteService
             $this->pdo->prepare(
                 "INSERT INTO musyrif_profiles (user_id, type, pondok_id, status)
                  VALUES (:user_id, 'pondok', :pondok_id, 'active')
-                 ON DUPLICATE KEY UPDATE pondok_id = :pondok_id2, status = 'active'"
-            )->execute(['user_id' => $userId, 'pondok_id' => $pondokId, 'pondok_id2' => $pondokId]);
+                 ON DUPLICATE KEY UPDATE status = 'active'"
+            )->execute(['user_id' => $userId, 'pondok_id' => $pondokId]);
         }
 
         $existing = $this->pdo->prepare(

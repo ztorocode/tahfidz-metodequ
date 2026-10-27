@@ -132,7 +132,15 @@ final class PlatformSantriService
         foreach ($emails as $email) {
             try {
                 $invite = $this->createInvite($actor, $halaqah, $email);
-                $sent[] = ['id' => $invite['id'], 'email' => $email, 'email_sent' => $invite['email_sent']];
+                if (($invite['email_sent'] ?? false) === true) {
+                    $sent[] = ['id' => $invite['id'], 'email' => $email];
+                    continue;
+                }
+
+                $failed[] = [
+                    'email' => $email,
+                    'message' => 'Email gagal dikirim oleh SMTP. Gunakan Salin Link Undangan untuk membagikan link secara manual.',
+                ];
             } catch (RegistrationException $exception) {
                 $failed[] = ['email' => $email, 'message' => $exception->getMessage()];
             }

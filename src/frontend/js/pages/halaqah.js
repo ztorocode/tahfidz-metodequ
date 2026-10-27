@@ -361,7 +361,7 @@ function musyrifList(items,opts={}){
     ${open?`<div class="halaqah-acc-body">
      <div class="halaqah-santri-list">${santriRows(item)}</div>
      ${opts.platform?`<div class="btn-joined" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-      <button class="btn" type="button" data-platform-halaqah-santri="${item.id}">+ Santri</button>
+      <button class="btn primary" type="button" data-platform-halaqah-santri="${item.id}">+ Santri</button>
       <button class="btn" type="button" data-halaqah-view="${item.id}">Detail</button>
       <button class="btn" type="button" data-platform-halaqah-edit="${item.id}" aria-label="Edit nama halaqah" title="Edit nama halaqah" style="display:grid;place-items:center;padding:8px 10px">${pencilIcon()}</button>
      </div>`:`<button class="btn full" type="button" data-halaqah-view="${item.id}">Lihat Detail</button>`}

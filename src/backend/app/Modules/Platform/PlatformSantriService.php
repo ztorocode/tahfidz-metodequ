@@ -19,6 +19,53 @@ final class PlatformSantriService
         private readonly PDO $pdo,
         private readonly RegisterRepository $accounts,
     ) {
+        $this->ensureInviteTable();
+    }
+
+    /**
+     * Compatibility guard untuk deployment auto-pull yang tidak menjalankan
+     * tools/migrate.php. Migration 016 tetap source of truth; DDL ini identik
+     * dan idempotent sehingga migration runner bisa dijalankan kemudian.
+     */
+    private function ensureInviteTable(): void
+    {
+        $exists = $this->pdo->prepare(
+            "SELECT COUNT(*)
+             FROM information_schema.tables
+             WHERE table_schema = DATABASE()
+               AND table_name = 'platform_santri_invites'"
+        );
+        $exists->execute();
+
+        if ((int) $exists->fetchColumn() > 0) {
+            return;
+        }
+
+        $this->pdo->exec(
+            "CREATE TABLE IF NOT EXISTS platform_santri_invites (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                halaqah_id BIGINT UNSIGNED NOT NULL,
+                token_hash CHAR(64) NOT NULL,
+                invite_token_plain VARCHAR(128) NULL,
+                invited_email VARCHAR(190) NULL,
+                created_by BIGINT UNSIGNED NOT NULL,
+                accepted_by BIGINT UNSIGNED NULL,
+                status ENUM('pending','accepted','expired','revoked') NOT NULL DEFAULT 'pending',
+                expires_at DATETIME(3) NOT NULL,
+                accepted_at DATETIME(3) NULL,
+                created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_platform_santri_invites_token (token_hash),
+                KEY idx_platform_santri_invites_scope (halaqah_id, status, expires_at),
+                KEY idx_platform_santri_invites_email (invited_email, status),
+                CONSTRAINT fk_platform_santri_invites_halaqah
+                    FOREIGN KEY (halaqah_id) REFERENCES halaqahs(id) ON DELETE CASCADE,
+                CONSTRAINT fk_platform_santri_invites_created_by
+                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+                CONSTRAINT fk_platform_santri_invites_accepted_by
+                    FOREIGN KEY (accepted_by) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
     }
 
     /** @param array{id:int,roles:string[]} $actor @return array{id:int,name:string,profile_id:int} */

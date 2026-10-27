@@ -5,6 +5,7 @@ import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHa
 import {juzEntries} from "../data/quran-juz.js?v=81bed469";
 import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=81bed469";
 import {toast} from "../utils/helpers.js?v=81bed469";
+import {logLearningActivity} from "../utils/activity-log.js?v=81bed469";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -243,16 +244,19 @@ document.addEventListener("click",event=>{
  }
  const kemarin=event.target.closest("[data-kemarin-open]");
  if(kemarin){
+  logLearningActivity(kemarin.dataset.kemarinOpen,stateWeek(currentData()),kemarin.dataset.progressDay);
   location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
  const istima=event.target.closest("[data-istima-open]");
  if(istima){
+  logLearningActivity(istima.dataset.istimaOpen,stateWeek(currentData()),istima.dataset.progressDay);
   location.hash="rabth-ayat?step="+encodeURIComponent(istima.dataset.istimaOpen)+"&day="+encodeURIComponent(istima.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
  const tikrar=event.target.closest("[data-tikrar-open]");
  if(tikrar){
+  logLearningActivity(tikrar.dataset.tikrarOpen,stateWeek(currentData()),tikrar.dataset.progressDay);
   location.hash="rabth-ayat?step="+encodeURIComponent(tikrar.dataset.tikrarOpen)+"&day="+encodeURIComponent(tikrar.dataset.progressDay)+"&from="+progressRoute();
   return;
  }
@@ -666,6 +670,7 @@ document.addEventListener("click",event=>{
   const day=step.dataset.progressDay;
   // Merekam → halaman rekam setoran (auto-centang saat kirim).
   if(step.dataset.progressStep==="merekam"){
+   logLearningActivity("merekam",week,day);
    location.hash="submission?week="+week+"&day="+encodeURIComponent(day)+"&from="+progressRoute();
    return;
   }
@@ -677,6 +682,7 @@ document.addEventListener("click",event=>{
   step.setAttribute("aria-pressed",String(active));
   updatePercent(day);
   scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+  if(active)logLearningActivity(step.dataset.progressStep,week,day);
  }
 });
 

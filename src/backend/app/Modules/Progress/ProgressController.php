@@ -7,6 +7,7 @@ namespace App\Modules\Progress;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\StudentActivityLog;
 use App\Modules\Auth\LoginValidator;
 use App\Modules\Auth\RegistrationException;
 use App\Modules\Auth\SessionService;
@@ -110,4 +111,21 @@ final class ProgressController
             ], $exception->statusCode);
         }
     }
+    /** Catat aksi belajar santri (hafalan kemarin, istima, menghafal, merekam, tikrar). */
+    public function activity(Request $request): never
+    {
+        try {
+            $actor = $this->actor($request);
+            $logger = new StudentActivityLog(Database::connection());
+            $row = $logger->log((int) $actor['id'], $request->body());
+            Response::json(['success' => true, 'message' => 'Aktivitas tercatat.', 'data' => $row], 201);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
 }

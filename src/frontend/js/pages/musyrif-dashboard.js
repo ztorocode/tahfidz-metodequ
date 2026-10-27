@@ -1,7 +1,7 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {students as demoStudents} from "../data/dummy-data.js?v=81bed469";
 import {badge,statusTone} from "../utils/helpers.js?v=81bed469";
-import {fmtWib} from "../utils/program-context.js?v=81bed469";
+
 
 function esc(value){
  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -15,6 +15,17 @@ function isPlatformMusyrif(){
 function accountName(){
  const s=getState();
  return s.authUser?.name||s.profileOverrides?.musyrif?.name||"Musyrif";
+}
+
+function activityTime(value){
+ if(!value)return "-";
+ const date=new Date(String(value).replace(" ","T")+"Z");
+ if(isNaN(date.getTime()))return "-";
+ const parts=new Intl.DateTimeFormat("id-ID",{
+  timeZone:"Asia/Jakarta",day:"numeric",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false
+ }).formatToParts(date);
+ const get=type=>parts.find(part=>part.type===type)?.value||"";
+ return [get("day"),get("month"),get("year")].filter(Boolean).join(" ")+" "+get("hour")+":"+get("minute");
 }
 
 function demoDashboard(){
@@ -35,7 +46,7 @@ function platformSkeleton(){
  </div>
  <div class="card">
   <div><h3>Aktivitas Santri</h3><small class="muted" id="platformDashStatus">Memuat aktivitas…</small></div>
-  <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Waktu</th><th>Santri</th><th>Halaqah</th><th>Aktivitas</th></tr></thead><tbody id="platformDashActivities"><tr><td colspan="4"><span class="muted">Memuat aktivitas…</span></td></tr></tbody></table></div>
+  <div class="table-wrap" style="margin-top:12px"><table class="table"><thead><tr><th>Aktivitas</th><th>Waktu</th></tr></thead><tbody id="platformDashActivities"><tr><td colspan="2"><span class="muted">Memuat aktivitas…</span></td></tr></tbody></table></div>
  </div>`;
 }
 
@@ -71,26 +82,30 @@ async function loadPlatformDashboard(){
    const at=v=>new Date(String(v||"").replace(" ","T")+"Z").getTime()||0;
    return at(b.activity_at)-at(a.activity_at);
   });
-  const decisionLabel={mutqin:"Mutqin",cukup_stabil:"Cukup Stabil",penguatan:"Perlu Penguatan",ulang:"Perlu Ulang"};
+  const activityLabel={
+   hafalan_kemarin:"hafalan kemarin",
+   istima:"istima",
+   menghafal:"menghafal",
+   merekam:"merekam",
+   tikrar:"tikrar"
+  };
   const activityText=row=>{
-   const target=[row.surah,row.juz?"Juz "+row.juz:null].filter(Boolean).join(" · ");
-   if(row.type==="review")return "Setoran dinilai "+(decisionLabel[row.decision]||row.decision||"selesai")+(target?" · "+target:"");
-   return "Mengirim setoran"+(target?" · "+target:"")+(row.status==="pending"?" · Menunggu review":"");
+   const action=activityLabel[row.activity_key]||row.activity_key||"beraktivitas";
+   const count=row.activity_count?(" "+row.activity_count+"x"):"";
+   return "Santri "+(row.student_name||"Santri")+" "+action+count;
   };
   kpis.innerHTML=`<div class="kpi"><b>${halaqahs.length}</b><span class="muted">Halaqah aktif</span></div>
    <div class="kpi"><b>${seen.size}</b><span class="muted">Santri aktif</span></div>
    <div class="kpi"><b>${pending}</b><span class="muted">Setoran pending</span></div>
    <div class="kpi"><b>${mutqin}</b><span class="muted">Mutqin total</span></div>`;
   tbody.innerHTML=activities.length?activities.slice(0,20).map(row=>`<tr>
-   <td style="white-space:nowrap">${esc(fmtWib(row.activity_at))} WIB</td>
-   <td><b>${esc(row.student_name||"Santri")}</b></td>
-   <td>${esc(row.halaqahName)}</td>
    <td>${esc(activityText(row))}</td>
-  </tr>`).join(""):'<tr><td colspan="4"><span class="muted">Belum ada aktivitas setoran dari santri.</span></td></tr>';
+   <td style="white-space:nowrap">${esc(activityTime(row.activity_at))}</td>
+  </tr>`).join(""):'<tr><td colspan="2"><span class="muted">Belum ada aktivitas hafalan dari santri.</span></td></tr>';
   if(status)status.textContent=activities.length?`${Math.min(20,activities.length)} aktivitas terbaru`:"Belum ada aktivitas.";
  }catch(error){
   if(status){status.textContent=error?.message||"Gagal memuat dashboard.";status.style.color="var(--danger)";}
-  tbody.innerHTML='<tr><td colspan="4"><span class="muted">Aktivitas dashboard tidak dapat dimuat.</span></td></tr>';
+  tbody.innerHTML='<tr><td colspan="2"><span class="muted">Aktivitas dashboard tidak dapat dimuat.</span></td></tr>';
   kpis.innerHTML='<div class="kpi"><b>—</b><span class="muted">Halaqah aktif</span></div><div class="kpi"><b>—</b><span class="muted">Santri aktif</span></div><div class="kpi"><b>—</b><span class="muted">Setoran pending</span></div><div class="kpi"><b>—</b><span class="muted">Mutqin total</span></div>';
  }
 }

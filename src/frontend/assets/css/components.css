@@ -68,3 +68,6 @@
  /* Hanya tombol Lihat Detail — baris santri juga elemen <button>, jangan ikut menyempit. */
  .halaqah-acc-body>.btn{width:calc(100% - 30px);margin:15px}
 }
+@media (max-width: 620px) {
+ .halaqah-acc-empty{padding:17px 15px}
+}

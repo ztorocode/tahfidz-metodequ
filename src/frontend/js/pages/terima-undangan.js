@@ -10,12 +10,24 @@ function inviteToken(){
 function inviteType(){
  const hash=(location.hash||"").replace(/^#/,"");
  const q=hash.includes("?")?hash.split("?")[1]:"";
- return new URLSearchParams(q).get("t")==="platform"?"platform":"pondok";
+ const type=new URLSearchParams(q).get("t")||"";
+ if(type==="platform-santri")return "platform-santri";
+ return type==="platform"?"platform":"pondok";
 }
 
-const apiBase=()=>inviteType()==="platform"?"/api/platform/musyrif-invites":"/api/pondok-invites";
+const apiBase=()=>{
+ const type=inviteType();
+ if(type==="platform")return "/api/platform/musyrif-invites";
+ if(type==="platform-santri")return "/api/platform/santri-invites";
+ return "/api/pondok-invites";
+};
 
 function applySession(info,rb,user,profile){
+ if(info.platform_santri){
+  setState({loggedIn:true,persona:"member",context:"personal",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:["member"],pondoks:[]},myPondoks:[],activePondokId:null,profileOverrides:{member:profile}});
+  location.hash="dashboard";
+  return;
+ }
  if(info.platform){
   setState({loggedIn:true,persona:"musyrif",context:"personal",musyrifType:null,authToken:rb.data.token,authUser:{...user,roles:["musyrif"],pondoks:[]},myPondoks:[],activePondokId:null,profileOverrides:{member:profile,musyrif:profile}});
   location.hash="musyrif";
@@ -55,7 +67,10 @@ function inviteForm(info,mode){
  const transferRow=t
   ?`<div class="quote" style="${blocked?"border-color:var(--danger);color:var(--danger)":""}"><b>Pindah halaqah</b><br>Dari halaqah <b>${escT(t.from_halaqah_name||"tanpa halaqah")}</b> ke <b>${escT(t.to_halaqah_name||"halaqah tujuan")}</b>.<br>${blocked?escT(t.blocked):"Isian progress lama akan dikosongkan — Anda memulai ulang dari nol di halaqah baru."}</div>`
   :"";
- return `<div><h1>Terima Undangan</h1><p class="muted">Anda diundang sebagai <b>${roleLabel}</b> di <b>${info.pondok_name}</b>.</p></div>
+ const scopeLine=info.platform_santri&&info.halaqah_name
+  ?`<p class="muted" style="margin-top:-8px">Halaqah: <b>${escT(info.halaqah_name)}</b></p>`
+  :"";
+ return `<div><h1>Terima Undangan</h1><p class="muted">Anda diundang sebagai <b>${roleLabel}</b> di <b>${info.pondok_name}</b>.</p>${scopeLine}</div>
  <div class="stack">
   ${emailRow}
   ${accountRow}
@@ -80,7 +95,10 @@ export function bindInvite(){
   .then(({ok,b})=>{
    if(!ok)throw new Error(b?.message||"Undangan tidak valid.");
    const info=b.data;
-   if(info.platform){const eb=document.querySelector("#inviteEyebrow");if(eb)eb.textContent="Musyrif Platform";}
+   if(info.platform||info.platform_santri){
+    const eb=document.querySelector("#inviteEyebrow");
+    if(eb)eb.textContent=info.platform_santri?"Santri Platform":"Musyrif Platform";
+   }
    const roleLabel=info.role==="musyrif"?"Musyrif":"Santri";
    let mode=info.registered?"member":"new";
    card.innerHTML=inviteForm(info,mode);

@@ -71,6 +71,25 @@ final class ProgressController
         }
     }
 
+    /** Musyrif mengisi murajaah, rabth awal/akhir, dan menghafal milik santri. */
+    public function mentorSave(Request $request): never
+    {
+        try {
+            $row = $this->service()->mentorSave($this->actor($request), $request->body());
+            Response::json([
+                'success' => true,
+                'message' => 'Progress santri tersimpan.',
+                'data' => $row,
+            ]);
+        } catch (RegistrationException $exception) {
+            Response::json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+                'errors' => $exception->errors,
+            ], $exception->statusCode);
+        }
+    }
+
     /** Baca progress seorang santri (musyrif/admin). */
     public function student(Request $request): never
     {

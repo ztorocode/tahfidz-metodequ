@@ -1,9 +1,10 @@
-import {getState} from "../store.js?v=7d2a8f14";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=7d2a8f14";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=7d2a8f14";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=7d2a8f14";
-import {juzEntries} from "../data/quran-juz.js?v=7d2a8f14";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=7d2a8f14";
+import {getState} from "../store.js?v=3e8c6a91";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=3e8c6a91";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=3e8c6a91";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=3e8c6a91";
+import {juzEntries} from "../data/quran-juz.js?v=3e8c6a91";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=3e8c6a91";
+import {toast} from "../utils/helpers.js?v=3e8c6a91";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -128,7 +129,7 @@ function closeRabthModal(){
 }
 
 function openRabthModal(field,day){
- const data=getProgressContext(getState());
+ const data=currentData();
  const week=stateWeek(data);
  const juz=rabthJuzOf(fieldValue(data,week,day,"murajaah"));
  rabthTarget={field,day,week,juz};
@@ -186,15 +187,26 @@ function saveRabth(){
   return;
  }
  const value=entry.name+" "+ayah;
- const data=getProgressContext(getState());
- const key=fieldKey(rabthTarget.week,rabthTarget.day,rabthTarget.field);
- setProgressContextPatch({fields:{...(data.fields||{}),[key]:value}});
- const button=document.querySelector('[data-rabth-pick="'+rabthTarget.field+'"][data-progress-day="'+rabthTarget.day+'"]');
- if(button){button.textContent=value;button.classList.remove("empty");}
+ const field=rabthTarget.field;
  const week=rabthTarget.week, day=rabthTarget.day;
+ const data=currentData();
+ const key=fieldKey(week,day,field);
+ if(isReviewRoute()){
+  applyReviewPatch({fields:{[key]:value}});
+ }else{
+  setProgressContextPatch({fields:{...(data.fields||{}),[key]:value}});
+ }
+ const button=document.querySelector('[data-rabth-pick="'+field+'"][data-progress-day="'+day+'"]');
+ if(button){button.textContent=value;button.classList.remove("empty");}
  updatePercent(day);
- scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
- closeRabthModal();
+ if(isReviewRoute()){
+  mentorSave(week,day,{fields:{[field]:value}});
+  closeRabthModal();
+  window.dispatchEvent(new Event("app:render"));
+ }else{
+  scheduleSave(week,day,dayProgress(currentData(),week,day));
+  closeRabthModal();
+ }
 }
 
 document.addEventListener("click",event=>{
@@ -219,6 +231,12 @@ document.addEventListener("click",event=>{
    const day=reviewDayButton.dataset.progressDayToggle;
    reviewOpenDay=reviewOpenDay===day?null:day;
    window.dispatchEvent(new Event("app:render"));
+   return;
+  }
+  // Musyrif boleh memilih Rabth awal/akhir.
+  const reviewRabth=event.target.closest("[data-rabth-pick]");
+  if(reviewRabth){
+   openRabthModal(reviewRabth.dataset.rabthPick,reviewRabth.dataset.progressDay);
    return;
   }
   return;
@@ -421,6 +439,40 @@ let reviewWeek=1;
 let reviewOpenDay=null;
 let reviewLoadedFor=0;
 let reviewLoadTried=0;
+let reviewData=null; // salinan kerja data santri (diedit musyrif)
+
+/** Data yang sedang dipakai halaman: milik santri (tinjau) atau milik sendiri. */
+function currentData(){
+ if(isReviewRoute())return reviewData||{week:reviewWeek,openDay:reviewOpenDay,fields:{},checks:{}};
+ return getProgressContext(getState());
+}
+
+/** Terapkan perubahan ke salinan data santri (tanpa menyentuh progress musyrif). */
+function applyReviewPatch(patch){
+ const base=reviewData||{fields:{},checks:{}};
+ reviewData={
+  ...base,
+  week:reviewWeek,
+  openDay:reviewOpenDay,
+  fields:{...(base.fields||{}),...(patch.fields||{})},
+  checks:{...(base.checks||{}),...(patch.checks||{})}
+ };
+ return reviewData;
+}
+
+/** Simpan isian musyrif ke progress santri (murajaah, rabth, menghafal). */
+function mentorSave(week,day,payload){
+ const target=reviewTarget();
+ if(!isReviewRoute()||!target)return;
+ const body={pondok_id:Number(activePondokId()),user_id:target.userId,week,day,...payload};
+ fetch("/api/progress/mentor-save",{
+  method:"POST",
+  headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+(getState().authToken||"")},
+  body:JSON.stringify(body)
+ }).then(r=>r.json().then(b=>({ok:r.ok,b}))).then(({ok,b})=>{
+  if(!ok)throw new Error(b?.message||"Gagal menyimpan.");
+ }).catch(error=>{toast(error?.message||"Gagal menyimpan progress santri.");});
+}
 
 function isReviewRoute(){
  return location.hash.replace(/^#/,"").split("?")[0]==="review-progress";
@@ -462,8 +514,11 @@ function reviewProgressPage(review){
   reviewLoadedFor=review.userId;
   reviewWeek=1;
   reviewOpenDay=null;
+  reviewData=null;
  }
- const data=cachedStudentProgress(review.userId);
+ const cached=cachedStudentProgress(review.userId);
+ if(!reviewData&&cached)reviewData=cached;
+ const data=reviewData;
  const loading=isStudentProgressLoading(review.userId);
  // Sekali tarik per santri (hindari render berulang bila jaringan gagal).
  if(!data&&!loading&&reviewLoadTried!==review.userId){
@@ -483,32 +538,55 @@ function reviewProgressPage(review){
   +weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")
   +'</div>'
   +'<div class="member-progress-days">'+body+'</div>'
+  +rabthModal()
   +'</section>';
+}
+
+function needsMusyrifPendingOverlay(){
+ const state=getState();
+ if(state.persona!=="member")return false;
+ if(state.context!=="pondok")return false;
+ if(isReviewRoute())return false;
+ const pid=String(activePondokId()??"");
+ if(myHalaqahPid()&&myHalaqahPid()!==pid)return false;
+ const halaqah=myHalaqah();
+ if(!halaqah)return false;
+ // Sudah punya halaqah tapi belum ada musyrif pembimbing
+ if(halaqah.musyrif_user_id||halaqah.musyrifName||halaqah.musyrif_name)return false;
+ return true;
+}
+
+function musyrifPendingOverlay(){
+ if(!needsMusyrifPendingOverlay())return "";
+ return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc musyrif pembimbing.</div></div>';
 }
 
 export function memberProgressPage(){
  const review=reviewTarget();
  if(review)return reviewProgressPage(review);
- const data=applyOpenDate(getProgressContext(getState()));
- const week=stateWeek(data);
+ const state=getState();
  loadMyHalaqah();
+ const data=applyOpenDate(getProgressContext(state));
+ const week=stateWeek(data);
  syncWeek(week);
  const start=myProgramStart();
  const fridayDate=start?fridayOf(start,week):null;
- return '<section class="member-progress-page">'+
-  myHalaqahCard()+
-  '<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'+
+ const overlay=musyrifPendingOverlay();
+ return '<section class="member-progress-page"'+(overlay?' style="position:relative"':"")+'>'
+  +myHalaqahCard()
+  +'<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'+
    weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")+
-  '</div>'+
-  '<div class="member-progress-days">'+
+  '</div>'
+  +'<div class="member-progress-days">'+
    weekDaysHtml(data,week,start,fridayDate).join("")+
-  '</div>'+
-  rabthModal()+
- '</section>';
+  '</div>'
+  +rabthModal()
+  +overlay
+  +'</section>';
 }
 
 function updatePercent(day){
- const data=getProgressContext(getState());
+ const data=currentData();
  const week=stateWeek(data);
  const node=document.querySelector('[data-progress-percent="'+day+'"]');
  if(node)node.textContent=dayProgress(data,week,day)+"%";
@@ -516,8 +594,19 @@ function updatePercent(day){
 
 document.addEventListener("click",event=>{
  if(!onProgressPage())return;
- // Mode tinjau: perubahan data (centang, kolom, tanggal mulai) tidak diizinkan.
- if(isReviewRoute())return;
+ // Mode tinjau: musyrif hanya boleh mencentang "Menghafal".
+ if(isReviewRoute()){
+  const reviewStep=event.target.closest("[data-progress-step]");
+  if(reviewStep&&reviewStep.dataset.progressStep==="menghafal"){
+   const day=reviewStep.dataset.progressDay;
+   const key=stepKey(reviewWeek,day,"menghafal");
+   const next=!Boolean((currentData().checks||{})[key]);
+   applyReviewPatch({checks:{[key]:next}});
+   window.dispatchEvent(new Event("app:render"));
+   mentorSave(reviewWeek,day,{checks:{menghafal:next}});
+  }
+  return;
+ }
 
  if(event.target.closest("[data-start-open]")){
   document.querySelector("#startModal")?.classList.remove("hidden");
@@ -592,9 +681,11 @@ document.addEventListener("click",event=>{
 });
 
 document.addEventListener("input",event=>{
- if(!onProgressPage()||isReviewRoute())return;
+ if(!onProgressPage())return;
  const input=event.target.closest("[data-progress-field]");
  if(!input)return;
+ // Mode tinjau: hanya kolom Muraja'ah yang bisa diisi musyrif.
+ if(isReviewRoute()&&input.dataset.progressField!=="murajaah")return;
  // Kolom angka: buang karakter selain digit dan satu pemisah desimal.
  if(input.dataset.progressNumeric){
   const cleaned=input.value.replace(/[^0-9.,]/g,"").replace(/,/g,".");
@@ -605,12 +696,25 @@ document.addEventListener("input",event=>{
    input.value=String(max);
   }
  }
- const data=getProgressContext(getState());
- const week=stateWeek(data);
+ const data=currentData();
+ const week=isReviewRoute()?reviewWeek:stateWeek(data);
  const day=input.dataset.progressDay;
  const key=fieldKey(week,day,input.dataset.progressField);
+ if(isReviewRoute()){
+  applyReviewPatch({fields:{[key]:input.value}});
+  updatePercent(day);
+  return;
+ }
  const next={...(data.fields||{}),[key]:input.value};
  setProgressContextPatch({fields:next});
  updatePercent(day);
- scheduleSave(week,day,dayProgress(getProgressContext(getState()),week,day));
+ scheduleSave(week,day,dayProgress(currentData(),week,day));
+});
+
+// Mode tinjau: simpan Muraja'ah saat kolom ditinggalkan (blur).
+document.addEventListener("change",event=>{
+ if(!onProgressPage()||!isReviewRoute())return;
+ const input=event.target.closest("[data-progress-field]");
+ if(!input||input.dataset.progressField!=="murajaah")return;
+ mentorSave(reviewWeek,input.dataset.progressDay,{fields:{murajaah:String(input.value||"").trim()}});
 });

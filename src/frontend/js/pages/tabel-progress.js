@@ -1,9 +1,9 @@
-import {getState} from "../store.js?v=7d2a8f14";
-import {member,progress} from "../data/dummy-data.js?v=7d2a8f14";
-import {getProgressContext} from "../utils/progress-context.js?v=7d2a8f14";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=7d2a8f14";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=7d2a8f14";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=7d2a8f14";
+import {getState} from "../store.js?v=3e8c6a91";
+import {member,progress} from "../data/dummy-data.js?v=3e8c6a91";
+import {getProgressContext} from "../utils/progress-context.js?v=3e8c6a91";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=3e8c6a91";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=3e8c6a91";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=3e8c6a91";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -99,6 +99,23 @@ function weekRows(data,showCells,start){
 }
 
 /** Rentang juz dari isian "Muraja'ah (juz)" yang terisi. */
+function needsMusyrifPendingOverlayReport(){
+ const state=getState();
+ if(state.persona!=="member")return false;
+ if(state.context!=="pondok")return false;
+ const pid=String(activePondokId()??"");
+ if(myHalaqahPid()&&myHalaqahPid()!==pid)return false;
+ const halaqah=myHalaqah();
+ if(!halaqah)return false;
+ if(halaqah.musyrif_user_id||halaqah.musyrifName||halaqah.musyrif_name)return false;
+ return true;
+}
+
+function musyrifPendingOverlayReport(){
+ if(!needsMusyrifPendingOverlayReport())return "";
+ return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc musyrif pembimbing.</div></div>';
+}
+
 function reportJuzRange(data){
  if(!data)return null;
  let min=null,max=null;
@@ -185,6 +202,7 @@ function pullMyWeeks(state){
 
 export function progressTablePage(){
  const state=getState();
+ loadMyHalaqah();
  const isMember=state.persona==="member";
  if(isMember&&state.context==="pondok")pullMyWeeks(state);
  const selected=isMember?memberSelection(state):state.selectedStudentProgress;
@@ -285,5 +303,7 @@ export function progressTablePage(){
     <tbody>${weekRows(progressData,showCells,start)}</tbody>
    </table>
   </div>
- </div>`;
+ </div>
+${musyrifPendingOverlayReport()}
+</main>`;
 }

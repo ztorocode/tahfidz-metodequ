@@ -18,6 +18,23 @@ final class ProgressService
 {
     private const DAYS = ['sabtu', 'ahad', 'senin', 'selasa', 'rabu', 'kamis'];
 
+    /** Kolom yang boleh diisi musyrif saat meninjau progress santri. */
+    private const MENTOR_FIELDS = ['murajaah', 'rabth-awal', 'rabth-akhir'];
+    /** Checklist yang boleh diubah musyrif. */
+    private const MENTOR_CHECKS = ['menghafal'];
+    /** Dasar hitung persen (sama dengan halaman progress: 3 kolom + 35 langkah). */
+    private const FIELD_IDS = ['murajaah', 'rabth-awal', 'rabth-akhir'];
+    private const STEP_IDS = [
+        'kemarin-1', 'kemarin-2', 'kemarin-3', 'kemarin-4', 'kemarin-5',
+        'istima-1', 'istima-2', 'istima-3',
+        'menghafal', 'merekam',
+        'tikrar-1', 'tikrar-2', 'tikrar-3', 'tikrar-4', 'tikrar-5',
+        'tikrar-6', 'tikrar-7', 'tikrar-8', 'tikrar-9', 'tikrar-10',
+        'tikrar-11', 'tikrar-12', 'tikrar-13', 'tikrar-14', 'tikrar-15',
+        'tikrar-16', 'tikrar-17', 'tikrar-18', 'tikrar-19', 'tikrar-20',
+        'tikrar-21', 'tikrar-22', 'tikrar-23', 'tikrar-24', 'tikrar-25',
+    ];
+
     public function __construct(private readonly PDO $pdo)
     {
     }
@@ -147,6 +164,127 @@ final class ProgressService
     }
 
     /** Isian progress seorang santri — untuk musyrif halaqahnya atau admin pondok. */
+    /**
+     * Musyrif mengisi sebagian progress santri (murajaah, rabth awal/akhir,
+     * menghafal). Langkah lain (hafalan kemarin, istima', tikrar, merekam)
+     * tetap milik santri.
+     *
+     * @param array{pondok_id:int,user_id:int,week:int,day:string,fields?:array,checks?:array} $input
+     * @return array<string,mixed>
+     */
+    public function mentorSave(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $userId = (int) ($input['user_id'] ?? 0);
+        $week = (int) ($input['week'] ?? 0);
+        $day = (string) ($input['day'] ?? '');
+
+        if ($userId < 1) {
+            throw new RegistrationException('Santri wajib dipilih.', 422, ['user_id' => 'Santri wajib dipilih.']);
+        }
+        if ($pondokId < 1) {
+            throw new RegistrationException('Pondok tidak diketahui.', 422, ['pondok_id' => 'Pondok tidak diketahui.']);
+        }
+        $this->assertCanViewStudent($actor, $pondokId, $userId);
+        $this->assertWeek($week);
+        if (!in_array($day, self::DAYS, true)) {
+            throw new RegistrationException('Hari tidak dikenal.', 422, ['day' => 'Hari tidak dikenal.']);
+        }
+
+        $fieldsIn = is_array($input['fields'] ?? null) ? $input['fields'] : [];
+        $checksIn = is_array($input['checks'] ?? null) ? $input['checks'] : [];
+
+        $current = $this->row($userId, $pondokId, $week, $day);
+        $fields = $current !== null ? $this->decodeJson($current['fields'] ?? null) : [];
+        $checks = $current !== null ? $this->decodeJson($current['checks'] ?? null) : [];
+
+        $changed = false;
+        foreach (self::MENTOR_FIELDS as $fieldId) {
+            if (!array_key_exists($fieldId, $fieldsIn)) {
+                continue;
+            }
+            $value = trim((string) $fieldsIn[$fieldId]);
+            if ($value === '') {
+                unset($fields[$fieldId]);
+            } else {
+                $fields[$fieldId] = $value;
+            }
+            $changed = true;
+        }
+        foreach (self::MENTOR_CHECKS as $checkId) {
+            if (!array_key_exists($checkId, $checksIn)) {
+                continue;
+            }
+            $checks[$checkId] = (bool) $checksIn[$checkId];
+            $changed = true;
+        }
+        if (!$changed) {
+            throw new RegistrationException('Tidak ada isian yang boleh diubah.', 422);
+        }
+
+        $percent = $this->completionPercent($fields, $checks);
+        $fieldsJson = $this->encodeJson($fields);
+        $checksJson = $this->encodeJson($checks);
+
+        if ($current === null) {
+            $statement = $this->pdo->prepare(
+                'INSERT INTO member_progress
+                    (user_id, pondok_id, halaqah_id, week_no, day_code, fields, checks,
+                     completion_percent, version, client_updated_at)
+                 VALUES
+                    (:user_id, :pondok_id, :halaqah_id, :week, :day, :fields, :checks,
+                     :percent, 1, CURRENT_TIMESTAMP(3))'
+            );
+            $statement->execute([
+                'user_id' => $userId,
+                'pondok_id' => $pondokId,
+                'halaqah_id' => $this->currentHalaqahId($userId, $pondokId),
+                'week' => $week,
+                'day' => $day,
+                'fields' => $fieldsJson,
+                'checks' => $checksJson,
+                'percent' => $percent,
+            ]);
+        } else {
+            $statement = $this->pdo->prepare(
+                'UPDATE member_progress
+                    SET fields = :fields,
+                        checks = :checks,
+                        completion_percent = :percent,
+                        version = version + 1,
+                        client_updated_at = CURRENT_TIMESTAMP(3)
+                  WHERE id = :id'
+            );
+            $statement->execute([
+                'fields' => $fieldsJson,
+                'checks' => $checksJson,
+                'percent' => $percent,
+                'id' => (int) $current['id'],
+            ]);
+        }
+
+        $saved = $this->row($userId, $pondokId, $week, $day);
+        return $saved !== null ? $this->rowPayload($saved) : [];
+    }
+
+    /** Persen isian satu hari dari kolom + checklist (formula halaman progress). */
+    private function completionPercent(array $fields, array $checks): int
+    {
+        $done = 0;
+        foreach (self::FIELD_IDS as $fieldId) {
+            if (trim((string) ($fields[$fieldId] ?? '')) !== '') {
+                $done++;
+            }
+        }
+        foreach (self::STEP_IDS as $checkId) {
+            if (!empty($checks[$checkId])) {
+                $done++;
+            }
+        }
+        $total = count(self::FIELD_IDS) + count(self::STEP_IDS);
+        return (int) round($done / $total * 100);
+    }
+
     public function forStudent(array $actor, int $pondokId, int $userId, int $week): array
     {
         $this->assertCanViewStudent($actor, $pondokId, $userId);

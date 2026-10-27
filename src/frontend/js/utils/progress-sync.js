@@ -1,5 +1,5 @@
-import {getState} from "../store.js?v=7d2a8f14";
-import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=7d2a8f14";
+import {getState} from "../store.js?v=3e8c6a91";
+import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=3e8c6a91";
 
 /**
  * Sinkronisasi isian progress ke server.

@@ -87,10 +87,11 @@ async function loadInviteBanner(){
    let b={};try{b=await r.json()}catch{}
    if(!r.ok)throw new Error(b?.message||"Gagal menerima.");
    const user=b.data.user||{};
-   const pondok=(user.pondoks||[])[0];
-   const myPondoks=[...(s.myPondoks||[])];
-   if(pondok&&!myPondoks.some(p=>p.id===pondok.id))myPondoks.push(pondok);
-   setState({authToken:b.data.token,authUser:user,myPondoks,activePondokId:pondok?.id??s.activePondokId,myInvites:(s.myInvites||[]).filter(v=>v.id!==Number(btn.dataset.acceptInvite))});
+   const myPondoks=Array.isArray(user.pondoks)?user.pondoks:[...(s.myPondoks||[])];
+   const musyrifContexts=user.musyrif_contexts||s.musyrifContexts;
+   const pondokList=s.persona==="musyrif"&&Array.isArray(musyrifContexts?.pondoks)?musyrifContexts.pondoks:myPondoks;
+   const pondok=pondokList.find(p=>!s.activePondokId||p.id===s.activePondokId)||pondokList[0]||null;
+   setState({authToken:b.data.token,authUser:user,myPondoks,musyrifContexts,activePondokId:s.context==="platform"?null:(pondok?.id??s.activePondokId),myInvites:(s.myInvites||[]).filter(v=>v.id!==Number(btn.dataset.acceptInvite))});
    window.dispatchEvent(new Event("app:render"));
   }catch(err){
    alert(err?.message||"Gagal menerima.");

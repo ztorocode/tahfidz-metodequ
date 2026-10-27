@@ -216,15 +216,29 @@ final class PlatformSantriService
         );
         $statement->execute(['halaqah_id' => $halaqah['id']]);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
-        if (is_array($row) && is_string($row['invite_token_plain']) && $row['invite_token_plain'] !== '') {
+        $token = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $token);
+
+        if (is_array($row)) {
+            $this->pdo->prepare(
+                'UPDATE platform_santri_invites
+                    SET token_hash = :token_hash,
+                        invite_token_plain = :token_plain,
+                        expires_at = DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ' . self::STANDING_DAYS . ' DAY)
+                  WHERE id = :id AND status = \'pending\' AND invited_email IS NULL'
+            )->execute([
+                'token_hash' => $tokenHash,
+                'token_plain' => $token,
+                'id' => (int) $row['id'],
+            ]);
+
             return [
                 'id' => (int) $row['id'],
-                'link' => $this->inviteLink($row['invite_token_plain']),
+                'link' => $this->inviteLink($token),
                 'halaqah' => ['id' => $halaqah['id'], 'name' => $halaqah['name']],
             ];
         }
 
-        $token = bin2hex(random_bytes(32));
         $this->pdo->prepare(
             'INSERT INTO platform_santri_invites
                 (halaqah_id, token_hash, invite_token_plain, invited_email, created_by, expires_at)
@@ -233,7 +247,7 @@ final class PlatformSantriService
                  DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL ' . self::STANDING_DAYS . ' DAY))'
         )->execute([
             'halaqah_id' => $halaqah['id'],
-            'token_hash' => hash('sha256', $token),
+            'token_hash' => $tokenHash,
             'token_plain' => $token,
             'created_by' => (int) $actor['id'],
         ]);

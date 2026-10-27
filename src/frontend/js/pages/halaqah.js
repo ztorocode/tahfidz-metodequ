@@ -1,5 +1,5 @@
-import {getState,setState} from "../store.js?v=e7b2c904";
-import {badge,statusTone,toast} from "../utils/helpers.js?v=e7b2c904";
+import {getState,setState} from "../store.js?v=7d2a8f14";
+import {badge,statusTone,toast} from "../utils/helpers.js?v=7d2a8f14";
 
 let selectedHalaqahId=null;
 /** Halaqah yang sedang dibuka pada daftar milik musyrif (undefined = belum dipilih). */
@@ -481,14 +481,18 @@ document.addEventListener("click",event=>{
   const item=halaqahs().find(row=>row.id===progress.dataset.halaqahId);
   const student=item?.students.find(row=>row.name===progress.dataset.studentProgress);
   if(!item||!student)return;
+  const studentId=Number(student.santriUserId)||0;
   setState({selectedStudentProgress:{
-   student:{...student,userId:Number(student.santriUserId)||null},
+   student:{...student,userId:studentId||null},
    halaqahId:item.id,
    halaqahName:item.name,
    startDate:item.startDate||null,
    musyrifName:item.musyrifName||musyrifName(item.musyrifId)
   }});
-  location.hash="santri-progress";
+  // Baris santri membuka halaman tinjau progress (layout sama dengan #progress).
+  location.hash=studentId
+   ?"review-progress?student="+studentId+"&halaqah="+encodeURIComponent(item.id)
+   :"santri-progress";
  }
 });
 

@@ -1,8 +1,9 @@
-import {getState} from "../store.js?v=e7b2c904";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=e7b2c904";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=e7b2c904";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=e7b2c904";
-import {juzEntries} from "../data/quran-juz.js?v=e7b2c904";
+import {getState} from "../store.js?v=7d2a8f14";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=7d2a8f14";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=7d2a8f14";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=7d2a8f14";
+import {juzEntries} from "../data/quran-juz.js?v=7d2a8f14";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=7d2a8f14";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -198,6 +199,30 @@ function saveRabth(){
 
 document.addEventListener("click",event=>{
  if(!onProgressPage())return;
+
+ if(event.target.closest("[data-review-back]")){
+  location.hash="halaqah";
+  return;
+ }
+
+ // Mode tinjau: hanya boleh pindah pekan / buka-tutup hari.
+ if(isReviewRoute()){
+  const reviewWeekButton=event.target.closest("[data-progress-week]");
+  if(reviewWeekButton){
+   reviewWeek=Number(reviewWeekButton.dataset.progressWeek)||1;
+   reviewOpenDay=null;
+   window.dispatchEvent(new Event("app:render"));
+   return;
+  }
+  const reviewDayButton=event.target.closest("[data-progress-day-toggle]");
+  if(reviewDayButton){
+   const day=reviewDayButton.dataset.progressDayToggle;
+   reviewOpenDay=reviewOpenDay===day?null:day;
+   window.dispatchEvent(new Event("app:render"));
+   return;
+  }
+  return;
+ }
  const kemarin=event.target.closest("[data-kemarin-open]");
  if(kemarin){
   location.hash="rabth-ayat?step="+encodeURIComponent(kemarin.dataset.kemarinOpen)+"&day="+encodeURIComponent(kemarin.dataset.progressDay)+"&from="+progressRoute();
@@ -277,11 +302,11 @@ function dayBody(data,week,day){
  '</div>';
 }
 
-function dayCard(data,week,item,index){
+function dayCard(data,week,item,index,startOverride){
  const open=data.openDay===item.id;
  const dayNumber=((week-1)*6)+index+1;
  const pct=dayProgress(data,week,item.id);
- const start=myProgramStart();
+ const start=startOverride!==undefined?startOverride:myProgramStart();
  const date=programDayDate(start,dayNumber);
  const isToday=date&&todayDayNumber(start)===dayNumber;
  // Nama hari diturunkan dari tanggal asli program; tanpa tanggal mulai, pakai nama bawaan.
@@ -337,7 +362,7 @@ function fridayCard(date){
 
 /** Susun hari-hari pekan + kartu Jum'at libur sesuai urutan tanggal. */
 function weekDaysHtml(data,week,start,fridayDate){
- const cards=days.map((item,index)=>dayCard(data,week,item,index));
+ const cards=days.map((item,index)=>dayCard(data,week,item,index,start));
  if(!start||!fridayDate){
   // Tanpa tanggal mulai program → perilaku lama: Jum'at di akhir daftar.
   cards.push(fridayCard(null));
@@ -390,7 +415,80 @@ function applyOpenDate(data){
  return next;
 }
 
+/* ---------- Mode tinjau progress santri (musyrif) ---------- */
+
+let reviewWeek=1;
+let reviewOpenDay=null;
+let reviewLoadedFor=0;
+let reviewLoadTried=0;
+
+function isReviewRoute(){
+ return location.hash.replace(/^#/,"").split("?")[0]==="review-progress";
+}
+
+/** Santri yang sedang ditinjau: #review-progress?student=ID&halaqah=ID */
+function reviewTarget(){
+ if(!isReviewRoute())return null;
+ const params=new URLSearchParams(location.hash.split("?")[1]||"");
+ const userId=Number(params.get("student")||0);
+ if(!userId)return null;
+ const state=getState();
+ const halaqahId=params.get("halaqah")||"";
+ const halaqah=(state.realHalaqahs||[]).find(item=>item.id===halaqahId)||null;
+ const row=halaqah?.students?.find(item=>Number(item.santriUserId)===userId)||null;
+ const selected=state.selectedStudentProgress;
+ const sel=selected&&Number(selected.student?.userId)===userId?selected:null;
+ return {
+  userId,
+  name:row?.name||sel?.student?.name||"Santri",
+  halaqahName:halaqah?.name||sel?.halaqahName||"",
+  startDate:halaqah?.startDate||sel?.startDate||null
+ };
+}
+
+function reviewHeader(review){
+ const dayNo=todayDayNumber(review.startDate);
+ return '<div class="card" style="margin-bottom:14px">'
+  +'<div class="row between" style="gap:10px;align-items:flex-start;flex-wrap:wrap">'
+  +'<div><p class="eyebrow">Tinjau Progress</p><h2 style="margin:4px 0 2px">'+escapeHtml(review.name)+'</h2>'
+  +'<small class="muted">'+escapeHtml(review.halaqahName||"Tanpa halaqah")+(dayNo?" · Hari ke-"+dayNo:"")+'</small></div>'
+  +'<div class="row" style="gap:8px;align-items:center"><span class="badge">Hanya baca</span>'
+  +'<button class="btn" type="button" data-review-back>← Halaqah</button></div>'
+  +'</div></div>';
+}
+
+function reviewProgressPage(review){
+ if(reviewLoadedFor!==review.userId){
+  reviewLoadedFor=review.userId;
+  reviewWeek=1;
+  reviewOpenDay=null;
+ }
+ const data=cachedStudentProgress(review.userId);
+ const loading=isStudentProgressLoading(review.userId);
+ // Sekali tarik per santri (hindari render berulang bila jaringan gagal).
+ if(!data&&!loading&&reviewLoadTried!==review.userId){
+  reviewLoadTried=review.userId;
+  loadStudentProgress(review.userId).then(()=>window.dispatchEvent(new Event("app:render"))).catch(()=>{});
+ }
+ const week=Math.min(5,Math.max(1,Number(reviewWeek)||1));
+ const start=review.startDate;
+ const fridayDate=start?fridayOf(start,week):null;
+ const view={...(data||{}),week,openDay:reviewOpenDay};
+ const body=(loading&&!data)
+  ?'<div class="card"><small class="muted">Memuat progress santri…</small></div>'
+  :weekDaysHtml(view,week,start,fridayDate).join("");
+ return '<section class="member-progress-page is-review">'
+  +reviewHeader(review)
+  +'<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'
+  +weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")
+  +'</div>'
+  +'<div class="member-progress-days">'+body+'</div>'
+  +'</section>';
+}
+
 export function memberProgressPage(){
+ const review=reviewTarget();
+ if(review)return reviewProgressPage(review);
  const data=applyOpenDate(getProgressContext(getState()));
  const week=stateWeek(data);
  loadMyHalaqah();
@@ -418,6 +516,8 @@ function updatePercent(day){
 
 document.addEventListener("click",event=>{
  if(!onProgressPage())return;
+ // Mode tinjau: perubahan data (centang, kolom, tanggal mulai) tidak diizinkan.
+ if(isReviewRoute())return;
 
  if(event.target.closest("[data-start-open]")){
   document.querySelector("#startModal")?.classList.remove("hidden");
@@ -492,7 +592,7 @@ document.addEventListener("click",event=>{
 });
 
 document.addEventListener("input",event=>{
- if(!onProgressPage())return;
+ if(!onProgressPage()||isReviewRoute())return;
  const input=event.target.closest("[data-progress-field]");
  if(!input)return;
  // Kolom angka: buang karakter selain digit dan satu pemisah desimal.

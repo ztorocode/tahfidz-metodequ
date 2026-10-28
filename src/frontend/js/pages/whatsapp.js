@@ -4,7 +4,7 @@ import {getState} from "../store.js?v=81bed469";
 const TABS=[["device","Device"],["template","Template Pesan"],["history","Riwayat Pengiriman"]];
 const HEADLINE={
  device:["Perangkat WhatsApp","Satu device per pondok — nama device dibuat otomatis dari nama pondok."],
- template:["Template Pesan","Isi pesan otomatis yang dikirim ke santri & musyrif."],
+ template:["Template Pesan","Isi pesan otomatis yang dikirim ke santri & ustadz."],
  history:["Riwayat Pengiriman","Log pengiriman pesan WhatsApp dari pondok Anda."]
 };
 const DEFAULT_TPLS=[

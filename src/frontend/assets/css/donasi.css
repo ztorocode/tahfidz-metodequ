@@ -16,3 +16,39 @@
 .donasi-footnote{color:#60786e;font-size:13px;line-height:1.7;margin-top:23px}
 @media(max-width:850px){.donasi-list{grid-template-columns:1fr}.donasi-summary{display:grid}.donasi-summary small{max-width:none}}
 @media(max-width:620px){.donasi-main{width:calc(100% - 28px);padding-top:28px}.donasi-back{margin-bottom:29px}.donasi-intro p{font-size:15px}.donasi-summary{margin-top:30px}.donasi-ustadz-head{padding:20px 17px 16px}.donasi-ustadz-head h2{font-size:19px}.donasi-avatar{width:50px;height:50px}.donasi-ustadz-metrics{margin:0 17px}.donasi-ustadz-metrics strong{font-size:20px}.donasi-ustadz-total{padding:18px 17px 21px;align-items:flex-start;flex-direction:column}.donasi-ustadz-total strong{text-align:left}.donasi-state button{display:block;margin:16px auto 0}}
+
+.donasi-ustadz-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 24px}
+.donasi-ustadz-actions .btn{min-height:43px;justify-content:center}
+.donasi-overlay[hidden]{display:none!important}
+.donasi-overlay{position:fixed;z-index:1000;inset:0;background:rgba(8,29,22,.66);display:grid;place-items:center;padding:14px}
+.donasi-modal-open{overflow:hidden}
+.donasi-dialog{background:#fff;color:#15372a;width:min(700px,100%);max-height:min(90vh,900px);overflow:auto;overscroll-behavior:contain;border-radius:20px;box-shadow:0 18px 65px rgba(0,0,0,.24)}
+.donasi-dialog-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e0ebe4;padding:20px 24px}
+.donasi-dialog-head h2{margin:0;font-size:24px;line-height:1.25}
+.donasi-dialog-close{width:36px;height:36px;border:1px solid #d9e9df;background:#f5f9f6;border-radius:10px;font-size:24px;cursor:pointer;color:#15372a;flex:none}
+.donasi-dialog-body{padding:22px 24px 28px}.donasi-dialog-body>p{color:#587266;line-height:1.65;margin:0 0 20px}
+.donasi-bank{display:grid;grid-template-columns:minmax(115px,1fr) minmax(0,1.8fr);gap:18px;padding:24px;background:#f1f8f4;border:1px solid #d7e9dd;border-radius:16px;align-items:start}
+.donasi-bank span{color:#607b6b}.donasi-bank strong{overflow-wrap:anywhere;color:#15372a;font-size:17px}
+.donasi-bank .donasi-account-number{font-size:clamp(22px,4vw,30px);letter-spacing:.04em;user-select:all}
+.donasi-copy{margin-top:18px}
+.donasi-caution{font-size:12px;line-height:1.6;color:#637a6c;margin-top:18px!important}
+.donasi-dialog-section{font-size:19px;margin:30px 0 14px}
+.donasi-empty{padding:20px;border-radius:14px;background:#f1f7f3;color:#587366;line-height:1.6}
+.donasi-halaqah{border:1px solid #dceae1;border-radius:14px;padding:18px;margin:12px 0}
+.donasi-halaqah h3{margin:0 0 15px;font-size:18px}
+.donasi-halaqah-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.donasi-halaqah-metrics span{color:#607568;font-size:13px}.donasi-halaqah-metrics b{display:block;color:#0f6b4d;font-size:19px;margin-bottom:4px}
+.donasi-photo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.donasi-photo-grid figure{margin:0;border-radius:12px;overflow:hidden;background:#f1f7f3;border:1px solid #e0eae4}
+.donasi-photo-grid img{display:block;width:100%;height:188px;object-fit:cover}
+.donasi-photo-grid figcaption{padding:12px;color:#15372a;line-height:1.5;font-size:13px}
+.donasi-photo-grid small{display:block;color:#678272;margin-top:4px}
+.donor-settings{margin-top:20px}.donor-settings h2{font-size:20px}.donor-settings p{line-height:1.6}
+.donor-settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.donor-settings .label{display:block;margin-bottom:5px}
+.donor-settings .input{width:100%}
+.donor-check{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.5;margin:12px 0}
+.donor-feedback{min-height:18px;font-size:13px;margin:10px 0;color:#476a55}
+.donor-photo-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e7ece9;font-size:13px}
+.donor-photo-row button{flex:none}
+@media(max-width:620px){.donasi-ustadz-actions{padding:0 17px 20px}.donasi-dialog-head{padding:17px}.donasi-dialog-head h2{font-size:19px}.donasi-dialog-body{padding:17px}.donasi-bank{grid-template-columns:1fr;gap:6px;padding:17px}.donasi-bank strong{margin-bottom:12px}.donasi-photo-grid{grid-template-columns:1fr}.donasi-halaqah-metrics{grid-template-columns:1fr 1fr}.donor-settings-grid{grid-template-columns:1fr}}

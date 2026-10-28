@@ -6,5 +6,14 @@ use App\Core\Router;
 use App\Modules\PublicDonations\PublicUstadzController;
 
 return static function (Router $router): void {
-    $router->get('/api/public/ustadz', [new PublicUstadzController(), 'index']);
+    $public = new PublicUstadzController();
+    $router->get('/api/public/ustadz', [$public, 'index']);
+    $router->get('/api/public/ustadz/detail', [$public, 'detail']);
+    $router->get('/api/public/ustadz/photo', [$public, 'photo']);
+
+    $profile = new \App\Modules\PublicDonations\UstadzDonationProfileController();
+    $router->get('/api/ustadz/donation-profile', [$profile, 'show']);
+    $router->post('/api/ustadz/donation-profile/bank', [$profile, 'saveBank']);
+    $router->post('/api/ustadz/donation-profile/photo', [$profile, 'uploadPhoto']);
+    $router->post('/api/ustadz/donation-profile/photo/delete', [$profile, 'deletePhoto']);
 };

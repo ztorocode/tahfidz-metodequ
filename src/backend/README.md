@@ -82,3 +82,18 @@ Safe SMTP authentication check (does not send an email):
 `GET /api/public/ustadz` tidak memerlukan autentikasi. Respons hanya berisi nama ustadz, tipe platform/pondok, jumlah santri aktif, total penilaian setoran, penilaian mutqin sejak tercatat, dan total nominal donasi terverifikasi untuk bulan kalender berjalan (Asia/Jakarta).
 
 Jalankan migrasi `20261028_019_donation_transfers` sebelum mengaktifkan API tersebut. Kolom `donation_transfers.status='verified'` hanya boleh diset setelah transfer diverifikasi oleh petugas berwenang. Wajib isi `verified_by` dan `verified_at`. Tabel ini belum menyediakan UI pencatatan atau verifikasi, sehingga nominal saat belum ada catatan akan tampil Rp0. Ini berarti belum ada donasi *yang tercatat dan terverifikasi* di Mutqeen, bukan bukti belum ada transfer melalui rekening ustadz.
+
+## Rekening dan aktivitas publik ustadz
+
+Halaman /#donasi menampilkan tombol **Donate** (nomor rekening) dan **Aktivitas** (foto dan agregat progres halaqah). API detail GET /api/public/ustadz/detail?id=PROFILE_ID dan GET /api/public/ustadz/photo?id=PHOTO_ID tidak mengungkap data per santri.
+
+Jalankan seluruh migrasi hingga 20261028_020_ustadz_donation_profile, termasuk 019. Pemilik akun ustadz mengelola rekening, izin publikasi, dan foto di bagian **Informasi untuk Donatur** pada dashboard ustadz.
+
+- GET /api/ustadz/donation-profile dan POST /api/ustadz/donation-profile/bank membutuhkan Bearer token akun ustadz aktif.
+- Upload foto menggunakan POST /api/ustadz/donation-profile/photo dengan multipart photo, caption, halaqah_id opsional, consent=yes. Penghapusan lewat POST /api/ustadz/donation-profile/photo/delete dengan JSON id.
+- Upload membutuhkan ekstensi PHP GD dan izin tulis pada src/backend/storage/ustadz-activities. Direktori ini harus persisten saat deployment dan termasuk backup. PHP harus mengizinkan upload sampai 2 MB.
+- Foto diubah menjadi JPEG dengan panjang sisi maksimum 1400 piksel untuk membuang metadata asli. Ustadz wajib memastikan izin publikasi foto, terutama jika ada santri. Rekening dan foto tidak dibuat dengan data contoh.
+- Rekening terlihat hanya saat is_public aktif. Foto yang telah dihapus tidak boleh lagi tersedia melalui API.
+- Progres per halaqah mencakup santri aktif, aktivitas bulan berjalan, total penilaian setoran, mutqin, dan rata-rata progres harian terakhir yang tercatat. Bila belum ada data, persentase ditandai belum tersedia.
+
+Urutan deployment: backup database, jalankan migrasi, pastikan ekstensi GD dan direktori penyimpanan, deploy frontend/backend terbaru, lalu uji login ustadz, simpan rekening, unggah dan hapus foto, serta buka kedua popup pada domain publik.

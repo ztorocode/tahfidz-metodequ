@@ -1,4 +1,5 @@
 import {getState,setState} from "../store.js?v=81bed469";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=5a9031cd";
 
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -130,13 +131,8 @@ export function bindDonationList(){
    const ustadzId=Number(overlay.dataset.ustadzId||0);
    if(Number.isSafeInteger(halaqahId)&&halaqahId>0&&Number.isSafeInteger(ustadzId)&&ustadzId>0){
     close();
-    const query="ustadz="+ustadzId+"&halaqah="+halaqahId;
-    const session=getState();
-    if(session.loggedIn&&session.authToken)location.hash="donasi-santri?"+query;
-    else{
-     if(session.loggedIn)setState({loggedIn:false,demoSession:false,authToken:null,authUser:null});
-     location.hash="login?intent=donasi-santri&"+query;
-    }
+    if(isDonorAuthenticated())location.hash="donasi-santri?ustadz="+ustadzId+"&halaqah="+halaqahId;
+    else openDonorModal(ustadzId,halaqahId,studentButton);
    }
    return;
   }
@@ -174,7 +170,7 @@ export function donationStudentsPage(){
   +'<section class="donasi-main donasi-students-main"><a href="#donasi" class="donasi-back">Kembali ke daftar ustadz</a>'
   +'<div class="donasi-intro"><span class="landing-kicker">Aktivitas halaqah</span><h1 id="donasiStudentsTitle">Daftar Santri</h1><p id="donasiStudentsContext">Memuat informasi halaqah...</p></div>'
   +'<div id="donasiStudentsList" class="donasi-students-list" aria-live="polite" aria-busy="true"><div class="donasi-state">Memuat daftar santri...</div></div>'
-  +'<p class="donasi-footnote">Nama dan progres santri hanya tersedia setelah login. Persentase menunjukkan kelengkapan isian harian terakhir, bukan total hafalan.</p>'
+  +'<p class="donasi-footnote">Nama dan progres santri hanya tersedia untuk akun Donatur yang sudah login. Persentase menunjukkan kelengkapan isian harian terakhir, bukan total hafalan.</p>'
   +'</section><footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer></main>';
 }
 export async function bindDonationStudents(){
@@ -191,21 +187,32 @@ export async function bindDonationStudents(){
   list.setAttribute("aria-busy","false");
   return;
  }
- const loginHref="#login?intent=donasi-santri&ustadz="+ustadzId+"&halaqah="+halaqahId;
- function promptLogin(){
-  context.textContent="Masuk ke Mutqeen untuk melihat nama dan progres santri.";
-  list.innerHTML='<div class="donasi-state">Silakan login dengan akun Mutqeen terverifikasi.<div style="margin-top:16px"><a class="btn primary" id="donasiStudentsLogin" href="'+loginHref+'">Masuk untuk melihat santri</a></div></div>';
+ function promptDonorAccess(openImmediately=false){
+  context.textContent="Masuk sebagai Donatur untuk melihat nama dan progres santri.";
+  list.innerHTML='<div class="donasi-state">Halaman ini hanya tersedia untuk akun Donatur.<div style="margin-top:16px"><button type="button" class="btn primary" id="donasiStudentsLogin">Masuk atau Daftar Donatur</button></div></div>';
   list.setAttribute("aria-busy","false");
-  list.querySelector("#donasiStudentsLogin")?.addEventListener("click",()=>setState({loggedIn:false,demoSession:false,authToken:null,authUser:null}));
+  const button=list.querySelector("#donasiStudentsLogin");
+  button?.addEventListener("click",()=>openDonorModal(ustadzId,halaqahId,button));
+  if(openImmediately)openDonorModal(ustadzId,halaqahId,button);
  }
  const state=getState();
- if(!state.loggedIn||!state.authToken){promptLogin();return;}
+ if(!isDonorAuthenticated()){promptDonorAccess(true);return;}
  try{
   const response=await fetch("/api/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{
    headers:{Accept:"application/json",Authorization:"Bearer "+state.authToken},cache:"no-store"
   });
   const result=await response.json().catch(()=>({}));
-  if(response.status===401){if(list.isConnected)promptLogin();return;}
+  if(response.status===401){
+   setState({loggedIn:false,demoSession:false,authToken:null,authUser:null});
+   if(list.isConnected)promptDonorAccess(true);
+   return;
+  }
+  if(response.status===403){
+   const session=getState();
+   setState({authUser:{...session.authUser,roles:(session.authUser?.roles||[]).filter(role=>role!=="donatur")}});
+   if(list.isConnected)promptDonorAccess(true);
+   return;
+  }
   if(!response.ok||!result.success)throw new Error(result.message||"Daftar santri belum dapat dimuat.");
   if(!list.isConnected)return;
   const data=result.data||{};

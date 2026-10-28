@@ -73,3 +73,17 @@
 .donasi-student-info small{display:block;color:#71897b;font-size:12px;margin-top:7px}
 .donasi-student-progress{height:9px;overflow:hidden;border-radius:99px;background:#e5f0e9;margin-top:11px}
 .donasi-student-progress>span{display:block;height:100%;border-radius:99px;background:#0f6b4d}
+
+/* Popup login dan pendaftaran Donatur. */
+.donor-auth-dialog{width:min(460px,100%);max-height:min(90dvh,820px)}
+.donor-auth-dialog .donasi-dialog-body>p{margin:0 0 15px;line-height:1.6}
+.donor-auth-choices{display:grid;gap:12px}
+.donor-auth-choices .btn,.donor-auth-form>.btn{width:100%;justify-content:center;min-height:48px}
+.donor-auth-form{display:grid;gap:14px;margin-top:16px}
+.donor-auth-form label{display:grid;gap:6px;font-size:14px;font-weight:650;color:#15372a}
+.donor-auth-form input{min-height:46px;width:100%;border:1px solid #c9dcd1;background:#fff;border-radius:10px;padding:11px 12px;color:#15372a;font:inherit}
+.donor-auth-form input:focus-visible{outline:3px solid #b8e3c9;outline-offset:1px}
+.donor-auth-form button:disabled{opacity:.65;cursor:wait}
+.donor-auth-secondary{text-align:center;margin-top:18px}
+.donor-auth-secondary button{border:0;background:none;color:#0f6b4d;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-size:14px;font-weight:750}
+.donor-auth-error{background:#fff1f0;color:#8e281e;padding:10px 12px;border-radius:10px;line-height:1.5;font-size:13px}

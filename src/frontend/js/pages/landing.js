@@ -16,8 +16,8 @@ export function landingPage(){
     <h1>Bantu Ustadz Tahfidz Secara Langsung. <span>Lihat Dampaknya pada Hafalan Santri.</span></h1>
     <p>Mutqeen menghubungkan donatur dengan ustadz tahfidz. Dukungan ditransfer langsung ke rekening ustadz, sementara aktivitas bimbingan dan progres hafalan santri tercatat dan dapat dipantau.</p>
     <div class="landing-hero-actions">
-     <a class="btn primary landing-cta" href="#login">Masuk ke Mutqeen</a>
-     <a class="btn landing-cta secondary" href="#cara-kerja">Lihat Cara Kerja</a>
+     <a class="btn primary landing-cta" href="#login?intent=donasi">Donasi Sekarang</a>
+     <a class="btn landing-cta secondary" href="#login?intent=ustadz">Daftar sebagai Ustadz</a>
     </div>
     <div class="landing-trust-row">
      <span>Transfer langsung</span><span>Penerima jelas</span><span>Aktivitas tercatat</span><span>Progres terpantau</span>
@@ -105,7 +105,10 @@ export function landingPage(){
    <span class="landing-kicker">Menjaga penghafal Al-Qur'an bersama</span>
    <h2>Dukung orang yang setiap hari menjaga hafalan para santri.</h2>
    <p>Mulai dari satu ustadz. Lihat aktivitasnya. Ikuti perkembangan santri yang dibimbingnya.</p>
-   <div><a class="btn primary landing-cta" href="#login">Masuk ke Mutqeen</a></div>
+   <div class="landing-hero-actions landing-final-actions">
+    <a class="btn primary landing-cta" href="#login?intent=donasi">Donasi Sekarang</a>
+    <a class="btn landing-cta secondary" href="#login?intent=ustadz">Daftar sebagai Ustadz</a>
+   </div>
   </section>
 
   <footer class="landing-footer"><b>Mutqeen</b><span>Transfer langsung. Penerima jelas. Aktivitas tercatat. Progres terpantau.</span></footer>
@@ -120,11 +123,4 @@ export function bindLanding(){
   event.preventDefault();
   target.scrollIntoView({behavior:"smooth",block:"start"});
  }));
- const secondary=document.querySelector('.landing-hero-actions a[href="#cara-kerja"]');
- secondary?.addEventListener("click",event=>{
-  const target=document.querySelector("#cara-kerja");
-  if(!target)return;
-  event.preventDefault();
-  target.scrollIntoView({behavior:"smooth",block:"start"});
- });
 }

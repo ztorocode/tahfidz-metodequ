@@ -44,6 +44,12 @@ async function render(){
 
  const route=rawRoute();
 
+ // Kompatibilitas tautan CTA lama yang sudah tersebar.
+ if(route==="login"&&new URLSearchParams(routeName().split("?")[1]||"").get("intent")==="donasi"){
+  location.hash="donasi";
+  return;
+ }
+
  // Daftar ustadz untuk donatur tetap publik, termasuk saat pengguna telah login.
  if(route==="donasi"){
   app.innerHTML=donationListPage();

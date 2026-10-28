@@ -38,7 +38,7 @@ final class PlatformMusyrifController
     {
         try {
             $musyrif = $this->service()->createMusyrif($this->actor($request), $request->body());
-            Response::json(['success' => true, 'message' => 'Musyrif platform berhasil ditambahkan.', 'data' => $musyrif], 201);
+            Response::json(['success' => true, 'message' => 'Ustadz platform berhasil ditambahkan.', 'data' => $musyrif], 201);
         } catch (RegistrationException $exception) {
             Response::json([
                 'success' => false,
@@ -167,7 +167,7 @@ final class PlatformMusyrifController
 
             Response::json([
                 'success' => true,
-                'message' => 'Undangan diterima. Selamat bergabung sebagai Musyrif Platform!',
+                'message' => 'Undangan diterima. Selamat bergabung sebagai Ustadz Platform!',
                 'data' => $session,
             ], 201);
         } catch (RegistrationException $exception) {

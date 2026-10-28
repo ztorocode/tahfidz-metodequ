@@ -46,7 +46,7 @@ async function loadMusyrifList(){
   if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
   try{
    const b=await api("/api/pondoks/musyrifs?pondok_id="+pid);
-   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada musyrif.</small>';
+   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada ustadz.</small>';
   }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
   try{
    const box2=document.querySelector("#inviteList");
@@ -418,14 +418,14 @@ function bindPageActions(){
    btn.disabled=true;btn.textContent="Menyimpan...";
    try{
     const b=await api("/api/pondoks/musyrifs",{method:"POST",body:JSON.stringify(payload)});
-    if(msg){msg.textContent="Musyrif "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
+    if(msg){msg.textContent="Ustadz "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
     ["#newMusyrifName","#newMusyrifEmail","#newMusyrifPhone","#newMusyrifPassword"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
     loadMusyrifList();
     setTimeout(()=>musyrifModal()?.classList.add("hidden"),800);
    }catch(err){
     if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
    }
-   btn.disabled=false;btn.textContent="Simpan Musyrif";
+   btn.disabled=false;btn.textContent="Simpan Ustadz";
   });
   // ============ Penilaian setoran oleh musyrif (#santri-progress) ============
   const setoranModal=()=>document.querySelector("#setoranModal");

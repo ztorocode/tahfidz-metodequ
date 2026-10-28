@@ -25,7 +25,7 @@ final class MusyrifService
         try {
             PondokAccess::assertPondokAdmin($this->pdo, $actor, $pondokId);
         } catch (RegistrationException $exception) {
-            throw new RegistrationException('Hanya admin pondok yang boleh mengelola musyrif.', 403);
+            throw new RegistrationException('Hanya admin pondok yang boleh mengelola ustadz.', 403);
         }
     }
 

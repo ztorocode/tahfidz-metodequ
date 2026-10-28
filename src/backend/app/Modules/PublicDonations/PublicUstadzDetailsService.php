@@ -129,13 +129,11 @@ final class PublicUstadzDetailsService
     }
 
 
-    /**
-     * Keanggotaan aktual, ditampilkan sebagai label anonim tanpa data personal.
-     */
+    /** Daftar anggota aktif dan progres harian terakhir untuk pemilik sesi login yang valid. */
     public function students(int $profileId, int $halaqahId): ?array
     {
         $q = $this->pdo->prepare(
-            "SELECT h.id, h.name, ustadz.name AS ustadz_name
+            "SELECT h.name, ustadz.name AS ustadz_name
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id AND mp.status = 'active'
              JOIN users ustadz ON ustadz.id = mp.user_id AND ustadz.status = 'active' AND ustadz.deleted_at IS NULL
@@ -152,19 +150,46 @@ final class PublicUstadzDetailsService
         }
 
         $members = $this->pdo->prepare(
-            "SELECT DISTINCT hm.user_id
+            "SELECT DISTINCT santri.id, santri.name
              FROM halaqah_memberships hm
              JOIN users santri ON santri.id = hm.user_id AND santri.status = 'active' AND santri.deleted_at IS NULL
              WHERE hm.halaqah_id = :halaqah_id AND hm.status = 'active'
-             ORDER BY hm.user_id ASC"
+             ORDER BY santri.name ASC, santri.id ASC"
         );
         $members->execute(['halaqah_id' => $halaqahId]);
-        $studentIds = $members->fetchAll(PDO::FETCH_COLUMN);
-        $students = [];
-        foreach ($studentIds as $index => $_studentId) {
-            $students[] = ['label' => 'Santri ' . ($index + 1)];
+        $rows = $members->fetchAll(PDO::FETCH_ASSOC);
+        $progressByUser = [];
+        if ($rows && $this->tableExists('member_progress')) {
+            $ids = implode(',', array_map(static fn (array $row): int => (int) $row['id'], $rows));
+            $progress = $this->pdo->prepare(
+                "SELECT mp.user_id, mp.week_no, mp.day_code, mp.completion_percent, mp.updated_at
+                 FROM member_progress mp
+                 WHERE mp.halaqah_id = :halaqah_id AND mp.user_id IN ($ids)
+                   AND mp.deleted_at IS NULL
+                   AND mp.id = (
+                       SELECT mp2.id FROM member_progress mp2
+                       WHERE mp2.user_id = mp.user_id AND mp2.halaqah_id = mp.halaqah_id
+                         AND mp2.deleted_at IS NULL
+                       ORDER BY mp2.updated_at DESC, mp2.id DESC LIMIT 1
+                   )"
+            );
+            $progress->execute(['halaqah_id' => $halaqahId]);
+            foreach ($progress->fetchAll(PDO::FETCH_ASSOC) as $pr) {
+                $progressByUser[(int) $pr['user_id']] = $pr;
+            }
         }
 
+        $students = [];
+        foreach ($rows as $row) {
+            $pr = $progressByUser[(int) $row['id']] ?? null;
+            $students[] = [
+                'name' => (string) $row['name'],
+                'progress_percent' => $pr !== null ? (int) $pr['completion_percent'] : null,
+                'progress_week' => $pr !== null ? (int) $pr['week_no'] : null,
+                'progress_day' => $pr !== null ? (string) $pr['day_code'] : null,
+                'progress_updated_at' => $pr !== null ? (string) $pr['updated_at'] : null,
+            ];
+        }
         return [
             'halaqah_name' => (string) $halaqah['name'],
             'ustadz_name' => (string) $halaqah['ustadz_name'],

@@ -7,6 +7,8 @@ namespace App\Modules\PublicDonations;
 use App\Core\Database;
 use App\Core\Request;
 use App\Core\Response;
+use App\Modules\Auth\LoginValidator;
+use App\Modules\Auth\SessionService;
 
 final class PublicUstadzController
 {
@@ -34,12 +36,19 @@ final class PublicUstadzController
 
     public function students(Request $request): never
     {
+        header('Cache-Control: no-store');
+        $pdo = Database::connection();
+        $sessions = new SessionService($pdo, new LoginValidator());
+        $actor = $sessions->userFromToken(SessionService::bearerToken($request->headers));
+        if ($actor === null) {
+            Response::json(['success' => false, 'message' => 'Login diperlukan untuk melihat nama dan progres santri.'], 401);
+        }
         $profileId = filter_var($request->query['ustadz_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $halaqahId = filter_var($request->query['halaqah_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if (!$profileId || !$halaqahId) {
             Response::json(['success' => false, 'message' => 'Halaqah tidak valid.'], 422);
         }
-        $data = (new PublicUstadzDetailsService(Database::connection()))->students((int) $profileId, (int) $halaqahId);
+        $data = (new PublicUstadzDetailsService($pdo))->students((int) $profileId, (int) $halaqahId);
         if ($data === null) {
             Response::json(['success' => false, 'message' => 'Halaqah tidak ditemukan.'], 404);
         }

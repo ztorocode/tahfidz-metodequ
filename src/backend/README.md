@@ -98,9 +98,19 @@ Jalankan seluruh migrasi hingga 20261028_020_ustadz_donation_profile, termasuk 0
 
 Urutan deployment: backup database, jalankan migrasi, pastikan ekstensi GD dan direktori penyimpanan, deploy frontend/backend terbaru, lalu uji login ustadz, simpan rekening, unggah dan hapus foto, serta buka kedua popup pada domain publik.
 
-## Daftar publik santri halaqah
+## Daftar santri yang wajib login
 
-Klik angka **Santri aktif** pada popup Aktivitas membuka halaman `/#donasi-santri?ustadz=PROFILE_ID&halaqah=HALAQAH_ID`.
-GET `/api/public/ustadz/santri?ustadz_id=PROFILE_ID&halaqah_id=HALAQAH_ID` memverifikasi profil ustadz, halaqah, dan anggota aktif saat diakses.
-Setiap santri aktif memiliki satu entri berlabel anonim `Santri N`. Endpoint tidak mengirim nama, user ID, email, atau catatan pribadi.
-Tidak ada migrasi database baru.
+Tombol **Santri aktif** mengarahkan ke login bila belum memiliki token. Login email/OTP riil
+mengembalikan pengguna ke `/#donasi-santri?ustadz=PROFILE_ID&halaqah=HALAQAH_ID`.
+
+Endpoint `GET /api/ustadz/santri?ustadz_id=PROFILE_ID&halaqah_id=HALAQAH_ID`
+memerlukan Bearer token yang diverifikasi server melalui `SessionService::userFromToken`.
+Tanpa token / sesi kedaluwarsa mendapat HTTP 401 dan tidak menerima data pribadi.
+Endpoint publik anonim lama dihapus.
+
+Hasil berisi nama asli santri aktif dan catatan progres harian terakhir
+(`completion_percent`, minggu, hari, updated_at). Tidak mengirim ID, email,
+nomor HP, `fields` atau `checks`. Progres kosong berupa null, bukan 0%.
+Persentase adalah kelengkapan isian harian, bukan total hafalan.
+Akun apa pun yang login riil saat ini boleh melihatnya; belum ada role donatur tersendiri.
+Tidak ada migrasi database.

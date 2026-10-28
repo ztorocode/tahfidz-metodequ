@@ -123,7 +123,7 @@ final class UstadzDonationProfileService
         imagefill($target, 0, 0, $white);
         imagecopy($target, $source, 0, 0, 0, 0, imagesx($source), imagesy($source));
         imagedestroy($source);
-        $directory = dirname(__DIR__, 4) . '/storage/ustadz-activities';
+        $directory = dirname(__DIR__, 3) . '/storage/ustadz-activities';
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
             imagedestroy($target);
             throw new \RuntimeException('Direktori foto tidak dapat dibuat.');
@@ -160,7 +160,7 @@ final class UstadzDonationProfileService
         $delete = $this->pdo->prepare('DELETE FROM ustadz_activity_photos WHERE id = :id AND musyrif_profile_id = :profile');
         $delete->execute(['id' => $id, 'profile' => $profileId]);
         if (preg_match('/^[a-f0-9]{32}\.jpg$/', $filename)) {
-            @unlink(dirname(__DIR__, 4) . '/storage/ustadz-activities/' . $filename);
+            @unlink(dirname(__DIR__, 3) . '/storage/ustadz-activities/' . $filename);
         }
     }
 }

@@ -342,7 +342,7 @@ function bindPageActions(){
      ta.value=link;document.body.appendChild(ta);ta.select();
      document.execCommand("copy");ta.remove();
     }
-    if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+role+".";msg.style.color="var(--brand)";}
+    if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+(role==="musyrif"?"ustadz":role)+".";msg.style.color="var(--brand)";}
     toast("Link undangan tersalin ke clipboard.");
    }catch(err){
     if(msg){msg.textContent=err?.message||"Gagal menyalin link.";msg.style.color="var(--danger)";}

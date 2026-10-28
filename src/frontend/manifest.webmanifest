@@ -1,7 +1,7 @@
 {
-  "name": "MetodeQu",
-  "short_name": "MetodeQu",
-  "description": "Pendamping tahfidz untuk membangun hafalan yang mutqin.",
+  "name": "Mutqeen",
+  "short_name": "Mutqeen",
+  "description": "Pendamping tahfidz dan transparansi dukungan langsung untuk Ustadz Tahfidz.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

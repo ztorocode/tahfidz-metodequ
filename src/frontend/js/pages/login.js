@@ -45,7 +45,7 @@ function loginForm(method="whatsapp"){
 
 function registerForm(mode="personal"){
  const pondok=mode==="pondok";
- return `<div><h1>Buat Akun MetodeQu</h1><p class="muted">${pondok?"Daftarkan akun pengelola sekaligus pondok atau lembaga tahfidz.":"Daftar untuk menggunakan MetodeQu secara personal."} Username dibuat otomatis dari bagian email sebelum tanda @.</p></div>
+ return `<div><h1>Buat Akun Mutqeen</h1><p class="muted">${pondok?"Daftarkan akun pengelola sekaligus pondok atau lembaga tahfidz.":"Daftar untuk menggunakan Mutqeen secara personal."} Username dibuat otomatis dari bagian email sebelum tanda @.</p></div>
  <div class="segmented">
   <button id="registerPersonal" class="${pondok?"":"active"}" type="button">Personal</button>
   <button id="registerPondok" class="${pondok?"active":""}" type="button">Pondok</button>
@@ -69,15 +69,15 @@ function registerForm(mode="personal"){
 }
 
 function loginCard(){
- return `<div><h1>Masuk ke MetodeQu</h1><p class="muted">Lanjutkan perjalanan hafalan Anda.</p></div>
+ return `<div><h1>Masuk ke Mutqeen</h1><p class="muted">Lanjutkan perjalanan hafalan Anda.</p></div>
  <div id="loginForm" class="stack">${loginForm("whatsapp")}</div>
  <small class="muted" style="text-align:center">Belum punya akun? <a href="#" id="registerLink" style="color:var(--brand);font-weight:800">Daftar sekarang</a></small>
  ${demoAccountsInfo()}`;
 }
 
 export function loginPage(){return `<section class="auth">
-<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=81bed469">MetodeQu</div></div>
-<div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Aplikasi pendamping tahfidz untuk membantu Anda membangun hafalan Al-Qur'an yang kuat dan terjaga.</p></div>
+<div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div></div>
+<div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Platform pendamping tahfidz yang menghubungkan pembinaan santri dengan dukungan yang lebih transparan kepada ustadz.</p></div>
 <div><small>Prototype demo · Personal & Pondok</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
 

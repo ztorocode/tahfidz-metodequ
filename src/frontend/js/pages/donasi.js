@@ -4,6 +4,7 @@ function escapeHtml(value){
 const countFormat=new Intl.NumberFormat("id-ID");
 const moneyFormat=new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0,minimumFractionDigits:0});
 const monthFormat=new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric",timeZone:"Asia/Jakarta"});
+function count(value){return countFormat.format(Math.max(0,Number(value)||0))}
 function monthLabel(value){
  if(!/^\d{4}-\d{2}$/.test(String(value||"")))return "bulan ini";
  const date=new Date(value+"-01T12:00:00+07:00");
@@ -13,17 +14,20 @@ function ustadzCard(item){
  const name=escapeHtml(item.name);
  const scope=item.type==="pondok"?(item.pondok_name||"Pondok"):"Ustadz Platform";
  const initial=escapeHtml((item.name||"U").trim().charAt(0).toUpperCase());
- const number=value=>countFormat.format(Math.max(0,Number(value)||0));
  const amount=item.donasi_bulan_ini==null?null:Number(item.donasi_bulan_ini);
+ const id=Number(item.id)||0;
  return '<article class="donasi-ustadz-card">'
   +'<div class="donasi-ustadz-head"><span class="donasi-avatar" aria-hidden="true">'+initial+'</span><div><h2>'+name+'</h2><p>'+escapeHtml(scope)+'</p></div></div>'
   +'<div class="donasi-ustadz-metrics">'
-  +'<div><strong>'+number(item.santri_aktif)+'</strong><span>Santri aktif</span></div>'
-  +'<div><strong>'+number(item.setoran_dinilai)+'</strong><span>Setoran dinilai</span></div>'
-  +'<div><strong>'+number(item.hafalan_mutqin)+'</strong><span>Penilaian mutqin</span></div>'
+  +'<div><strong>'+count(item.santri_aktif)+'</strong><span>Santri aktif</span></div>'
+  +'<div><strong>'+count(item.setoran_dinilai)+'</strong><span>Setoran dinilai</span></div>'
+  +'<div><strong>'+count(item.hafalan_mutqin)+'</strong><span>Penilaian mutqin</span></div>'
   +'</div><div class="donasi-ustadz-total"><span>Donasi terverifikasi bulan ini</span><strong>'
   +(amount!==null&&Number.isFinite(amount)&&amount>=0?moneyFormat.format(amount):"Belum tersedia")
-  +'</strong></div></article>';
+  +'</strong></div>'
+  +'<div class="donasi-ustadz-actions"><button type="button" class="btn primary" data-donate-id="'+id+'" data-ustadz-name="'+name+'">Donate</button>'
+  +'<button type="button" class="btn" data-activity-id="'+id+'" data-ustadz-name="'+name+'">Aktivitas</button></div>'
+  +'</article>';
 }
 export function donationListPage(){
  return '<main class="landing-page donasi-page">'
@@ -34,32 +38,112 @@ export function donationListPage(){
   +'<div class="donasi-summary"><span id="donasiPeriode">Donasi terverifikasi bulan ini</span><small>Nominal hanya mencakup transfer yang sudah tercatat dan terverifikasi di Mutqeen. Transfer langsung di luar pencatatan mungkin belum termasuk.</small></div>'
   +'<div id="donasiList" class="donasi-list" aria-live="polite" aria-busy="true"><div class="donasi-state">Memuat daftar ustadz...</div></div>'
   +'<p class="donasi-footnote">Pencapaian setoran dan mutqin dihitung dari catatan penilaian sejak mulai tercatat. Jumlah santri menunjukkan binaan aktif saat ini.</p></section>'
-  +'<footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer></main>';
+  +'<footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer>'
+  +'<div class="donasi-overlay" id="donasiOverlay" hidden><section class="donasi-dialog" role="dialog" aria-modal="true" aria-labelledby="donasiDialogTitle">'
+  +'<header class="donasi-dialog-head"><h2 id="donasiDialogTitle"></h2><button type="button" class="donasi-dialog-close" id="donasiClose" aria-label="Tutup">×</button></header>'
+  +'<div id="donasiDialogBody" class="donasi-dialog-body" aria-live="polite"></div></section></div></main>';
 }
-export async function bindDonationList(){
- const box=document.querySelector("#donasiList");
- if(!box)return;
- try{
-  const response=await fetch("/api/public/ustadz",{headers:{"Accept":"application/json"},cache:"no-store"});
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.success)throw new Error("Data ustadz belum dapat dimuat.");
-  if(!box.isConnected)return;
-  const data=result.data||{};
-  const period=document.querySelector("#donasiPeriode");
-  if(period)period.textContent="Donasi terverifikasi "+monthLabel(data.month);
-  const items=Array.isArray(data.items)?data.items:[];
-  box.innerHTML=items.length?items.map(ustadzCard).join(""):'<div class="donasi-state">Belum ada ustadz aktif yang dapat ditampilkan.</div>';
- }catch(error){
-  if(box.isConnected){
-   box.innerHTML='<div class="donasi-state">Daftar ustadz belum bisa dimuat. <button type="button" class="btn" id="donasiRetry">Coba lagi</button></div>';
-   document.querySelector("#donasiRetry")?.addEventListener("click",()=>{
-    if(!box.isConnected)return;
-    box.innerHTML='<div class="donasi-state">Memuat daftar ustadz...</div>';
-    box.setAttribute("aria-busy","true");
-    bindDonationList();
-   });
+function bankView(detail){
+ const bank=detail.bank;
+ if(!bank)return '<div class="donasi-empty">Ustadz belum mempublikasikan nomor rekening untuk donasi.</div>';
+ return '<p>Transfer langsung ke rekening yang dicantumkan ustadz berikut.</p>'
+   +'<div class="donasi-bank"><span>Bank</span><strong>'+escapeHtml(bank.bank_name)+'</strong>'
+   +'<span>Nomor rekening</span><strong class="donasi-account-number">'+escapeHtml(bank.account_number)+'</strong>'
+   +'<span>Atas nama</span><strong>'+escapeHtml(bank.account_holder)+'</strong></div>'
+   +'<button type="button" class="btn primary donasi-copy" data-copy-account="'+escapeHtml(bank.account_number)+'">Salin Nomor Rekening</button>'
+   +'<p class="donasi-caution">Periksa kembali nama penerima di aplikasi bank sebelum transfer. Mutqeen tidak menerima atau meneruskan dana.</p>';
+}
+function halaqahView(item){
+ const progress=item.progres_rata_rata==null?"Belum tersedia":count(item.progres_rata_rata)+"%";
+ return '<div class="donasi-halaqah"><h3>'+escapeHtml(item.name)+'</h3><div class="donasi-halaqah-metrics">'
+  +'<span><b>'+count(item.santri_aktif)+'</b> Santri aktif</span>'
+  +'<span><b>'+count(item.aktivitas_bulan_ini)+'</b> Aktivitas bulan ini</span>'
+  +'<span><b>'+count(item.setoran_dinilai)+'</b> Setoran dinilai</span>'
+  +'<span><b>'+count(item.hafalan_mutqin)+'</b> Mutqin</span>'
+  +'<span><b>'+progress+'</b> Rata-rata progres harian terakhir</span></div></div>';
+}
+function activityView(detail){
+ const halaqahs=Array.isArray(detail.halaqahs)?detail.halaqahs:[];
+ const photos=Array.isArray(detail.photos)?detail.photos:[];
+ const gallery=photos.length?'<div class="donasi-photo-grid">'+photos.map(photo=>
+   '<figure><img src="'+escapeHtml(photo.url)+'" alt="'+escapeHtml(photo.caption)+'" loading="lazy">'
+   +'<figcaption>'+escapeHtml(photo.caption)+(photo.halaqah_name?'<small>'+escapeHtml(photo.halaqah_name)+'</small>':'')+'</figcaption></figure>'
+  ).join("")+'</div>':'<div class="donasi-empty">Belum ada foto aktivitas yang diizinkan untuk ditampilkan.</div>';
+ return '<p>Ringkasan kegiatan dan perkembangan halaqah. Tidak memuat identitas atau catatan pribadi santri.</p>'
+  +'<h3 class="donasi-dialog-section">Progres Halaqah</h3>'
+  +(halaqahs.length?halaqahs.map(halaqahView).join(""):'<div class="donasi-empty">Belum ada halaqah aktif.</div>')
+  +'<h3 class="donasi-dialog-section">Foto Aktivitas</h3>'+gallery
+  +'<p class="donasi-caution">Foto dipublikasikan oleh ustadz setelah menyatakan memiliki izin. Progres dihitung dari catatan aplikasi.</p>';
+}
+export function bindDonationList(){
+ const page=document.querySelector(".donasi-page");
+ const box=page?.querySelector("#donasiList");
+ const overlay=page?.querySelector("#donasiOverlay");
+ const body=page?.querySelector("#donasiDialogBody");
+ const title=page?.querySelector("#donasiDialogTitle");
+ if(!box||!overlay||!body||!title)return;
+ let openedBy=null,sequence=0;
+ const close=()=>{
+  sequence++;
+  overlay.hidden=true;
+  document.body.classList.remove("donasi-modal-open");
+  if(openedBy?.isConnected)openedBy.focus();
+ };
+ const open=async(mode,id,name,button)=>{
+  openedBy=button;
+  const ticket=++sequence;
+  title.textContent=mode==="bank"?"Donasi untuk "+name:"Aktivitas "+name;
+  body.innerHTML='<div class="donasi-state">Memuat informasi ustadz...</div>';
+  overlay.hidden=false;
+  document.body.classList.add("donasi-modal-open");
+  page.querySelector("#donasiClose")?.focus();
+  try{
+   const response=await fetch("/api/public/ustadz/detail?id="+id,{headers:{Accept:"application/json"},cache:"no-store"});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||!result.success)throw new Error(result.message||"Informasi belum bisa dimuat.");
+   if(ticket!==sequence||!overlay.isConnected)return;
+   body.innerHTML=mode==="bank"?bankView(result.data||{}):activityView(result.data||{});
+  }catch(error){
+   if(ticket===sequence&&overlay.isConnected)body.innerHTML='<div class="donasi-empty">'+escapeHtml(error.message||"Informasi belum bisa dimuat.")+'</div>';
   }
- }finally{
-  if(box.isConnected)box.setAttribute("aria-busy","false");
+ };
+ box.addEventListener("click",event=>{
+  const button=event.target.closest("[data-donate-id],[data-activity-id]");
+  if(!button||!box.contains(button))return;
+  const id=Number(button.dataset.donateId||button.dataset.activityId||0);
+  if(!Number.isSafeInteger(id)||id<1)return;
+  open(button.hasAttribute("data-donate-id")?"bank":"activity",id,button.dataset.ustadzName||"Ustadz",button);
+ });
+ page.querySelector("#donasiClose")?.addEventListener("click",close);
+ overlay.addEventListener("click",event=>{if(event.target===overlay)close()});
+ const onKey=event=>{if(event.key==="Escape"&&!overlay.hidden){event.preventDefault();close()}};
+ document.addEventListener("keydown",onKey);
+ const observer=new MutationObserver(()=>{if(!page.isConnected){document.removeEventListener("keydown",onKey);document.body.classList.remove("donasi-modal-open");observer.disconnect()}});
+ observer.observe(document.querySelector("#app")||document.body,{childList:true});
+ body.addEventListener("click",async event=>{
+  const copy=event.target.closest("[data-copy-account]");
+  if(!copy)return;
+  const value=copy.dataset.copyAccount||"";
+  try{await navigator.clipboard.writeText(value);copy.textContent="Nomor rekening tersalin";}
+  catch{copy.textContent="Tidak bisa menyalin. Pilih nomor rekening di atas."}
+ });
+ async function loadList(){
+  box.setAttribute("aria-busy","true");
+  try{
+   const response=await fetch("/api/public/ustadz",{headers:{"Accept":"application/json"},cache:"no-store"});
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||!result.success)throw new Error(result.message||"Data ustadz belum dapat dimuat.");
+   if(!box.isConnected)return;
+   const data=result.data||{};
+   const period=page.querySelector("#donasiPeriode");
+   if(period)period.textContent="Donasi terverifikasi "+monthLabel(data.month);
+   const items=Array.isArray(data.items)?data.items:[];
+   box.innerHTML=items.length?items.map(ustadzCard).join(""):'<div class="donasi-state">Belum ada ustadz aktif yang dapat ditampilkan.</div>';
+  }catch(error){
+   if(!box.isConnected)return;
+   box.innerHTML='<div class="donasi-state">Daftar ustadz belum bisa dimuat. <button type="button" class="btn" id="donasiRetry">Coba lagi</button></div>';
+   page.querySelector("#donasiRetry")?.addEventListener("click",loadList,{once:true});
+  }finally{if(box.isConnected)box.setAttribute("aria-busy","false")}
  }
+ loadList();
 }

@@ -12,7 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=b8c14e72";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=c6e18a42";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=f6a10c32";
 let deferredPrompt=null;
 export function renderPrivate(){
  const s=getState();document.documentElement.dataset.theme=s.theme;

@@ -24,7 +24,7 @@ export const programPages=[
 export const notifications=[
  {title:"Setoran diterima",body:"Juz 30 Hal. 11 dinyatakan mutqin",tone:"success",time:"1 jam lalu"},
  {title:"Pengingat Muraja'ah",body:"Anda memiliki 3 bagian muraja'ah hari ini",tone:"danger",time:"3 jam lalu"},
- {title:"Catatan dari Musyrif",body:"Juz 30 Hal. 10 · Cukup Stabil",tone:"warning",time:"5 jam lalu"},
+ {title:"Catatan dari Ustadz",body:"Juz 30 Hal. 10 · Cukup Stabil",tone:"warning",time:"5 jam lalu"},
  {title:"Motivasi Harian",body:"Hafalan yang terjaga lebih utama daripada banyak tetapi rapuh.",tone:"success",time:"1 hari lalu"}
 ];
 export const students=[

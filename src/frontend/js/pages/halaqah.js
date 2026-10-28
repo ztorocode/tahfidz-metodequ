@@ -228,13 +228,13 @@ function adminList(items){
  return `<div style="margin-bottom:18px">
   <p class="eyebrow">Pondok / Halaqah</p>
   <div class="row between" style="gap:12px"><h1 style="margin:0">Halaqah</h1><button class="btn primary" type="button" data-halaqah-add>+Halaqah</button></div>
-  <p class="muted">Kelola halaqah, tentukan musyrif, dan lihat santri di setiap halaqah.</p></div>
+  <p class="muted">Kelola halaqah, tentukan ustadz, dan lihat santri di setiap halaqah.</p></div>
  <div class="halaqah-grid" style="--cols:${halaqahCols(items)}">
   ${items.length?items.map(item=>`<div class="card">
    <div class="row" style="gap:12px">
     <div class="grow" style="min-width:0">
      <div class="row between" style="gap:8px"><b>${escapeHtml(item.name)}</b>${badge("Aktif","success")}</div>
-     <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Musyrif ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
+     <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Ustadz ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
     </div>
     <div class="row" style="gap:8px;flex:0 0 auto;align-items:flex-start">
      <button class="btn" type="button" data-halaqah-edit="${item.id}" aria-label="Edit halaqah" title="Edit halaqah" style="padding:8px 10px">${pencilIcon()}</button>
@@ -248,10 +248,10 @@ function adminList(items){
    <div><p class="eyebrow">Pondok</p><h2>Tambah Halaqah</h2></div>
    <form class="stack" id="halaqahForm" style="margin-top:16px">
     <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahName" placeholder="Contoh: Halaqah Ali" required></div>
-    <div><label class="label">Musyrif</label><select class="input" id="halaqahMusyrif">
-     ${musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada musyrif, bisa dipilih nanti —</option>'}
+    <div><label class="label">Ustadz</label><select class="input" id="halaqahMusyrif">
+     ${musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada ustadz, bisa dipilih nanti —</option>'}
     </select></div>
-    <small class="muted">Satu halaqah memiliki satu musyrif. Santri dapat ditambahkan setelah halaqah dibuat.</small>
+    <small class="muted">Satu halaqah memiliki satu ustadz. Santri dapat ditambahkan setelah halaqah dibuat.</small>
     <small class="muted" id="halaqahFormMessage"></small>
     <div class="btn-joined">
      <button class="btn" type="button" data-halaqah-close>Tutup</button>
@@ -265,8 +265,8 @@ function adminList(items){
    <div><p class="eyebrow">Pondok</p><h2>Edit Halaqah</h2></div>
    <form class="stack" id="halaqahEditForm" style="margin-top:16px">
     <div><label class="label">Nama Halaqah</label><input class="input" id="halaqahEditName" placeholder="Contoh: Halaqah Ali" required></div>
-    <div><label class="label">Musyrif</label><select class="input" id="halaqahEditMusyrif"></select></div>
-    <small class="muted">Satu halaqah memiliki satu musyrif. Pilih "— Tanpa musyrif —" bila penugasan musyrif ingin dikosongkan.</small>
+    <div><label class="label">Ustadz</label><select class="input" id="halaqahEditMusyrif"></select></div>
+    <small class="muted">Satu halaqah memiliki satu ustadz. Pilih "— Tanpa ustadz —" bila penugasan ustadz ingin dikosongkan.</small>
     <small class="muted" id="halaqahEditMessage"></small>
     <div class="btn-joined">
      <button class="btn" type="button" data-halaqah-edit-close>Tutup</button>
@@ -385,7 +385,7 @@ function musyrifList(items,opts={}){
     <p class="muted">Halaqah yang menjadi tanggung jawab Anda di ${escapeHtml(pondokName())}.</p>`;
  const empty=opts.platform
   ?`<div class="card"><h3>Belum ada halaqah</h3><p class="muted">Anda belum membuat halaqah. Klik <b>+ Buat Halaqah</b> untuk membuat halaqah pertama Anda (maksimal ${limit}).</p></div>`
-  :`<div class="card"><h3>Belum ada halaqah</h3><p class="muted">Admin Pondok belum menugaskan halaqah ke akun Musyrif ini.</p></div>`;
+  :`<div class="card"><h3>Belum ada halaqah</h3><p class="muted">Admin Pondok belum menugaskan halaqah ke akun Ustadz ini.</p></div>`;
  return `<div style="margin-bottom:18px">${heading}</div>
  <div class="halaqah-acc-list">
   ${items.length?items.map(item=>{
@@ -432,7 +432,7 @@ function detail(item,isAdmin){
    <button class="btn" type="button" data-halaqah-back style="margin-bottom:12px">← Kembali ke daftar</button>
    <p class="eyebrow">Pondok / Halaqah</p>
    <h1>${escapeHtml(item.name)}</h1>
-   <p class="muted">Musyrif: ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
+   <p class="muted">Ustadz: ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
   </div>
   ${isAdmin?`<button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>
   <div class="modal-backdrop hidden" id="santriModal">
@@ -512,7 +512,7 @@ document.addEventListener("click",event=>{
   document.querySelector("#halaqahName")?.focus();
   refreshMusyrifs(true,true).then(()=>{
    const sel=document.querySelector("#halaqahMusyrif");
-   if(sel)sel.innerHTML=musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada musyrif, bisa dipilih nanti —</option>';
+   if(sel)sel.innerHTML=musyrifOptions().length?musyrifOptions().map(item=>`<option value="${item.id}">${escapeHtml(item.name)}</option>`).join(""):'<option value="">— belum ada ustadz, bisa dipilih nanti —</option>';
   });
   return;
  }
@@ -537,9 +537,9 @@ document.addEventListener("click",event=>{
    if(item.musyrifId&&options.length&&!options.some(opt=>opt.id===item.musyrifId)){
     options.push({id:item.musyrifId,name:item.musyrifName||musyrifName(item.musyrifId)});
    }
-   sel.innerHTML='<option value="">— Tanpa musyrif —</option>'+(options.length
+   sel.innerHTML='<option value="">— Tanpa ustadz —</option>'+(options.length
     ?options.map(opt=>`<option value="${opt.id}">${escapeHtml(opt.name)}</option>`).join("")
-    :'<option value="" disabled>— belum ada musyrif terdaftar —</option>');
+    :'<option value="" disabled>— belum ada ustadz terdaftar —</option>');
    sel.value=item.musyrifId||"";
   };
   fillMusyrifOptions();

@@ -1,7 +1,7 @@
 import {getState,setState} from "./store.js?v=81bed469";
 import {loginPage,bindLogin} from "./pages/login.js?v=f1a72c9b";
 
-const PRIVATE_RUNTIME="./private-app.js?v=f1a72c9b";
+const PRIVATE_RUNTIME="./private-app.js?v=e42b7c10";
 const INVITE_PAGE="./pages/terima-undangan.js?v=f1a72c9b";
 let privateRuntime=null;
 let inviteModule=null;
@@ -68,12 +68,20 @@ async function render(){
  mod.renderPrivate();
 }
 
-window.addEventListener("hashchange",()=>{render();});
-window.addEventListener("app:render",()=>{render();});
+function guardedRender(){
+ render().catch(error=>{
+  console.error("Render gagal",error);
+  const app=document.querySelector("#app");
+  if(app)app.innerHTML='<div class="auth-shell"><div class="auth-card"><div class="card"><h2>Halaman gagal dimuat</h2><p class="muted">Muat ulang halaman untuk mengambil versi aplikasi terbaru.</p><button class="btn primary full" type="button" onclick="location.reload()">Muat ulang</button></div></div></div>';
+ });
+}
+
+window.addEventListener("hashchange",guardedRender);
+window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=f1a72c9b"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=e42b7c10"));
 }
 
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"login";
-render();
+guardedRender();

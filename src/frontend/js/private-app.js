@@ -547,7 +547,6 @@ function renderInstall(){
  document.querySelector("#installBtn")?.addEventListener("click",async()=>{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;slot.innerHTML=""});
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
-window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
 // Sesi lama tanpa pondok aktif (mis. member yang pondoknya diturunkan dari halaqah):
 // ambil ulang profil sekali supaya activePondokId terisi untuk sinkronisasi progress.

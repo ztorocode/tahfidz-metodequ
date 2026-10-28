@@ -1,10 +1,10 @@
-const CACHE='metodequ-f1a72c9b';
+const CACHE='metodequ-e42b7c10';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
  './assets/css/components.css?v=b9f2d4e1','./assets/css/responsive.css?v=f28a6c10',
  './assets/images/icon.svg?v=81bed469',
- './js/app.js?v=f1a72c9b','./js/store.js?v=81bed469',
+ './js/app.js?v=e42b7c10','./js/store.js?v=81bed469',
  './js/pages/login.js?v=f1a72c9b',
  './js/pages/terima-undangan.js?v=f1a72c9b',
  './js/utils/helpers.js?v=81bed469'

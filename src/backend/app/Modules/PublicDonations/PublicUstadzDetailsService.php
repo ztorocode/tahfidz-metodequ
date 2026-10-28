@@ -152,7 +152,7 @@ final class PublicUstadzDetailsService
         header('Content-Type: image/jpeg');
         header('X-Content-Type-Options: nosniff');
         header('Content-Disposition: inline');
-        header('Cache-Control: public, max-age=3600');
+        header('Cache-Control: no-store');
         header('Content-Length: ' . filesize($file));
         readfile($file);
         exit;

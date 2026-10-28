@@ -15,7 +15,7 @@ const SHELL=[
  './js/utils/activity-log.js?v=d91f3c28',
   './js/pages/terima-undangan.js?v=c6e18a42','./js/pages/login.js?v=c6e18a42','./js/pages/member-progress.js?v=d91f3c28','./js/pages/member-dashboard.js?v=c6e18a42','./js/pages/program.js?v=81bed469',
   './js/pages/activity.js?v=81bed469','./js/pages/submission.js?v=c6e18a42','./js/pages/murajaah.js?v=81bed469',
-  './js/pages/notifications.js?v=81bed469','./js/pages/musyrif-dashboard.js?v=c6e18a42',
+  './js/pages/notifications.js?v=c6e18a42','./js/pages/musyrif-dashboard.js?v=c6e18a42',
   './js/pages/review.js?v=81bed469','./js/pages/admin-dashboard.js?v=c6e18a42','./js/pages/halaqah.js?v=c6e18a42','./js/pages/santri-progress.js?v=c6e18a42','./js/pages/tabel-progress.js?v=c6e18a42',
   './js/pages/rabth-ayat.js?v=81bed469',
  './js/pages/whatsapp.js?v=c6e18a42','./js/pages/super-admin.js?v=c6e18a42'

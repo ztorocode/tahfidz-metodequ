@@ -2,7 +2,7 @@ import {getState,setState} from "./store.js?v=81bed469";
 import {loginPage,bindLogin} from "./pages/login.js?v=b8c14e72";
 import {landingPage,bindLanding} from "./pages/landing.js?v=b8c14e72";
 
-const PRIVATE_RUNTIME="./private-app.js?v=e42b7c10";
+const PRIVATE_RUNTIME="./private-app.js?v=b8c14e72";
 const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
 let privateRuntime=null;
 let inviteModule=null;

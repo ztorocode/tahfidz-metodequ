@@ -12,7 +12,7 @@ function isPlatformMusyrif(){
 
 function accountName(){
  const s=getState();
- return s.authUser?.name||s.profileOverrides?.musyrif?.name||"Musyrif";
+ return s.authUser?.name||s.profileOverrides?.musyrif?.name||"Ustadz";
 }
 
 function activityTime(value){
@@ -34,7 +34,7 @@ function pondokName(){
 
 function pondokSkeleton(){
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
-  <div><p class="eyebrow">Musyrif · ${esc(pondokName())}</p><h1>${esc(accountName())}</h1><p class="muted">Ringkasan halaqah yang Anda ampu di pondok ini.</p></div>
+  <div><p class="eyebrow">Ustadz · ${esc(pondokName())}</p><h1>${esc(accountName())}</h1><p class="muted">Ringkasan halaqah yang Anda ampu di pondok ini.</p></div>
   <a class="btn primary" href="#review">Review setoran</a>
  </div>
  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px" id="pondokDashKpis">
@@ -51,7 +51,7 @@ function pondokSkeleton(){
 
 function platformSkeleton(){
  return `<div style="margin-bottom:18px">
-  <p class="eyebrow">Musyrif Platform</p><h1>${esc(accountName())}</h1><p class="muted">Ringkasan real halaqah dan santri yang Anda ampu.</p>
+  <p class="eyebrow">Ustadz Platform</p><h1>${esc(accountName())}</h1><p class="muted">Ringkasan real halaqah dan santri yang Anda ampu.</p>
  </div>
  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px" id="platformDashKpis">
   <div class="kpi"><b>…</b><span class="muted">Halaqah aktif</span></div>

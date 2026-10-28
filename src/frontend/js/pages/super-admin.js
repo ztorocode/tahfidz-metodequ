@@ -70,9 +70,9 @@ const users=[
  {name:"Ahmad Fauzi",email:"member@metodequ.id",role:"Member",type:"Personal",scope:"Personal",status:"Aktif"},
  {name:"Siti Aisyah",email:"siti@example.com",role:"Santri",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
  {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Ustadz",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Ustadz",type:"Platform",scope:"MetodeQu",status:"Aktif"},
+ {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Ustadz",type:"Platform",scope:"Mutqeen",status:"Aktif"},
  {name:"Admin Pondok",email:"admin@metodequ.id",role:"Admin Pondok",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Super Admin",email:"superadmin@metodequ.id",role:"Super Admin",type:"Platform",scope:"MetodeQu",status:"Aktif"}
+ {name:"Super Admin",email:"superadmin@metodequ.id",role:"Super Admin",type:"Platform",scope:"Mutqeen",status:"Aktif"}
 ];
 
 export function superAdminDashboard(){

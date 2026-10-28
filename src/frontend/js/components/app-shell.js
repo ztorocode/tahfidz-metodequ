@@ -4,14 +4,14 @@ import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
 const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"]];
-const adminNav=[["admin","Dashboard"],["kelola-musyrif","Musyrif"],["kelola-santri","Santri"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
-const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Musyrif Platform"],["platform-settings","Pengaturan"]];
+const adminNav=[["admin","Dashboard"],["kelola-musyrif","Ustadz"],["kelola-santri","Santri"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
+const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Ustadz Platform"],["platform-settings","Pengaturan"]];
 const memberMobileNav=memberNav;
 
 const demoAccounts={
  member:{name:"Ahmad Fauzi",role:"Member",email:"member@metodequ.id",phone:"+62 812 3456 7890",initials:"AF"},
- musyrif:{name:"Ust. Rahmat Hidayat",role:"Musyrif Pondok",email:"musyrif@metodequ.id",phone:"+62 813 4567 8901",initials:"RH"},
- musyrif_platform:{name:"Ust. Abdullah",role:"Musyrif Platform",email:"musyrif.platform@metodequ.id",phone:"+62 814 0000 0002",initials:"UA"},
+ musyrif:{name:"Ust. Rahmat Hidayat",role:"Ustadz Pondok",email:"musyrif@metodequ.id",phone:"+62 813 4567 8901",initials:"RH"},
+ musyrif_platform:{name:"Ust. Abdullah",role:"Ustadz Platform",email:"musyrif.platform@metodequ.id",phone:"+62 814 0000 0002",initials:"UA"},
  admin:{name:"Admin Pondok",role:"Admin Pondok",email:"admin@metodequ.id",phone:"+62 811 2345 6789",initials:"AP"},
  super_admin:{name:"Super Admin",role:"Super Admin",email:"superadmin@metodequ.id",phone:"+62 815 0000 0001",initials:"SA"}
 };
@@ -73,7 +73,7 @@ function pondokChoices(){
   ?s.musyrifContexts.pondoks
   :pondokList();
  const active=allowed.find(p=>p.id===(s.activePondokId??allowed[0]?.id))||allowed[0];
- return allowed.map(p=>`<button class="account-choice ${s.context==="pondok"&&active?.id===p.id?"active":""}" data-switch-context="pondok" data-pondok-id="${p.id}" type="button"><span class="avatar">P</span><span><b>${p.name}</b><small class="muted" style="display:block">Musyrif pondok</small></span></button>`).join("");
+ return allowed.map(p=>`<button class="account-choice ${s.context==="pondok"&&active?.id===p.id?"active":""}" data-switch-context="pondok" data-pondok-id="${p.id}" type="button"><span class="avatar">P</span><span><b>${p.name}</b><small class="muted" style="display:block">Ustadz pondok</small></span></button>`).join("");
 }
 
 function accountMenu(){
@@ -91,7 +91,7 @@ function accountMenu(){
    ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Ganti Konteks</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
-    ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform MetodeQu</b><small class="muted" style="display:block">Musyrif platform</small></span></button>`:""}
+    ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform MetodeQu</b><small class="muted" style="display:block">Ustadz platform</small></span></button>`:""}
     ${getState().persona!=="musyrif"&&canPersonal()?`<button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>`:""}
     ${pondokChoices()}
    </div>`}

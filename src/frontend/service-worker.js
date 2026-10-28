@@ -1,4 +1,4 @@
-const CACHE='metodequ-b8c14e72';
+const CACHE='mutqeen-b8c14e72';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',

@@ -48,7 +48,7 @@ function waBadge(){
 function distCard(){
  const d=Array.isArray(summary?.distribution)?summary.distribution:[];
  const total=d.reduce((a,x)=>a+(Number(x.count)||0),0);
- if(!total)return '<div class="card"><h3>Distribusi Progress</h3><p class="muted" style="margin:8px 0 0">Belum ada setoran yang direview. Progres akan muncul di sini setelah musyrif menilai setoran.</p></div>';
+ if(!total)return '<div class="card"><h3>Distribusi Progress</h3><p class="muted" style="margin:8px 0 0">Belum ada setoran yang direview. Progres akan muncul di sini setelah ustadz menilai setoran.</p></div>';
  return `<div class="card"><h3>Distribusi Progress</h3>
   <div class="mini-bars">${d.map(x=>`<span title="${escapeText(x.label)}: ${x.count}" style="height:${Math.max(6,Number(x.percent)||0)}%"></span>`).join("")}</div>
   <div class="row between" style="flex-wrap:wrap;gap:6px">${d.map(x=>`<span class="badge ${x.label==="Mutqin"?"success":x.label==="Perlu Ulang"?"danger":"warning"}">${escapeText(x.label)} ${x.count}</span>`).join("")}</div></div>`;
@@ -74,7 +74,7 @@ export function adminDashboard(){
  const show=n=>n===null?"…":String(n);
  const halaqah=ready?(summary.halaqah>0?summary.halaqah:localHalaqahCount()):null;
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Dashboard Pondok</p><h1>${escapeText(pondokName())}</h1><p class="muted">Ringkasan operasional tahfidz dan kualitas hafalan.</p></div><div class="row" style="gap:8px">${waBadge()}<button class="btn" type="button" data-dash-refresh style="padding:6px 10px">Muat ulang</button></div></div>
-<div class="kpi-row kpi-two" style="margin-bottom:16px"><div class="kpi"><b>${show(halaqah)}</b><span class="muted">Halaqah</span></div><div class="kpi"><b>${show(val(summary?.santri))}</b><span class="muted">Santri</span></div><div class="kpi"><b>${show(val(summary?.musyrif))}</b><span class="muted">Musyrif</span></div><div class="kpi"><b>${show(val(summary?.mutqin_total))}</b><span class="muted">Hafalan Mutqin</span></div></div>
+<div class="kpi-row kpi-two" style="margin-bottom:16px"><div class="kpi"><b>${show(halaqah)}</b><span class="muted">Halaqah</span></div><div class="kpi"><b>${show(val(summary?.santri))}</b><span class="muted">Santri</span></div><div class="kpi"><b>${show(val(summary?.musyrif))}</b><span class="muted">Ustadz</span></div><div class="kpi"><b>${show(val(summary?.mutqin_total))}</b><span class="muted">Hafalan Mutqin</span></div></div>
 <div class="grid-2">${distCard()}
 ${pendingCard()}</div>
 <div class="card" style="margin-top:16px"><div class="row between"><h3 style="margin:0">Aktivitas Terbaru</h3><small class="muted">Data per ${summary&&sumPid===String(pid??"")?fmtTime(summary.refreshed_at):"—"} WIB</small></div>

@@ -145,7 +145,7 @@ final class PublicUstadzDetailsService
         if (!is_string($fileName) || !preg_match('/^[a-f0-9]{32}\.jpg$/', $fileName)) {
             Response::json(['success' => false, 'message' => 'Foto tidak ditemukan.'], 404);
         }
-        $file = dirname(__DIR__, 4) . '/storage/ustadz-activities/' . $fileName;
+        $file = dirname(__DIR__, 3) . '/storage/ustadz-activities/' . $fileName;
         if (!is_file($file)) {
             Response::json(['success' => false, 'message' => 'Foto belum tersedia.'], 404);
         }

@@ -14,7 +14,7 @@ function ustadzCard(item){
  const scope=item.type==="pondok"?(item.pondok_name||"Pondok"):"Ustadz Platform";
  const initial=escapeHtml((item.name||"U").trim().charAt(0).toUpperCase());
  const number=value=>countFormat.format(Math.max(0,Number(value)||0));
- const amount=Number(item.donasi_bulan_ini);
+ const amount=item.donasi_bulan_ini==null?null:Number(item.donasi_bulan_ini);
  return '<article class="donasi-ustadz-card">'
   +'<div class="donasi-ustadz-head"><span class="donasi-avatar" aria-hidden="true">'+initial+'</span><div><h2>'+name+'</h2><p>'+escapeHtml(scope)+'</p></div></div>'
   +'<div class="donasi-ustadz-metrics">'
@@ -22,7 +22,7 @@ function ustadzCard(item){
   +'<div><strong>'+number(item.setoran_dinilai)+'</strong><span>Setoran dinilai</span></div>'
   +'<div><strong>'+number(item.hafalan_mutqin)+'</strong><span>Penilaian mutqin</span></div>'
   +'</div><div class="donasi-ustadz-total"><span>Donasi terverifikasi bulan ini</span><strong>'
-  +(Number.isFinite(amount)&&amount>=0?moneyFormat.format(amount):"Belum tersedia")
+  +(amount!==null&&Number.isFinite(amount)&&amount>=0?moneyFormat.format(amount):"Belum tersedia")
   +'</strong></div></article>';
 }
 export function donationListPage(){

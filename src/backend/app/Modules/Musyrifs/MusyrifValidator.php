@@ -34,7 +34,7 @@ final class MusyrifValidator
         }
 
         if ($errors !== []) {
-            throw new RegistrationException('Data musyrif belum valid.', 422, $errors);
+            throw new RegistrationException('Data ustadz belum valid.', 422, $errors);
         }
 
         $username = substr($email, 0, (int) strpos($email, '@'));

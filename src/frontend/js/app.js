@@ -1,9 +1,9 @@
 import {getState,setState} from "./store.js?v=81bed469";
-import {loginPage,bindLogin} from "./pages/login.js?v=a93d6f24";
-import {landingPage,bindLanding} from "./pages/landing.js?v=a93d6f24";
+import {loginPage,bindLogin} from "./pages/login.js?v=b8c14e72";
+import {landingPage,bindLanding} from "./pages/landing.js?v=b8c14e72";
 
 const PRIVATE_RUNTIME="./private-app.js?v=e42b7c10";
-const INVITE_PAGE="./pages/terima-undangan.js?v=f1a72c9b";
+const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
 let privateRuntime=null;
 let inviteModule=null;
 let renderGeneration=0;
@@ -53,7 +53,7 @@ async function render(){
  }
 
  if(clearInvalidSession()){
-  if(rawRoute()!=="login"){location.hash="login";return;}
+  if(!["login","home"].includes(rawRoute())){location.hash="home";return;}
  }
 
  if(!getState().loggedIn){
@@ -89,7 +89,7 @@ window.addEventListener("hashchange",guardedRender);
 window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=a93d6f24"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b8c14e72"));
 }
 
 if(!location.hash)location.hash=getState().loggedIn?"dashboard":"home";

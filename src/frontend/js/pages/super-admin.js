@@ -20,7 +20,7 @@ export async function loadPlatformMusyrif(force=false){
  try{
   const r=await fetch("/api/platform/musyrifs"+(force?"?t="+Date.now():''),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}});
   const b=await r.json().catch(()=>({}));
-  if(!r.ok||!b.success)throw new Error(b?.message||"Gagal memuat musyrif platform.");
+  if(!r.ok||!b.success)throw new Error(b?.message||"Gagal memuat ustadz platform.");
   platformMusyrif=b.data||{items:[],total:0,platform_active:0,pondok_active:0,dampingan_total:0};
   platformMusyrifState="done";
  }catch(err){
@@ -69,28 +69,28 @@ async function copyText(link){
 const users=[
  {name:"Ahmad Fauzi",email:"member@metodequ.id",role:"Member",type:"Personal",scope:"Personal",status:"Aktif"},
  {name:"Siti Aisyah",email:"siti@example.com",role:"Santri",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Musyrif",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Musyrif",type:"Platform",scope:"MetodeQu",status:"Aktif"},
+ {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Ustadz",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
+ {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Ustadz",type:"Platform",scope:"MetodeQu",status:"Aktif"},
  {name:"Admin Pondok",email:"admin@metodequ.id",role:"Admin Pondok",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
  {name:"Super Admin",email:"superadmin@metodequ.id",role:"Super Admin",type:"Platform",scope:"MetodeQu",status:"Aktif"}
 ];
 
 export function superAdminDashboard(){
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Dashboard MetodeQu</h1><p class="muted">Ringkasan platform lintas akun dan pondok.</p></div><span class="badge success">Platform Aktif</span></div>
- <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.284</b><span class="muted">Total user</span></div><div class="kpi"><b>24</b><span class="muted">Pondok</span></div><div class="kpi"><b>12</b><span class="muted">Musyrif platform</span></div><div class="kpi"><b>740</b><span class="muted">User personal</span></div></div>
- <div class="grid-2"><div class="card"><div class="row between"><h3>Manajemen User</h3><a href="#users" class="muted">Lihat semua</a></div><div class="list"><div class="list-item"><span class="dot"></span><div class="grow"><b>Member / Santri</b><small class="muted" style="display:block">Personal dan anggota pondok</small></div><b>1.126</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Musyrif</b><small class="muted" style="display:block">Platform dan pondok</small></div><b>109</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Admin Pondok</b><small class="muted" style="display:block">Pengelola tenant pondok</small></div><b>48</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Super Admin</b><small class="muted" style="display:block">Pengelola aplikasi MetodeQu</small></div><b>1</b></div></div></div>
- <div class="card"><h3>Aktivitas Platform</h3><div class="list"><div class="list-item"><span class="dot"></span><div class="grow"><b>Pondok Al-Ikhlas bergabung</b><small class="muted" style="display:block">Tenant baru aktif</small></div><small>Hari ini</small></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Ust. Abdullah ditugaskan</b><small class="muted" style="display:block">Musyrif Platform · 8 user personal</small></div><small>Hari ini</small></div></div></div></div>`;
+ <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.284</b><span class="muted">Total user</span></div><div class="kpi"><b>24</b><span class="muted">Pondok</span></div><div class="kpi"><b>12</b><span class="muted">Ustadz platform</span></div><div class="kpi"><b>740</b><span class="muted">User personal</span></div></div>
+ <div class="grid-2"><div class="card"><div class="row between"><h3>Manajemen User</h3><a href="#users" class="muted">Lihat semua</a></div><div class="list"><div class="list-item"><span class="dot"></span><div class="grow"><b>Member / Santri</b><small class="muted" style="display:block">Personal dan anggota pondok</small></div><b>1.126</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Ustadz</b><small class="muted" style="display:block">Platform dan pondok</small></div><b>109</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Admin Pondok</b><small class="muted" style="display:block">Pengelola tenant pondok</small></div><b>48</b></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Super Admin</b><small class="muted" style="display:block">Pengelola aplikasi MetodeQu</small></div><b>1</b></div></div></div>
+ <div class="card"><h3>Aktivitas Platform</h3><div class="list"><div class="list-item"><span class="dot"></span><div class="grow"><b>Pondok Al-Ikhlas bergabung</b><small class="muted" style="display:block">Tenant baru aktif</small></div><small>Hari ini</small></div><div class="list-item"><span class="dot"></span><div class="grow"><b>Ust. Abdullah ditugaskan</b><small class="muted" style="display:block">Ustadz Platform · 8 user personal</small></div><small>Hari ini</small></div></div></div></div>`;
 }
 
 export function userManagementPage(){
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Manajemen User</h1><p class="muted">Daftar akun lintas Personal dan Pondok. Data masih prototype/demo.</p></div><span class="badge success">${users.length} sample user</span></div>
- <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.126</b><span class="muted">Member / Santri</span></div><div class="kpi"><b>109</b><span class="muted">Musyrif</span></div><div class="kpi"><b>48</b><span class="muted">Admin Pondok</span></div><div class="kpi"><b>1</b><span class="muted">Super Admin</span></div></div>
+ <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.126</b><span class="muted">Member / Santri</span></div><div class="kpi"><b>109</b><span class="muted">Ustadz</span></div><div class="kpi"><b>48</b><span class="muted">Admin Pondok</span></div><div class="kpi"><b>1</b><span class="muted">Super Admin</span></div></div>
  <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${users.map(user=>`<tr><td><b>${user.name}</b></td><td>${user.email}</td><td>${user.role}</td><td>${user.type}</td><td>${user.scope}</td><td><span class="badge success">${user.status}</span></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
 export function platformPondoksPage(){
  const pondoks=[["Pondok Tahfidz Al-Furqan","Admin Pondok",120,8],["Pondok Tahfidz Al-Ikhlas","Ahmad Hasyim",86,6],["Rumah Qur'an An-Nur","Muhammad Fikri",54,4]];
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Pondok</h1><p class="muted">Daftar tenant pondok yang menggunakan MetodeQu.</p></div><span class="badge success">24 pondok aktif</span></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Pondok</th><th>Admin Pondok</th><th>Santri</th><th>Musyrif</th><th>Status</th></tr></thead><tbody>${pondoks.map(item=>`<tr><td><b>${item[0]}</b></td><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td><td><span class="badge success">Aktif</span></td></tr>`).join("")}</tbody></table></div></div>`;
+ return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Pondok</h1><p class="muted">Daftar tenant pondok yang menggunakan MetodeQu.</p></div><span class="badge success">24 pondok aktif</span></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Pondok</th><th>Admin Pondok</th><th>Santri</th><th>Ustadz</th><th>Status</th></tr></thead><tbody>${pondoks.map(item=>`<tr><td><b>${item[0]}</b></td><td>${item[1]}</td><td>${item[2]}</td><td>${item[3]}</td><td><span class="badge success">Aktif</span></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
 function inviteListBody(){
@@ -121,32 +121,32 @@ export function platformMusyrifPage(){
  const items=Array.isArray(d?.items)?d.items:[];
  const badge=!d
   ?"Memuat…"
-  :(d.error?"Gagal memuat":`${d.total??"0"} musyrif (${d.platform_active??0} platform · ${d.pondok_active??0} pondok)`);
+  :(d.error?"Gagal memuat":`${d.total??"0"} ustadz (${d.platform_active??0} platform · ${d.pondok_active??0} pondok)`);
  let body;
  if(!d){
-  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Memuat musyrif…</span></td></tr>';
+  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Memuat ustadz…</span></td></tr>';
  }else if(d.error){
   body=`<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">${esc(d.error)} Muat ulang halaman untuk mencoba lagi.</span></td></tr>`;
  }else if(!items.length){
-  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Belum ada musyrif terdaftar.</span></td></tr>';
+  body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Belum ada ustadz terdaftar.</span></td></tr>';
  }else{
-  body=items.map(item=>`<tr><td data-label="Musyrif"><b>${esc(item.name)}</b></td><td data-label="Email">${esc(item.email)}</td><td data-label="User dampingan">${item.dampingan}</td><td data-label="Tipe">${item.type==="platform"?"Platform":"Pondok"}</td><td data-label="Scope">${esc(item.scope)}</td><td data-label="Status">${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
+  body=items.map(item=>`<tr><td data-label="Ustadz"><b>${esc(item.name)}</b></td><td data-label="Email">${esc(item.email)}</td><td data-label="User dampingan">${item.dampingan}</td><td data-label="Tipe">${item.type==="platform"?"Platform":"Pondok"}</td><td data-label="Scope">${esc(item.scope)}</td><td data-label="Status">${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
  }
- return `<div class="platform-musyrif-page"><div class="row between platform-musyrif-head" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Musyrif Platform</h1><p class="muted">Musyrif yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge platform-musyrif-summary ${d&&!d.error?"success":""}">${badge}</span></div>
- <div class="grid-2 platform-musyrif-grid"><div class="card platform-musyrif-invite-card"><h3>Undang Musyrif</h3><div class="stack">
- <p class="muted" style="margin:0">Undang musyrif platform lewat email — mereka buat password sendiri.</p>
+ return `<div class="platform-musyrif-page"><div class="row between platform-musyrif-head" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Ustadz Platform</h1><p class="muted">Ustadz yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge platform-musyrif-summary ${d&&!d.error?"success":""}">${badge}</span></div>
+ <div class="grid-2 platform-musyrif-grid"><div class="card platform-musyrif-invite-card"><h3>Undang Ustadz</h3><div class="stack">
+ <p class="muted" style="margin:0">Undang ustadz platform lewat email — mereka buat password sendiri.</p>
  <button class="btn primary full" id="platInviteBtn" type="button">Kirim Undangan</button>
  <button class="btn full" id="platCopyLinkBtn" type="button">Salin Link Undangan</button>
- <button class="btn full" id="platAddBtn" type="button">Form +Musyrif</button>
+ <button class="btn full" id="platAddBtn" type="button">Form +Ustadz</button>
  <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="platInviteList">${inviteListBody()}</div>
  </div></div>
- <div class="card platform-musyrif-list-card"><h3>Daftar Musyrif</h3><div class="table-wrap platform-musyrif-table-wrap"><table class="table platform-musyrif-table"><thead><tr><th>Musyrif</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
+ <div class="card platform-musyrif-list-card"><h3>Daftar Ustadz</h3><div class="table-wrap platform-musyrif-table-wrap"><table class="table platform-musyrif-table"><thead><tr><th>Ustadz</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
  <div class="modal-backdrop hidden" id="platInviteModal">
   <div class="modal-card">
    <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
    <div class="stack">
     <div><label class="label">Email (bisa banyak, satu per baris)</label><textarea class="input" id="platEmail" rows="4" autocomplete="off" placeholder="nama1@email.com&#10;nama2@email.com"></textarea></div>
-    <small class="muted" id="platMsg">Maksimal 20 email per kirim. Nama &amp; WA diisi musyrif saat menerima undangan. Berlaku 7 hari.</small>
+    <small class="muted" id="platMsg">Maksimal 20 email per kirim. Nama &amp; WA diisi ustadz saat menerima undangan. Berlaku 7 hari.</small>
     <div class="btn-joined">
      <button class="btn" id="platInviteClose" type="button">Tutup</button>
      <button class="btn primary" id="platInviteSend" type="button">Kirim</button>
@@ -156,7 +156,7 @@ export function platformMusyrifPage(){
  </div>
  <div class="modal-backdrop hidden" id="platAddModal">
   <div class="modal-card">
-   <div><p class="eyebrow">Musyrif</p><h2>Tambah Musyrif Platform</h2></div>
+   <div><p class="eyebrow">Ustadz</p><h2>Tambah Ustadz Platform</h2></div>
    <div class="stack">
     <div><label class="label">Nama lengkap</label><input class="input" id="platMusyrifName" autocomplete="off" placeholder="Nama lengkap"></div>
     <div><label class="label">Email</label><input class="input" id="platMusyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
@@ -165,7 +165,7 @@ export function platformMusyrifPage(){
     <small class="muted" id="platAddMsg"></small>
     <div class="btn-joined">
      <button class="btn" id="platAddClose" type="button">Tutup</button>
-     <button class="btn primary" id="platAddSave" type="button">Simpan Musyrif</button>
+     <button class="btn primary" id="platAddSave" type="button">Simpan Ustadz</button>
     </div>
    </div>
   </div>
@@ -180,7 +180,7 @@ export function bindPlatformMusyrif(){
  document.querySelector("#platInviteBtn")?.addEventListener("click",()=>{
   const m=inviteModal();if(!m)return;
   const msg=document.querySelector("#platMsg");
-  if(msg){msg.textContent="Maksimal 20 email per kirim. Nama & WA diisi musyrif saat menerima undangan. Berlaku 7 hari.";msg.style.color="";}
+  if(msg){msg.textContent="Maksimal 20 email per kirim. Nama & WA diisi ustadz saat menerima undangan. Berlaku 7 hari.";msg.style.color="";}
   m.classList.remove("hidden");
  });
  document.querySelector("#platInviteClose")?.addEventListener("click",()=>inviteModal()?.classList.add("hidden"));
@@ -243,7 +243,7 @@ export function bindPlatformMusyrif(){
   btn.disabled=true;btn.textContent="Menyimpan...";
   try{
    const b=await api("/api/platform/musyrifs",{method:"POST",body:JSON.stringify(payload)});
-   toast("Musyrif "+(b.data?.name||"")+" ditambahkan.");
+   toast("Ustadz "+(b.data?.name||"")+" ditambahkan.");
    ["#platMusyrifName","#platMusyrifEmail","#platMusyrifPhone","#platMusyrifPassword"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
    addModal()?.classList.add("hidden");
    platformMusyrifState="idle";
@@ -251,7 +251,7 @@ export function bindPlatformMusyrif(){
   }catch(err){
    if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
   }
-  btn.disabled=false;btn.textContent="Simpan Musyrif";
+  btn.disabled=false;btn.textContent="Simpan Ustadz";
  });
  document.querySelectorAll("[data-plat-regen]").forEach(b=>b.addEventListener("click",async ()=>{
   const btn=b,label=btn.textContent;
@@ -281,5 +281,5 @@ export function bindPlatformMusyrif(){
 }
 
 export function platformSettingsPage(){
- return `<div style="margin-bottom:18px"><p class="eyebrow">Admin Aplikasi</p><h1>Pengaturan Platform</h1><p class="muted">Konfigurasi global MetodeQu. Pada prototype ini pengaturan masih read-only.</p></div><div class="grid-2"><div class="card"><h3>Role & akses</h3><div class="list"><div class="list-item"><div class="grow"><b>Super Admin</b><small class="muted" style="display:block">Akses level platform</small></div></div><div class="list-item"><div class="grow"><b>Admin Pondok</b><small class="muted" style="display:block">Akses tenant pondok</small></div></div><div class="list-item"><div class="grow"><b>Musyrif</b><small class="muted" style="display:block">Tipe Platform atau Pondok</small></div></div></div></div><div class="card"><h3>Scope data</h3><p class="muted">Data Personal, Pondok, dan Platform diperlakukan sebagai scope berbeda. Backend authorization tetap diperlukan sebelum production.</p></div></div>`;
+ return `<div style="margin-bottom:18px"><p class="eyebrow">Admin Aplikasi</p><h1>Pengaturan Platform</h1><p class="muted">Konfigurasi global MetodeQu. Pada prototype ini pengaturan masih read-only.</p></div><div class="grid-2"><div class="card"><h3>Role & akses</h3><div class="list"><div class="list-item"><div class="grow"><b>Super Admin</b><small class="muted" style="display:block">Akses level platform</small></div></div><div class="list-item"><div class="grow"><b>Admin Pondok</b><small class="muted" style="display:block">Akses tenant pondok</small></div></div><div class="list-item"><div class="grow"><b>Ustadz</b><small class="muted" style="display:block">Tipe Platform atau Pondok</small></div></div></div></div><div class="card"><h3>Scope data</h3><p class="muted">Data Personal, Pondok, dan Platform diperlakukan sebagai scope berbeda. Backend authorization tetap diperlukan sebelum production.</p></div></div>`;
 }

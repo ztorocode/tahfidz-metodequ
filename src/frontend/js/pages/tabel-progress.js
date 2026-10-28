@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {member,progress} from "../data/dummy-data.js?v=81bed469";
+import {member,progress} from "../data/dummy-data.js?v=c6e18a42";
 import {getProgressContext} from "../utils/progress-context.js?v=81bed469";
 import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=81bed469";
 import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=81bed469";
@@ -113,7 +113,7 @@ function needsMusyrifPendingOverlayReport(){
 
 function musyrifPendingOverlayReport(){
  if(!needsMusyrifPendingOverlayReport())return "";
- return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc musyrif pembimbing.</div></div>';
+ return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc ustadz pembimbing.</div></div>';
 }
 
 function reportJuzRange(data){
@@ -270,7 +270,7 @@ export function progressTablePage(){
   <div class="progress-sheet-scroll">
    <div class="progress-meta">${metaItems}</div>
 
-   <div class="progress-student-row"><b>Nama</b><span>${escapeHtml(student.name)}</span><b>Musyrif</b><span>${escapeHtml(selected.musyrifName)}</span></div>
+   <div class="progress-student-row"><b>Nama</b><span>${escapeHtml(student.name)}</span><b>Ustadz</b><span>${escapeHtml(selected.musyrifName)}</span></div>
 
    <table class="progress-sheet" aria-label="Tabel progress hafalan ${escapeHtml(student.name)}">
     <thead>

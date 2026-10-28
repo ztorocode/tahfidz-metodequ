@@ -4,7 +4,7 @@ import {getState} from "../store.js?v=81bed469";
 const TABS=[["device","Device"],["template","Template Pesan"],["history","Riwayat Pengiriman"]];
 const HEADLINE={
  device:["Perangkat WhatsApp","Satu device per pondok — nama device dibuat otomatis dari nama pondok."],
- template:["Template Pesan","Isi pesan otomatis yang dikirim ke santri & musyrif."],
+ template:["Template Pesan","Isi pesan otomatis yang dikirim ke santri & ustadz."],
  history:["Riwayat Pengiriman","Log pengiriman pesan WhatsApp dari pondok Anda."]
 };
 const DEFAULT_TPLS=[
@@ -91,7 +91,7 @@ function tplModal(){
     <div><label class="label">Variabel — klik untuk sisipkan</label>
      <div class="row" style="flex-wrap:wrap;gap:6px">${VARS.map(v=>`<button class="btn" type="button" data-tpl-var="${v}" style="padding:6px 10px;font-size:13px">${v}</button>`).join("")}</div>
     </div>
-    <small class="muted">Variabel diganti otomatis saat pesan dikirim: nama penerima, halaqah, musyrif, dan nama pondok.</small>
+    <small class="muted">Variabel diganti otomatis saat pesan dikirim: nama penerima, halaqah, ustadz, dan nama pondok.</small>
     <div class="btn-joined">
      <button class="btn" id="tplCloseBtn" type="button">Tutup</button>
      <button class="btn primary" id="tplSaveBtn" type="button">Simpan</button>

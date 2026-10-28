@@ -2,8 +2,8 @@ import {setState} from "../store.js?v=81bed469";
 
 const demoAccounts=[
  {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
- {id:"musyrif-pondok",role:"Musyrif Pondok",persona:"musyrif",context:"pondok",musyrifType:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
- {id:"musyrif-platform",role:"Musyrif Platform",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"+62 814 0000 0002",email:"musyrif.platform@metodequ.id",password:"musyrif123"},
+ {id:"musyrif-pondok",role:"Ustadz Pondok",persona:"musyrif",context:"pondok",musyrifType:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
+ {id:"musyrif-platform",role:"Ustadz Platform",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"+62 814 0000 0002",email:"musyrif.platform@metodequ.id",password:"musyrif123"},
  {id:"admin-pondok",role:"Admin Pondok Jamil",persona:"admin",context:"pondok",phone:"+62 819 0011 2255",email:"admin@pondokjamil.com",password:"PondokJamil123!"},
  {id:"super-admin",role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
@@ -135,7 +135,7 @@ export function bindLogin(){
   }
   const displayName=user.name||email;
   const initials=displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
-  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Musyrif":"Member";
+  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Ustadz":"Member";
   const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
   const profileOverrides={member:profile,[persona]:profile};
   const musyrifType=user.musyrif_type??(roles.includes("musyrif")

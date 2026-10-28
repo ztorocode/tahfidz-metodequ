@@ -1,18 +1,18 @@
-import {view,routeName} from "./router.js?v=d4b8f631";
+import {view,routeName} from "./router.js?v=c6e18a42";
 import {getState,setState} from "./store.js?v=81bed469";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=e7b314d2";
-import {bindLogin} from "./pages/login.js?v=b9f2d4e1";
-import {bindInvite} from "./pages/terima-undangan.js?v=d4b8f631";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=c6e18a42";
+import {bindLogin} from "./pages/login.js?v=c6e18a42";
+import {bindInvite} from "./pages/terima-undangan.js?v=c6e18a42";
 import {toast} from "./utils/helpers.js?v=81bed469";
 import {initProgressSync} from "./utils/progress-sync.js?v=81bed469";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
-import {bindWaPage} from "./pages/whatsapp.js?v=81bed469";
-import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=81bed469";
+import {bindWaPage} from "./pages/whatsapp.js?v=c6e18a42";
+import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
 import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
-import {bindSubmission} from "./pages/submission.js?v=81bed469";
-import {bindPlatformMusyrif} from "./pages/super-admin.js?v=81bed469";
+import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
+import {bindPlatformMusyrif} from "./pages/super-admin.js?v=c6e18a42";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=d4b8f631";
+import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=c6e18a42";
 let deferredPrompt=null;
 function render(){
  const s=getState();document.documentElement.dataset.theme=s.theme;
@@ -46,7 +46,7 @@ async function loadMusyrifList(){
   if(!pid){box.innerHTML='<small class="muted">Pondok tidak diketahui.</small>';return;}
   try{
    const b=await api("/api/pondoks/musyrifs?pondok_id="+pid);
-   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada musyrif.</small>';
+   box.innerHTML=(b.data|| []).length?b.data.map(m=>`<div class="list-item"><span class="avatar">${(m.name||"?").slice(0,1)}</span><div class="grow"><b>${m.name}</b><small class="muted" style="display:block">${m.email} · ${m.phone}</small></div></div>`).join(""):'<small class="muted">Belum ada ustadz.</small>';
   }catch(e){box.innerHTML=`<small class="muted">${e?.message||"Gagal memuat."}</small>`;}
   try{
    const box2=document.querySelector("#inviteList");
@@ -342,7 +342,7 @@ function bindPageActions(){
      ta.value=link;document.body.appendChild(ta);ta.select();
      document.execCommand("copy");ta.remove();
     }
-    if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+role+".";msg.style.color="var(--brand)";}
+    if(msg){msg.textContent="Link tersalin. Bagikan ke calon "+(role==="musyrif"?"ustadz":role)+".";msg.style.color="var(--brand)";}
     toast("Link undangan tersalin ke clipboard.");
    }catch(err){
     if(msg){msg.textContent=err?.message||"Gagal menyalin link.";msg.style.color="var(--danger)";}
@@ -418,14 +418,14 @@ function bindPageActions(){
    btn.disabled=true;btn.textContent="Menyimpan...";
    try{
     const b=await api("/api/pondoks/musyrifs",{method:"POST",body:JSON.stringify(payload)});
-    if(msg){msg.textContent="Musyrif "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
+    if(msg){msg.textContent="Ustadz "+(b.data?.name||"")+" ditambahkan.";msg.style.color="var(--brand)";}
     ["#newMusyrifName","#newMusyrifEmail","#newMusyrifPhone","#newMusyrifPassword"].forEach(s=>{const el=document.querySelector(s);if(el)el.value="";});
     loadMusyrifList();
     setTimeout(()=>musyrifModal()?.classList.add("hidden"),800);
    }catch(err){
     if(msg){msg.textContent=err?.message||"Gagal menyimpan.";msg.style.color="var(--danger)";}
    }
-   btn.disabled=false;btn.textContent="Simpan Musyrif";
+   btn.disabled=false;btn.textContent="Simpan Ustadz";
   });
   // ============ Penilaian setoran oleh musyrif (#santri-progress) ============
   const setoranModal=()=>document.querySelector("#setoranModal");
@@ -549,7 +549,7 @@ function renderInstall(){
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});
 window.addEventListener("hashchange",render);window.addEventListener("app:render",render);
 initProgressSync();
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=d4b8f631"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=c6e18a42"));
 // Sesi tanpa token = sesi palsu (mis. sisa "auto masuk" versi lama): kembalikan ke halaman masuk.
 const bootState=getState();
 if(bootState.loggedIn&&!bootState.authToken&&!bootState.demoSession){

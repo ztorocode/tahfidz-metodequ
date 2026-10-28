@@ -67,7 +67,7 @@ export function acceptInvitePage(){
 }
 
 function inviteForm(info,mode){
- const roleLabel=info.role==="musyrif"?"Musyrif":"Santri";
+ const roleLabel=info.role==="musyrif"?"Ustadz":"Santri";
  const generic=!!info.generic;
  const isMember=mode==="member";
  const emailRow=generic&&!isMember
@@ -116,9 +116,9 @@ export function bindInvite(){
    const info=b.data;
    if(info.platform||info.platform_santri){
     const eb=document.querySelector("#inviteEyebrow");
-    if(eb)eb.textContent=info.platform_santri?"Santri Platform":"Musyrif Platform";
+    if(eb)eb.textContent=info.platform_santri?"Santri Platform":"Ustadz Platform";
    }
-   const roleLabel=info.role==="musyrif"?"Musyrif":"Santri";
+   const roleLabel=info.role==="musyrif"?"Ustadz":"Santri";
    let mode=info.registered?"member":"new";
    card.innerHTML=inviteForm(info,mode);
 

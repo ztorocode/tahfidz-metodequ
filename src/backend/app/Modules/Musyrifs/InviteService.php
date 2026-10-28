@@ -40,7 +40,7 @@ final class InviteService
             $errors['pondok_id'] = 'Pondok wajib dipilih.';
         }
         if (!in_array($role, ['musyrif', 'santri'], true)) {
-            $errors['role'] = 'Role undangan harus musyrif atau santri.';
+            $errors['role'] = 'Role undangan harus ustadz atau santri.';
         }
         if ($isTransfer && $role !== 'santri') {
             $errors['halaqah_id'] = 'Pindah halaqah hanya berlaku untuk undangan santri.';
@@ -173,16 +173,16 @@ final class InviteService
         $safePondok = $pondokRow['name'];
         $emailSent = $this->tryEmail(
             $email,
-            'Undangan ' . ($role === 'musyrif' ? 'Musyrif' : 'Santri') . ' ' . $safePondok,
+            'Undangan ' . ($role === 'musyrif' ? 'Ustadz' : 'Santri') . ' ' . $safePondok,
             "<p>Halo {$this->e($name)},</p>"
-            . "<p>Anda diundang menjadi <strong>" . ($role === 'musyrif' ? 'Musyrif' : 'Santri') . '</strong> di <strong>' . $this->e($safePondok) . '</strong> (MetodeQu).</p>'
+            . "<p>Anda diundang menjadi <strong>" . ($role === 'musyrif' ? 'Ustadz' : 'Santri') . '</strong> di <strong>' . $this->e($safePondok) . '</strong> (MetodeQu).</p>'
             . '<p>Klik link berikut untuk menerima undangan dan membuat password (berlaku 7 hari):</p>'
             . "<p><a href=\"{$link}\">Terima Undangan</a></p>"
             . "<p>Link: {$link}</p>"
         );
         $waSent = $phone !== null ? $this->tryWa(
             $phone,
-            "Assalamu'alaikum {$name}, Anda diundang menjadi " . ($role === 'musyrif' ? 'Musyrif' : 'Santri')
+            "Assalamu'alaikum {$name}, Anda diundang menjadi " . ($role === 'musyrif' ? 'Ustadz' : 'Santri')
             . " di {$safePondok} (MetodeQu). Terima di sini (7 hari): {$link}",
             (int) $pondokRow['id']
         ) : false;
@@ -324,7 +324,7 @@ final class InviteService
             throw new RegistrationException('Pondok wajib dipilih.', 422);
         }
         if (!in_array($role, ['musyrif', 'santri'], true)) {
-            throw new RegistrationException('Role undangan harus musyrif atau santri.', 422);
+            throw new RegistrationException('Role undangan harus ustadz atau santri.', 422);
         }
 
         PondokAccess::assertPondokAdmin($this->pdo, $actor, $pondokId);

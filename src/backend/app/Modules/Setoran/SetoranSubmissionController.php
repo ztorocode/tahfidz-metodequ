@@ -156,7 +156,7 @@ final class SetoranSubmissionController
 
             Response::json([
                 'success' => true,
-                'message' => 'Setoran terkirim ke musyrif.',
+                'message' => 'Setoran terkirim ke ustadz.',
                 'data' => [
                     'id' => (int) $this->pdo->lastInsertId(),
                     'audio_path' => $audioPath,

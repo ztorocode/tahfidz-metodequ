@@ -2,16 +2,16 @@ import {getState} from "../store.js?v=81bed469";
 
 export function adminMusyrifPage(){
  const pondokName=getState().pondokProfile?.name||(getState().myPondoks?.[0]?.name||"Pondok");
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Kelola Musyrif</p><h1>Musyrif ${pondokName}</h1><p class="muted">Undang musyrif lewat email & WhatsApp, mereka buat password sendiri.</p></div></div>
-<div class="grid-2"><div class="card"><h3>Undang Musyrif</h3><div class="stack">
-<p class="muted" style="margin:0">Undang banyak musyrif sekaligus lewat email & WhatsApp, mereka buat password sendiri.</p>
+ return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Kelola Ustadz</p><h1>Ustadz ${pondokName}</h1><p class="muted">Undang ustadz lewat email & WhatsApp, mereka buat password sendiri.</p></div></div>
+<div class="grid-2"><div class="card"><h3>Undang Ustadz</h3><div class="stack">
+<p class="muted" style="margin:0">Undang banyak ustadz sekaligus lewat email & WhatsApp, mereka buat password sendiri.</p>
 <button class="btn primary full" id="inviteMusyrifBtn" type="button">Kirim Undangan</button>
 <button class="btn full" id="copyMusyrifLinkBtn" type="button">Salin Link Undangan</button>
-<button class="btn full" id="addMusyrifBtn" type="button">Form +Musyrif</button>
+<button class="btn full" id="addMusyrifBtn" type="button">Form +Ustadz</button>
 <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="inviteList"><small class="muted">Memuat...</small></div>
 <h3 style="margin-top:16px">Menunggu Persetujuan</h3><div class="list" id="pendingMusyrifList"><small class="muted">Memuat...</small></div>
 </div></div>
-<div class="card"><h3>Daftar Musyrif</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div></div>
+<div class="card"><h3>Daftar Ustadz</h3><div class="list" id="musyrifList"><small class="muted">Memuat...</small></div></div>
 </div></div></div>
 <div class="modal-backdrop hidden" id="inviteMusyrifModal">
  <div class="modal-card">
@@ -29,7 +29,7 @@ export function adminMusyrifPage(){
 </div></div></div>
 <div class="modal-backdrop hidden" id="musyrifModal">
  <div class="modal-card">
-  <div><p class="eyebrow">Musyrif</p><h2>Tambah Musyrif</h2></div>
+  <div><p class="eyebrow">Ustadz</p><h2>Tambah Ustadz</h2></div>
   <div class="stack">
    <div><label class="label">Nama lengkap</label><input class="input" id="newMusyrifName" autocomplete="off" placeholder="Nama lengkap"></div>
    <div><label class="label">Email</label><input class="input" id="newMusyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>
@@ -38,7 +38,7 @@ export function adminMusyrifPage(){
    <small class="muted" id="newMusyrifMessage"></small>
    <div class="btn-joined">
     <button class="btn" id="closeMusyrifBtn" type="button">Tutup</button>
-    <button class="btn primary" id="saveMusyrifBtn" type="button">Simpan Musyrif</button>
+    <button class="btn primary" id="saveMusyrifBtn" type="button">Simpan Ustadz</button>
    </div>
   </div>
  </div>

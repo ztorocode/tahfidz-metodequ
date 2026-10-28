@@ -59,6 +59,10 @@ final class RegistrationService
                 $passwordHash,
                 $data['mode'] === 'pondok' ? 'admin' : 'member',
             );
+            // Donatur adalah role tambahan: registrasi tetap memiliki role member.
+            if ($data['mode'] === 'donatur') {
+                $this->repository->assignRole($userId, 'donatur');
+            }
 
             $verifyToken = bin2hex(random_bytes(32));
             $expiresAt = (new \DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');

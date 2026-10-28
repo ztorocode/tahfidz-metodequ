@@ -114,3 +114,15 @@ nomor HP, `fields` atau `checks`. Progres kosong berupa null, bukan 0%.
 Persentase adalah kelengkapan isian harian, bukan total hafalan.
 Akun apa pun yang login riil saat ini boleh melihatnya; belum ada role donatur tersendiri.
 Tidak ada migrasi database.
+
+## Akun Donatur dan akses progres santri
+
+Registrasi dengan `POST /api/auth/register` dan `mode=donatur` membuat role
+`member` ditambah `donatur`, lalu mengikuti proses verifikasi email/WhatsApp
+yang sudah berlaku. Akun yang sudah login bisa menambahkan role Donatur melalui
+`POST /api/donatur/activate` dengan Bearer token; operasi bersifat idempoten dan
+tidak menghapus role lain. `GET /api/ustadz/santri` memerlukan sesi valid
+**dan** role Donatur aktif; mengembalikan 401 untuk sesi tidak valid atau 403
+untuk akun yang bukan Donatur. Tidak ada migrasi karena `user_roles.role`
+menggunakan VARCHAR(50). Pembukaan akses Donatur tidak memverifikasi pembayaran
+donasi, karena proses verifikasi transfer terpisah dari pengelolaan role.

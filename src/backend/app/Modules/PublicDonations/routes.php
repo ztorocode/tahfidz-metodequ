@@ -11,6 +11,7 @@ return static function (Router $router): void {
     $router->get('/api/public/ustadz/detail', [$public, 'detail']);
     $router->get('/api/public/ustadz/photo', [$public, 'photo']);
     $router->get('/api/ustadz/santri', [$public, 'students']);
+    $router->post('/api/donatur/activate', [$public, 'activateDonor']);
 
     $profile = new \App\Modules\PublicDonations\UstadzDonationProfileController();
     $router->get('/api/ustadz/donation-profile', [$profile, 'show']);

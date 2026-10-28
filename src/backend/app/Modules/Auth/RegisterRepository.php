@@ -78,6 +78,19 @@ final class RegisterRepository
         return $userId;
     }
 
+    /** Tambahkan role pada akun tanpa mengganti role yang sudah dimiliki. */
+    public function assignRole(int $userId, string $role): void
+    {
+        if ($role !== 'donatur') {
+            throw new \InvalidArgumentException('Role tidak valid.');
+        }
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO user_roles (user_id, role, status) VALUES (:user_id, :role, 'active')
+             ON DUPLICATE KEY UPDATE status = 'active'"
+        );
+        $stmt->execute(['user_id' => $userId, 'role' => $role]);
+    }
+
     public function pondokSlugExists(string $slug): bool
     {
         $statement = $this->pdo->prepare('SELECT 1 FROM pondoks WHERE slug = :slug LIMIT 1');

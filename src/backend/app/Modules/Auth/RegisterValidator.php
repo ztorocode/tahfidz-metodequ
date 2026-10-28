@@ -16,7 +16,7 @@ final class RegisterValidator
 
         $errors = [];
 
-        if (!in_array($mode, ['personal', 'pondok'], true)) {
+        if (!in_array($mode, ['personal', 'pondok', 'donatur'], true)) {
             $errors['mode'] = 'Jenis pendaftaran tidak valid.';
         }
 

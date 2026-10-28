@@ -16,7 +16,7 @@ export function landingPage(){
     <h1>Bantu Ustadz Tahfidz Secara Langsung. <span>Lihat Dampaknya pada Hafalan Santri.</span></h1>
     <p>Mutqeen menghubungkan donatur dengan ustadz tahfidz. Dukungan ditransfer langsung ke rekening ustadz, sementara aktivitas bimbingan dan progres hafalan santri tercatat dan dapat dipantau.</p>
     <div class="landing-hero-actions">
-     <a class="btn primary landing-cta" href="#login">Mulai sebagai Donatur</a>
+     <a class="btn primary landing-cta" href="#login">Masuk ke Mutqeen</a>
      <a class="btn landing-cta secondary" href="#cara-kerja">Lihat Cara Kerja</a>
     </div>
     <div class="landing-trust-row">
@@ -33,7 +33,7 @@ export function landingPage(){
      <div><b>184</b><span>Halaman mutqin</span></div>
      <div><b>312</b><span>Aktivitas tercatat</span></div>
     </div>
-    <small class="landing-demo-note">Contoh tampilan laporan dampak.</small>
+    <small class="landing-demo-note">Contoh tampilan laporan dampak, bukan data transaksi nyata.</small>
    </div>
   </section>
 
@@ -84,7 +84,7 @@ export function landingPage(){
    <div class="landing-section-head"><span class="landing-kicker">Laporan dampak</span><h2>Bukan hanya “dana sudah diterima”.</h2><p>Donatur dapat melihat indikator aktivitas tahfidz yang relevan untuk memahami dampak dukungannya.</p></div>
    <div class="landing-report-grid">
     <div class="landing-report-main">
-     <small>Aktivitas Ustadz · 30 hari terakhir</small>
+     <small>Contoh laporan · 30 hari terakhir</small>
      <h3>Ustadz Abdullah</h3>
      <div class="landing-report-bars">
       <div><span>Setoran direview</span><b>67</b></div>

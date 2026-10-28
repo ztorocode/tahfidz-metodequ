@@ -91,7 +91,7 @@ function accountMenu(){
    ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Ganti Konteks</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
-    ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform MetodeQu</b><small class="muted" style="display:block">Ustadz platform</small></span></button>`:""}
+    ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform Mutqeen</b><small class="muted" style="display:block">Ustadz platform</small></span></button>`:""}
     ${getState().persona!=="musyrif"&&canPersonal()?`<button class="account-choice ${getState().context==="personal"?"active":""}" data-switch-context="personal" type="button"><span class="avatar">P</span><span><b>Personal</b><small class="muted" style="display:block">Hafalan pribadi</small></span></button>`:""}
     ${pondokChoices()}
    </div>`}
@@ -127,8 +127,8 @@ export function shell(content){
  const myPondoks=s.myPondoks||[];
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
- const activeContext=s.persona==="super_admin"?"Platform MetodeQu":s.persona==="musyrif"?(s.context==="platform"?"Platform MetodeQu":pondokName):s.context==="personal"?"Personal":pondokName;
- return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">MetodeQu</div><nav class="nav">${nav}</nav>
+ const activeContext=s.persona==="super_admin"?"Platform Mutqeen":s.persona==="musyrif"?(s.context==="platform"?"Platform Mutqeen":pondokName):s.context==="personal"?"Personal":pondokName;
+ return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>

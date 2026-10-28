@@ -1,16 +1,16 @@
-import {view,routeName} from "./router.js?v=f1a72c9b";
+import {view,routeName} from "./router.js?v=b8c14e72";
 import {getState,setState} from "./store.js?v=81bed469";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=f1a72c9b";
-import {bindLogin} from "./pages/login.js?v=f1a72c9b";
-import {bindInvite} from "./pages/terima-undangan.js?v=f1a72c9b";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=b8c14e72";
+import {bindLogin} from "./pages/login.js?v=b8c14e72";
+import {bindInvite} from "./pages/terima-undangan.js?v=b8c14e72";
 import {toast} from "./utils/helpers.js?v=81bed469";
 import {initProgressSync} from "./utils/progress-sync.js?v=81bed469";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
-import {bindWaPage} from "./pages/whatsapp.js?v=c6e18a42";
+import {bindWaPage} from "./pages/whatsapp.js?v=b8c14e72";
 import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
 import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
-import {bindPlatformMusyrif} from "./pages/super-admin.js?v=c6e18a42";
+import {bindPlatformMusyrif} from "./pages/super-admin.js?v=b8c14e72";
 import {bindReview} from "./pages/review.js?v=81bed469";
 import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=c6e18a42";
 let deferredPrompt=null;
@@ -543,7 +543,7 @@ document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener(
 }
 function renderInstall(){
  const slot=document.querySelector("#installSlot");if(!slot||!deferredPrompt)return;
- slot.innerHTML='<div class="install-banner"><div><b>Install MetodeQu</b><div style="font-size:12px">Buka lebih cepat dan gunakan app shell saat offline.</div></div><button class="btn primary" id="installBtn">Install</button></div>';
+ slot.innerHTML='<div class="install-banner"><div><b>Install Mutqeen</b><div style="font-size:12px">Buka lebih cepat dan gunakan app shell saat offline.</div></div><button class="btn primary" id="installBtn">Install</button></div>';
  document.querySelector("#installBtn")?.addEventListener("click",async()=>{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;slot.innerHTML=""});
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});

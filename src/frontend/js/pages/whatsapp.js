@@ -51,7 +51,7 @@ function deviceSection(){
    <p class="muted" style="margin:4px 0 10px">Kirim 1 pesan beneran dari device pondok untuk menguji koneksi.</p>
    <div class="stack">
     <div><label class="label">Nomor WhatsApp</label><input class="input" id="waTestPhone" inputmode="tel" autocomplete="off" placeholder="+628 ..."></div>
-    <div><label class="label">Pesan</label><textarea class="input" id="waTestMsg" rows="3">Test dari MetodeQu — pesan otomatis, abaikan.</textarea></div>
+    <div><label class="label">Pesan</label><textarea class="input" id="waTestMsg" rows="3">Test dari Mutqeen — pesan otomatis, abaikan.</textarea></div>
     <button class="btn primary full" id="waTestBtn" type="button">Kirim Test</button>
    </div>
   </div>

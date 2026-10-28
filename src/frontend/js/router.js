@@ -1,5 +1,5 @@
 import {getState} from "./store.js?v=81bed469";
-import {loginPage} from "./pages/login.js?v=c6e18a42";
+import {loginPage} from "./pages/login.js?v=b8c14e72";
 import {memberDashboard} from "./pages/member-dashboard.js?v=c6e18a42";
 import {programPage} from "./pages/program.js?v=81bed469";
 import {activityPage} from "./pages/activity.js?v=81bed469";
@@ -8,17 +8,17 @@ import {murajaahPage} from "./pages/murajaah.js?v=81bed469";
 import {notificationsPage} from "./pages/notifications.js?v=c6e18a42";
 import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=c6e18a42";
 import {reviewPage} from "./pages/review.js?v=81bed469";
-import {acceptInvitePage} from "./pages/terima-undangan.js?v=c6e18a42";
+import {acceptInvitePage} from "./pages/terima-undangan.js?v=b8c14e72";
 import {adminSantriPage} from "./pages/admin-santri.js?v=81bed469";
 import {adminMusyrifPage} from "./pages/admin-musyrif.js?v=c6e18a42";
 import {adminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
-import {halaqahPage} from "./pages/halaqah.js?v=c6e18a42";
+import {halaqahPage} from "./pages/halaqah.js?v=b8c14e72";
 import {studentProgressPage} from "./pages/santri-progress.js?v=c6e18a42";
 import {memberProgressPage} from "./pages/member-progress.js?v=d91f3c28";
 import {progressTablePage} from "./pages/tabel-progress.js?v=c6e18a42";
 import {rabthAyatPage} from "./pages/rabth-ayat.js?v=81bed469";
-import {whatsappPage} from "./pages/whatsapp.js?v=c6e18a42";
-import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=c6e18a42";
+import {whatsappPage} from "./pages/whatsapp.js?v=b8c14e72";
+import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=b8c14e72";
 const routes={
  login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,

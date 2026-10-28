@@ -1,12 +1,12 @@
-const CACHE='mutqeen-f6a10c32';
+const CACHE='mutqeen-2bd19c6a';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
  './assets/css/components.css?v=b9f2d4e1','./assets/css/responsive.css?v=f28a6c10','./assets/css/landing.css?v=b8c14e72',
- './assets/images/icon.svg?v=81bed469','./assets/css/donasi.css?v=f6a10c32',
- './js/app.js?v=f6a10c32','./js/store.js?v=81bed469',
+ './assets/images/icon.svg?v=81bed469','./assets/css/donasi.css?v=2bd19c6a',
+ './js/app.js?v=2bd19c6a','./js/store.js?v=81bed469',
  './js/pages/login.js?v=b8c14e72',
- './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=f6a10c32',
+ './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=2bd19c6a',
  './js/pages/terima-undangan.js?v=b8c14e72',
  './js/utils/helpers.js?v=81bed469'
 ];

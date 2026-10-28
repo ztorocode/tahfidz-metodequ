@@ -52,3 +52,16 @@
 .donor-photo-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #e7ece9;font-size:13px}
 .donor-photo-row button{flex:none}
 @media(max-width:620px){.donasi-ustadz-actions{padding:0 17px 20px}.donasi-dialog-head{padding:17px}.donasi-dialog-head h2{font-size:19px}.donasi-dialog-body{padding:17px}.donasi-bank{grid-template-columns:1fr;gap:6px;padding:17px}.donasi-bank strong{margin-bottom:12px}.donasi-photo-grid{grid-template-columns:1fr}.donasi-halaqah-metrics{grid-template-columns:1fr 1fr}.donor-settings-grid{grid-template-columns:1fr}}
+
+.donasi-halaqah-students{display:block;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;border-radius:8px}
+.donasi-halaqah-students b{color:#0f6b4d;text-decoration:underline;text-underline-offset:3px}
+.donasi-halaqah-students>span{color:#476e58;font-size:13px}
+.donasi-halaqah-students:hover b{color:#084d37}
+.donasi-halaqah-students:focus-visible{outline:3px solid #0f6b4d;outline-offset:5px}
+.donasi-students-main{max-width:900px}
+.donasi-students-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:32px}
+.donasi-student-card{display:flex;align-items:center;gap:16px;border:1px solid #dce9e1;background:#fff;border-radius:15px;padding:18px}
+.donasi-student-avatar{display:grid;place-items:center;background:#e3f3e9;color:#0f6b4d;width:48px;height:48px;border-radius:13px;font-weight:800}
+.donasi-student-card h2{margin:0 0 4px;font-size:18px;color:#15372a}
+.donasi-student-card div>span{font-size:13px;color:#587266}
+@media(max-width:620px){.donasi-students-list{grid-template-columns:1fr}}

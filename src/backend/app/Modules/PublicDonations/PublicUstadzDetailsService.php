@@ -128,6 +128,51 @@ final class PublicUstadzDetailsService
         ];
     }
 
+
+    /**
+     * Keanggotaan aktual, ditampilkan sebagai label anonim tanpa data personal.
+     */
+    public function students(int $profileId, int $halaqahId): ?array
+    {
+        $q = $this->pdo->prepare(
+            "SELECT h.id, h.name, ustadz.name AS ustadz_name
+             FROM halaqahs h
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id AND mp.status = 'active'
+             JOIN users ustadz ON ustadz.id = mp.user_id AND ustadz.status = 'active' AND ustadz.deleted_at IS NULL
+             LEFT JOIN pondoks p ON p.id = mp.pondok_id AND p.status = 'active' AND p.deleted_at IS NULL
+             WHERE h.id = :halaqah_id AND h.musyrif_profile_id = :profile_id
+               AND h.status = 'active' AND h.deleted_at IS NULL
+               AND (mp.type = 'platform' OR p.id IS NOT NULL)
+             LIMIT 1"
+        );
+        $q->execute(['halaqah_id' => $halaqahId, 'profile_id' => $profileId]);
+        $halaqah = $q->fetch(PDO::FETCH_ASSOC);
+        if (!is_array($halaqah)) {
+            return null;
+        }
+
+        $members = $this->pdo->prepare(
+            "SELECT DISTINCT hm.user_id
+             FROM halaqah_memberships hm
+             JOIN users santri ON santri.id = hm.user_id AND santri.status = 'active' AND santri.deleted_at IS NULL
+             WHERE hm.halaqah_id = :halaqah_id AND hm.status = 'active'
+             ORDER BY hm.user_id ASC"
+        );
+        $members->execute(['halaqah_id' => $halaqahId]);
+        $studentIds = $members->fetchAll(PDO::FETCH_COLUMN);
+        $students = [];
+        foreach ($studentIds as $index => $_studentId) {
+            $students[] = ['label' => 'Santri ' . ($index + 1)];
+        }
+
+        return [
+            'halaqah_name' => (string) $halaqah['name'],
+            'ustadz_name' => (string) $halaqah['ustadz_name'],
+            'santri_aktif' => count($students),
+            'students' => $students,
+        ];
+    }
+
     public function sendPhoto(int $id): never
     {
         if (!$this->tableExists('ustadz_activity_photos')) {

@@ -31,6 +31,22 @@ final class PublicUstadzController
         Response::json(['success' => true, 'data' => $result]);
     }
 
+
+    public function students(Request $request): never
+    {
+        $profileId = filter_var($request->query['ustadz_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $halaqahId = filter_var($request->query['halaqah_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$profileId || !$halaqahId) {
+            Response::json(['success' => false, 'message' => 'Halaqah tidak valid.'], 422);
+        }
+        $data = (new PublicUstadzDetailsService(Database::connection()))->students((int) $profileId, (int) $halaqahId);
+        if ($data === null) {
+            Response::json(['success' => false, 'message' => 'Halaqah tidak ditemukan.'], 404);
+        }
+        header('Cache-Control: no-store');
+        Response::json(['success' => true, 'data' => $data]);
+    }
+
     public function photo(Request $request): never
     {
         $id = filter_var($request->query['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);

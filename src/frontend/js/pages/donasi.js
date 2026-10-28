@@ -56,7 +56,7 @@ function bankView(detail){
 function halaqahView(item){
  const progress=item.progres_rata_rata==null?"Belum tersedia":count(item.progres_rata_rata)+"%";
  return '<div class="donasi-halaqah"><h3>'+escapeHtml(item.name)+'</h3><div class="donasi-halaqah-metrics">'
-  +'<span><b>'+count(item.santri_aktif)+'</b> Santri aktif</span>'
+  +'<span><button type="button" class="donasi-halaqah-students" data-students-halaqah="'+(Number(item.id)||0)+'" aria-label="Lihat '+count(item.santri_aktif)+' santri aktif di '+escapeHtml(item.name)+'"><b>'+count(item.santri_aktif)+'</b><span>Santri aktif <span aria-hidden="true">›</span></span></button></span>'
   +'<span><b>'+count(item.aktivitas_bulan_ini)+'</b> Aktivitas bulan ini</span>'
   +'<span><b>'+count(item.setoran_dinilai)+'</b> Setoran dinilai</span>'
   +'<span><b>'+count(item.hafalan_mutqin)+'</b> Mutqin</span>'
@@ -91,6 +91,7 @@ export function bindDonationList(){
  };
  const open=async(mode,id,name,button)=>{
   openedBy=button;
+  overlay.dataset.ustadzId=String(id);
   const ticket=++sequence;
   title.textContent=mode==="bank"?"Donasi untuk "+name:"Aktivitas "+name;
   body.innerHTML='<div class="donasi-state">Memuat informasi ustadz...</div>';
@@ -121,6 +122,16 @@ export function bindDonationList(){
  const observer=new MutationObserver(()=>{if(!page.isConnected){document.removeEventListener("keydown",onKey);document.body.classList.remove("donasi-modal-open");observer.disconnect()}});
  observer.observe(document.querySelector("#app")||document.body,{childList:true});
  body.addEventListener("click",async event=>{
+  const studentButton=event.target.closest("[data-students-halaqah]");
+  if(studentButton&&body.contains(studentButton)){
+   const halaqahId=Number(studentButton.dataset.studentsHalaqah||0);
+   const ustadzId=Number(overlay.dataset.ustadzId||0);
+   if(Number.isSafeInteger(halaqahId)&&halaqahId>0&&Number.isSafeInteger(ustadzId)&&ustadzId>0){
+    close();
+    location.hash="donasi-santri?ustadz="+ustadzId+"&halaqah="+halaqahId;
+   }
+   return;
+  }
   const copy=event.target.closest("[data-copy-account]");
   if(!copy)return;
   const value=copy.dataset.copyAccount||"";
@@ -146,4 +157,47 @@ export function bindDonationList(){
   }finally{if(box.isConnected)box.setAttribute("aria-busy","false")}
  }
  loadList();
+}
+
+/** Publik hanya melihat keanggotaan anonim, bukan nama/ID/kontak santri. */
+export function donationStudentsPage(){
+ return '<main class="landing-page donasi-page">'
+  +'<header class="landing-header"><a class="landing-brand" href="#home"><span class="landing-logo">م</span><span>Mutqeen</span></a><a class="btn landing-login" href="#login">Masuk</a></header>'
+  +'<section class="donasi-main donasi-students-main"><a href="#donasi" class="donasi-back">Kembali ke daftar ustadz</a>'
+  +'<div class="donasi-intro"><span class="landing-kicker">Aktivitas halaqah</span><h1 id="donasiStudentsTitle">Daftar Santri</h1><p id="donasiStudentsContext">Memuat informasi halaqah...</p></div>'
+  +'<div id="donasiStudentsList" class="donasi-students-list" aria-live="polite" aria-busy="true"><div class="donasi-state">Memuat daftar santri...</div></div>'
+  +'<p class="donasi-footnote">Identitas santri disamarkan karena halaman ini dapat diakses tanpa login.</p>'
+  +'</section><footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer></main>';
+}
+export async function bindDonationStudents(){
+ const params=new URLSearchParams(location.hash.split("?")[1]||"");
+ const ustadzId=Number(params.get("ustadz"));
+ const halaqahId=Number(params.get("halaqah"));
+ const list=document.querySelector("#donasiStudentsList");
+ const title=document.querySelector("#donasiStudentsTitle");
+ const context=document.querySelector("#donasiStudentsContext");
+ if(!list||!title||!context)return;
+ if(!Number.isSafeInteger(ustadzId)||ustadzId<1||!Number.isSafeInteger(halaqahId)||halaqahId<1){
+  context.textContent="Tautan daftar santri tidak valid.";
+  list.innerHTML='<div class="donasi-empty">Halaqah tidak ditemukan.</div>';
+  list.setAttribute("aria-busy","false");
+  return;
+ }
+ try{
+  const response=await fetch("/api/public/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{headers:{Accept:"application/json"},cache:"no-store"});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result.message||"Daftar santri belum dapat dimuat.");
+  if(!list.isConnected)return;
+  const data=result.data||{};
+  const students=Array.isArray(data.students)?data.students:[];
+  title.textContent="Santri "+(data.halaqah_name||"Halaqah");
+  context.textContent=count(students.length)+" santri aktif dibimbing oleh "+(data.ustadz_name||"Ustadz")+".";
+  list.innerHTML=students.length?students.map(student=>
+   '<article class="donasi-student-card"><span class="donasi-student-avatar" aria-hidden="true">م</span><div><h2>'+escapeHtml(student.label)+'</h2><span>Santri aktif</span></div></article>'
+  ).join(""):'<div class="donasi-empty">Belum ada santri aktif dalam halaqah ini.</div>';
+ }catch(error){
+  if(!list.isConnected)return;
+  context.textContent="Daftar santri belum dapat ditampilkan.";
+  list.innerHTML='<div class="donasi-empty">'+escapeHtml(error.message||"Gagal memuat daftar santri.")+'</div>';
+ }finally{if(list.isConnected)list.setAttribute("aria-busy","false")}
 }

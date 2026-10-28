@@ -97,3 +97,10 @@ Jalankan seluruh migrasi hingga 20261028_020_ustadz_donation_profile, termasuk 0
 - Progres per halaqah mencakup santri aktif, aktivitas bulan berjalan, total penilaian setoran, mutqin, dan rata-rata progres harian terakhir yang tercatat. Bila belum ada data, persentase ditandai belum tersedia.
 
 Urutan deployment: backup database, jalankan migrasi, pastikan ekstensi GD dan direktori penyimpanan, deploy frontend/backend terbaru, lalu uji login ustadz, simpan rekening, unggah dan hapus foto, serta buka kedua popup pada domain publik.
+
+## Daftar publik santri halaqah
+
+Klik angka **Santri aktif** pada popup Aktivitas membuka halaman `/#donasi-santri?ustadz=PROFILE_ID&halaqah=HALAQAH_ID`.
+GET `/api/public/ustadz/santri?ustadz_id=PROFILE_ID&halaqah_id=HALAQAH_ID` memverifikasi profil ustadz, halaqah, dan anggota aktif saat diakses.
+Setiap santri aktif memiliki satu entri berlabel anonim `Santri N`. Endpoint tidak mengirim nama, user ID, email, atau catatan pribadi.
+Tidak ada migrasi database baru.

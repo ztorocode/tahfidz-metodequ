@@ -39,7 +39,7 @@ final class MusyrifController
     {
         try {
             $musyrif = $this->service()->addPondokMusyrif($this->actor($request), $request->body());
-            Response::json(['success' => true, 'message' => 'Musyrif berhasil ditambahkan.', 'data' => $musyrif], 201);
+            Response::json(['success' => true, 'message' => 'Ustadz berhasil ditambahkan.', 'data' => $musyrif], 201);
         } catch (RegistrationException $exception) {
             Response::json([
                 'success' => false,
@@ -60,7 +60,7 @@ final class MusyrifController
                 (int) ($body['pondok_id'] ?? 0),
                 (int) ($body['user_id'] ?? 0)
             );
-            Response::json(['success' => true, 'message' => 'Musyrif berhasil ditambahkan.', 'data' => $musyrif], 201);
+            Response::json(['success' => true, 'message' => 'Ustadz berhasil ditambahkan.', 'data' => $musyrif], 201);
         } catch (RegistrationException $exception) {
             Response::json([
                 'success' => false,

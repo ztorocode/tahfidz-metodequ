@@ -1,4 +1,4 @@
-import {member} from "../data/dummy-data.js?v=81bed469";
+import {member} from "../data/dummy-data.js?v=c6e18a42";
 import {getState} from "../store.js?v=81bed469";
 import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";

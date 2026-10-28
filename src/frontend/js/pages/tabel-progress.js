@@ -270,7 +270,7 @@ export function progressTablePage(){
   <div class="progress-sheet-scroll">
    <div class="progress-meta">${metaItems}</div>
 
-   <div class="progress-student-row"><b>Nama</b><span>${escapeHtml(student.name)}</span><b>Musyrif</b><span>${escapeHtml(selected.musyrifName)}</span></div>
+   <div class="progress-student-row"><b>Nama</b><span>${escapeHtml(student.name)}</span><b>Ustadz</b><span>${escapeHtml(selected.musyrifName)}</span></div>
 
    <table class="progress-sheet" aria-label="Tabel progress hafalan ${escapeHtml(student.name)}">
     <thead>

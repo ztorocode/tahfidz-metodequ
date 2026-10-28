@@ -543,7 +543,7 @@ document.querySelectorAll("[data-revoke-invite]").forEach(b=>b.addEventListener(
 }
 function renderInstall(){
  const slot=document.querySelector("#installSlot");if(!slot||!deferredPrompt)return;
- slot.innerHTML='<div class="install-banner"><div><b>Install MetodeQu</b><div style="font-size:12px">Buka lebih cepat dan gunakan app shell saat offline.</div></div><button class="btn primary" id="installBtn">Install</button></div>';
+ slot.innerHTML='<div class="install-banner"><div><b>Install Mutqeen</b><div style="font-size:12px">Buka lebih cepat dan gunakan app shell saat offline.</div></div><button class="btn primary" id="installBtn">Install</button></div>';
  document.querySelector("#installBtn")?.addEventListener("click",async()=>{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;slot.innerHTML=""});
 }
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;renderInstall()});

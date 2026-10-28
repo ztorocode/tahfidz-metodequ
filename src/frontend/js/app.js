@@ -92,5 +92,5 @@ if("serviceWorker" in navigator){
  window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=b8c14e72"));
 }
 
-if(!location.hash)location.hash=getState().loggedIn?"dashboard":"home";
+if(!location.hash&&getState().loggedIn)location.hash="dashboard";
 guardedRender();

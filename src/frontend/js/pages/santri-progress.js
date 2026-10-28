@@ -151,7 +151,7 @@ function setoranSummaryCard(rows,student,canRate){
  const counts=setoranCounters(rows);
  return `<div class="card" style="margin-bottom:16px">
   <div class="row between" style="gap:12px;flex-wrap:wrap">
-   <div><h3>Ringkasan Penilaian Setoran</h3><p class="muted">Dihitung dari penilaian musyrif yang tersimpan.</p></div>
+   <div><h3>Ringkasan Penilaian Setoran</h3><p class="muted">Dihitung dari penilaian ustadz yang tersimpan.</p></div>
    ${canRate?`<button class="btn primary" type="button" id="addSetoranBtn" data-setoran-user="${Number(student.userId)||0}">+ Tambah Setoran</button>`:""}
   </div>
   <div class="grid-4" style="margin-top:14px">

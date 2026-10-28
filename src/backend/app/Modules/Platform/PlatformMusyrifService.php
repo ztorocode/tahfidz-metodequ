@@ -30,7 +30,7 @@ final class PlatformMusyrifService
     private function assertSuperAdmin(array $actor): void
     {
         if (!in_array('super_admin', $actor['roles'], true)) {
-            throw new RegistrationException('Hanya super admin yang boleh mengelola musyrif platform.', 403);
+            throw new RegistrationException('Hanya super admin yang boleh mengelola ustadz platform.', 403);
         }
     }
 
@@ -58,7 +58,7 @@ final class PlatformMusyrifService
             $errors['password'] = 'Password minimal 8 karakter.';
         }
         if ($errors !== []) {
-            throw new RegistrationException('Data musyrif belum valid.', 422, $errors);
+            throw new RegistrationException('Data ustadz belum valid.', 422, $errors);
         }
 
         $username = substr($email, 0, (int) strpos($email, '@'));

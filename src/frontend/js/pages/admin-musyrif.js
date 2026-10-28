@@ -29,7 +29,7 @@ export function adminMusyrifPage(){
 </div></div></div>
 <div class="modal-backdrop hidden" id="musyrifModal">
  <div class="modal-card">
-  <div><p class="eyebrow">Musyrif</p><h2>Tambah Ustadz</h2></div>
+  <div><p class="eyebrow">Ustadz</p><h2>Tambah Ustadz</h2></div>
   <div class="stack">
    <div><label class="label">Nama lengkap</label><input class="input" id="newMusyrifName" autocomplete="off" placeholder="Nama lengkap"></div>
    <div><label class="label">Email</label><input class="input" id="newMusyrifEmail" type="email" autocomplete="off" placeholder="nama@email.com"></div>

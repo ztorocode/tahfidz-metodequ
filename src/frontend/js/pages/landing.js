@@ -24,14 +24,14 @@ export function landingPage(){
     </div>
    </div>
    <div class="landing-impact-card" aria-label="Contoh laporan dampak">
-    <div class="landing-impact-head"><div><small>Dukungan bulan ini</small><strong>Ustadz Abdullah</strong></div><span class="badge success">Aktif membimbing</span></div>
+    <div class="landing-impact-head"><div><small>Contoh tampilan laporan dampak</small><strong>Ustadz Abdullah</strong></div><span class="badge success">Aktif membimbing</span></div>
     <div class="landing-progress"><span style="width:58%"></span></div>
-    <div class="landing-support"><b>Rp1.750.000</b><span>dari target Rp3.000.000</span></div>
+    <div class="landing-support"><b>Transfer langsung</b><span>ke rekening ustadz</span></div>
     <div class="landing-metrics">
-     <div><b>14</b><span>Santri dibimbing</span></div>
-     <div><b>67</b><span>Setoran direview</span></div>
-     <div><b>184</b><span>Halaman mutqin</span></div>
-     <div><b>312</b><span>Aktivitas tercatat</span></div>
+     <div><b>Santri</b><span>Jumlah binaan aktif</span></div>
+     <div><b>Setoran</b><span>Evaluasi yang direview</span></div>
+     <div><b>Mutqin</b><span>Progres hafalan santri</span></div>
+     <div><b>Aktivitas</b><span>Bimbingan yang tercatat</span></div>
     </div>
     <small class="landing-demo-note">Contoh tampilan laporan dampak, bukan data transaksi nyata.</small>
    </div>
@@ -87,10 +87,10 @@ export function landingPage(){
      <small>Contoh laporan · 30 hari terakhir</small>
      <h3>Ustadz Abdullah</h3>
      <div class="landing-report-bars">
-      <div><span>Setoran direview</span><b>67</b></div>
-      <div><span>Halaman dinyatakan mutqin</span><b>184</b></div>
-      <div><span>Santri aktif dibimbing</span><b>14</b></div>
-      <div><span>Aktivitas tahfidz tercatat</span><b>312</b></div>
+      <div><span>Setoran direview</span><b>Tercatat</b></div>
+      <div><span>Hafalan dinyatakan mutqin</span><b>Terukur</b></div>
+      <div><span>Santri aktif dibimbing</span><b>Terlihat</b></div>
+      <div><span>Aktivitas tahfidz</span><b>Terlacak</b></div>
      </div>
     </div>
     <aside class="landing-report-note">

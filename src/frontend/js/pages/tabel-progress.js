@@ -113,7 +113,7 @@ function needsMusyrifPendingOverlayReport(){
 
 function musyrifPendingOverlayReport(){
  if(!needsMusyrifPendingOverlayReport())return "";
- return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc musyrif pembimbing.</div></div>';
+ return '<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mohon tunggu acc ustadz pembimbing.</div></div>';
 }
 
 function reportJuzRange(data){

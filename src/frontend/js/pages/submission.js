@@ -139,7 +139,7 @@ export function bindSubmission(){
   if(!recordedUrl)return;
   submitBtn.disabled=true;
   submitBtn.textContent="Mengirim…";
-  message.textContent="Sedang mengirim setoran ke musyrif…";
+  message.textContent="Sedang mengirim setoran ke ustadz…";
   try{
    const st=getState();
    const pid=resolvePondokId();

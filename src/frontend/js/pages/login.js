@@ -39,15 +39,16 @@ function demoAccountsInfo(){
 
 function loginForm(method="whatsapp"){
  const whatsapp=method==="whatsapp";
+ const donorLogin=Boolean(donorReturnRoute());
  return `<div class="segmented">
   <button id="authWhatsapp" class="${whatsapp?"active":""}" type="button">Nomor WhatsApp</button>
   <button id="authEmail" class="${whatsapp?"":"active"}" type="button">Email</button>
  </div>
  <div id="authFields" class="stack">
   ${whatsapp
-   ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" value="+62 812 3456 7890"></div>`
-   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" value="member@metodequ.id"></div>
-      <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="member123"><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
+   ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" placeholder="+62 812 3456 7890" value="${donorLogin?"":"+62 812 3456 7890"}"></div>`
+   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" value="${donorLogin?"":"member@metodequ.id"}"></div>
+      <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="${donorLogin?"":"member123"}"><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
  </div>
  <small class="muted" id="loginMessage"></small>
  <button class="btn primary full" id="loginBtn">${whatsapp?"Kirim kode OTP":"Masuk"}</button>`;
@@ -88,7 +89,7 @@ function loginCard(){
 export function loginPage(){return `<section class="auth">
 <div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Platform pendamping tahfidz yang menghubungkan pembinaan santri dengan dukungan yang lebih transparan kepada ustadz.</p></div>
-<div><small>Prototype demo · Personal & Pondok</small></div></div>
+<div><small>${donorReturnRoute()?"Akses laporan santri":"Prototype demo · Personal & Pondok"}</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
 
 async function postRegistration(payload){
@@ -350,7 +351,7 @@ export function bindLogin(){
     if(button){button.disabled=false;button.textContent="Masuk";}
     return;
    }
-   const account=demoAccounts.find(item=>item.email===email&&item.password===password);
+   const account=donorReturnRoute()?null:demoAccounts.find(item=>item.email===email&&item.password===password);
    if(!account){
     if(message){message.textContent="Email atau password tidak sesuai.";message.style.color="var(--danger)";}
     if(button){button.disabled=false;button.textContent="Masuk";}

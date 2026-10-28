@@ -29,6 +29,8 @@ self.addEventListener('activate',event=>{
 
 self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET'||!event.request.url.startsWith('http'))return;
+ // API data must always come from the network; do not cache donor totals or private data.
+ if(new URL(event.request.url).pathname.startsWith('/api/'))return;
  event.respondWith(
   fetch(event.request)
    .then(response=>{

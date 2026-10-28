@@ -76,3 +76,9 @@ SMTP mail is configured from `src/backend/.env`. Gmail SMTP uses STARTTLS on por
 Safe SMTP authentication check (does not send an email):
 
     php tools/test-mail.php
+
+## Daftar publik ustadz dan donasi
+
+`GET /api/public/ustadz` tidak memerlukan autentikasi. Respons hanya berisi nama ustadz, tipe platform/pondok, jumlah santri aktif, total penilaian setoran, penilaian mutqin sejak tercatat, dan total nominal donasi terverifikasi untuk bulan kalender berjalan (Asia/Jakarta).
+
+Jalankan migrasi `20261028_019_donation_transfers` sebelum mengaktifkan API tersebut. Kolom `donation_transfers.status='verified'` hanya boleh diset setelah transfer diverifikasi oleh petugas berwenang. Wajib isi `verified_by` dan `verified_at`. Tabel ini belum menyediakan UI pencatatan atau verifikasi, sehingga nominal saat belum ada catatan akan tampil Rp0. Ini berarti belum ada donasi *yang tercatat dan terverifikasi* di Mutqeen, bukan bukti belum ada transfer melalui rekening ustadz.

@@ -1,3 +1,5 @@
+import {getState,setState} from "../store.js?v=81bed469";
+
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 }
@@ -128,7 +130,13 @@ export function bindDonationList(){
    const ustadzId=Number(overlay.dataset.ustadzId||0);
    if(Number.isSafeInteger(halaqahId)&&halaqahId>0&&Number.isSafeInteger(ustadzId)&&ustadzId>0){
     close();
-    location.hash="donasi-santri?ustadz="+ustadzId+"&halaqah="+halaqahId;
+    const query="ustadz="+ustadzId+"&halaqah="+halaqahId;
+    const session=getState();
+    if(session.loggedIn&&session.authToken)location.hash="donasi-santri?"+query;
+    else{
+     if(session.loggedIn)setState({loggedIn:false,demoSession:false,authToken:null,authUser:null});
+     location.hash="login?intent=donasi-santri&"+query;
+    }
    }
    return;
   }
@@ -159,14 +167,14 @@ export function bindDonationList(){
  loadList();
 }
 
-/** Publik hanya melihat keanggotaan anonim, bukan nama/ID/kontak santri. */
+/** Nama dan progres santri hanya dimuat setelah verifikasi sesi backend. */
 export function donationStudentsPage(){
  return '<main class="landing-page donasi-page">'
   +'<header class="landing-header"><a class="landing-brand" href="#home"><span class="landing-logo">م</span><span>Mutqeen</span></a><a class="btn landing-login" href="#login">Masuk</a></header>'
   +'<section class="donasi-main donasi-students-main"><a href="#donasi" class="donasi-back">Kembali ke daftar ustadz</a>'
   +'<div class="donasi-intro"><span class="landing-kicker">Aktivitas halaqah</span><h1 id="donasiStudentsTitle">Daftar Santri</h1><p id="donasiStudentsContext">Memuat informasi halaqah...</p></div>'
   +'<div id="donasiStudentsList" class="donasi-students-list" aria-live="polite" aria-busy="true"><div class="donasi-state">Memuat daftar santri...</div></div>'
-  +'<p class="donasi-footnote">Identitas santri disamarkan karena halaman ini dapat diakses tanpa login.</p>'
+  +'<p class="donasi-footnote">Nama dan progres santri hanya tersedia setelah login. Persentase menunjukkan kelengkapan isian harian terakhir, bukan total hafalan.</p>'
   +'</section><footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer></main>';
 }
 export async function bindDonationStudents(){
@@ -183,18 +191,37 @@ export async function bindDonationStudents(){
   list.setAttribute("aria-busy","false");
   return;
  }
+ const loginHref="#login?intent=donasi-santri&ustadz="+ustadzId+"&halaqah="+halaqahId;
+ function promptLogin(){
+  context.textContent="Masuk ke Mutqeen untuk melihat nama dan progres santri.";
+  list.innerHTML='<div class="donasi-state">Silakan login dengan akun Mutqeen terverifikasi.<div style="margin-top:16px"><a class="btn primary" id="donasiStudentsLogin" href="'+loginHref+'">Masuk untuk melihat santri</a></div></div>';
+  list.setAttribute("aria-busy","false");
+  list.querySelector("#donasiStudentsLogin")?.addEventListener("click",()=>setState({loggedIn:false,demoSession:false,authToken:null,authUser:null}));
+ }
+ const state=getState();
+ if(!state.loggedIn||!state.authToken){promptLogin();return;}
  try{
-  const response=await fetch("/api/public/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{headers:{Accept:"application/json"},cache:"no-store"});
+  const response=await fetch("/api/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{
+   headers:{Accept:"application/json",Authorization:"Bearer "+state.authToken},cache:"no-store"
+  });
   const result=await response.json().catch(()=>({}));
+  if(response.status===401){if(list.isConnected)promptLogin();return;}
   if(!response.ok||!result.success)throw new Error(result.message||"Daftar santri belum dapat dimuat.");
   if(!list.isConnected)return;
   const data=result.data||{};
   const students=Array.isArray(data.students)?data.students:[];
   title.textContent="Santri "+(data.halaqah_name||"Halaqah");
   context.textContent=count(students.length)+" santri aktif dibimbing oleh "+(data.ustadz_name||"Ustadz")+".";
-  list.innerHTML=students.length?students.map(student=>
-   '<article class="donasi-student-card"><span class="donasi-student-avatar" aria-hidden="true">م</span><div><h2>'+escapeHtml(student.label)+'</h2><span>Santri aktif</span></div></article>'
-  ).join(""):'<div class="donasi-empty">Belum ada santri aktif dalam halaqah ini.</div>';
+  list.innerHTML=students.length?students.map(student=>{
+   const pct=student.progress_percent==null?null:Math.max(0,Math.min(100,Number(student.progress_percent)||0));
+   const detail=pct===null?"Belum ada catatan progres harian":
+    "Minggu "+count(student.progress_week)+" · "+escapeHtml(student.progress_day||"")+" · "+count(pct)+"% isian harian";
+   const updated=student.progress_updated_at?"Diperbarui "+escapeHtml(student.progress_updated_at):"";
+   return '<article class="donasi-student-card"><span class="donasi-student-avatar" aria-hidden="true">م</span>'
+    +'<div class="donasi-student-info"><h2>'+escapeHtml(student.name||"Nama belum tersedia")+'</h2><span>'+detail+'</span>'
+    +(pct===null?'':'<div class="donasi-student-progress" role="progressbar" aria-label="Progres harian terakhir '+escapeHtml(student.name)+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><span style="width:'+pct+'%"></span></div>')
+    +(updated?'<small>'+updated+'</small>':'')+'</div></article>';
+  }).join(""):'<div class="donasi-empty">Belum ada santri aktif dalam halaqah ini.</div>';
  }catch(error){
   if(!list.isConnected)return;
   context.textContent="Daftar santri belum dapat ditampilkan.";

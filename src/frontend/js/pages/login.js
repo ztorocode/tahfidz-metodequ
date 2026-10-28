@@ -8,6 +8,16 @@ const demoAccounts=[
  {id:"super-admin",role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
 
+function donorReturnRoute(){
+ const [route,query]=location.hash.replace(/^#/,"").split("?");
+ if(route!=="login")return null;
+ const params=new URLSearchParams(query||"");
+ if(params.get("intent")!=="donasi-santri")return null;
+ const ustadz=Number(params.get("ustadz")),halaqah=Number(params.get("halaqah"));
+ if(!Number.isSafeInteger(ustadz)||ustadz<1||!Number.isSafeInteger(halaqah)||halaqah<1)return null;
+ return "donasi-santri?ustadz="+ustadz+"&halaqah="+halaqah;
+}
+
 function normalizePhone(value=""){return value.replace(/\D/g,"")}
 function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]))}
 
@@ -72,7 +82,7 @@ function loginCard(){
  return `<div><h1>Masuk ke Mutqeen</h1><p class="muted">Lanjutkan perjalanan hafalan Anda.</p></div>
  <div id="loginForm" class="stack">${loginForm("whatsapp")}</div>
  <small class="muted" style="text-align:center">Belum punya akun? <a href="#" id="registerLink" style="color:var(--brand);font-weight:800">Daftar sekarang</a></small>
- ${demoAccountsInfo()}`;
+ ${donorReturnRoute()?'<small class="muted">Gunakan akun Mutqeen terverifikasi. Akun demo tidak bisa membuka data santri.</small>':demoAccountsInfo()}`;
 }
 
 export function loginPage(){return `<section class="auth">
@@ -105,8 +115,9 @@ export function bindLogin(){
   // (login pun memakai localStorage yang sama antar akun di satu peramban).
   const emptyCache={realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null};
   const go=(persona="member",context="personal",extra={})=>{
+   const returnTo=extra.authToken?donorReturnRoute():null;
    setState({loggedIn:true,persona,context,musyrifType:null,...emptyCache,...extra});
-   location.hash=homeRoute(persona);
+   location.hash=returnTo||homeRoute(persona);
   };
 
  const goWithSession=(data)=>{

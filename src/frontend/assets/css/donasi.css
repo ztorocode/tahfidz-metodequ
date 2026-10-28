@@ -66,3 +66,10 @@
 .donasi-student-card h2{margin:0 0 4px;font-size:18px;color:#15372a}
 .donasi-student-card div>span{font-size:13px;color:#587266}
 @media(max-width:620px){.donasi-students-list{grid-template-columns:1fr}}
+
+.donasi-student-info{flex:1;min-width:0}
+.donasi-student-info h2{overflow-wrap:anywhere}
+.donasi-student-info>span{display:block;font-size:13px;color:#567366;line-height:1.5}
+.donasi-student-info small{display:block;color:#71897b;font-size:12px;margin-top:7px}
+.donasi-student-progress{height:9px;overflow:hidden;border-radius:99px;background:#e5f0e9;margin-top:11px}
+.donasi-student-progress>span{display:block;height:100%;border-radius:99px;background:#0f6b4d}

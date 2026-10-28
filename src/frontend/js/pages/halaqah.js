@@ -452,7 +452,7 @@ function detail(item,isAdmin){
   <div class="kpi"><b>${item.students.reduce((sum,s)=>sum+(Number(s.mutqin)||0),0)}</b><span class="muted">Total Mutqin</span></div>
   <div class="kpi"><b>${item.students.reduce((sum,s)=>sum+(Number(s.pending)||0),0)}</b><span class="muted">Setoran Pending</span></div>
  </div>
- <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Musyrif"}</b><span class="muted">Akses aktif</span></div>
+ <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Ustadz"}</b><span class="muted">Akses aktif</span></div>
  ${programCard(item,isAdmin)}
  <div class="card">
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>

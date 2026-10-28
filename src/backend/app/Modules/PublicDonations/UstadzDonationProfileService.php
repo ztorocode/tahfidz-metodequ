@@ -118,10 +118,15 @@ final class UstadzDonationProfileService
         if ($source === false) {
             throw new RegistrationException('Berkas foto tidak bisa dibaca.', 422);
         }
-        $target = imagecreatetruecolor(imagesx($source), imagesy($source));
+        $originalWidth = imagesx($source);
+        $originalHeight = imagesy($source);
+        $ratio = min(1, 1400 / max($originalWidth, $originalHeight));
+        $width = max(1, (int) round($originalWidth * $ratio));
+        $height = max(1, (int) round($originalHeight * $ratio));
+        $target = imagecreatetruecolor($width, $height);
         $white = imagecolorallocate($target, 255, 255, 255);
         imagefill($target, 0, 0, $white);
-        imagecopy($target, $source, 0, 0, 0, 0, imagesx($source), imagesy($source));
+        imagecopyresampled($target, $source, 0, 0, 0, 0, $width, $height, $originalWidth, $originalHeight);
         imagedestroy($source);
         $directory = dirname(__DIR__, 3) . '/storage/ustadz-activities';
         if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {

@@ -164,7 +164,7 @@ function setoranSummaryCard(rows,student,canRate){
 }
 
 function setoranHistoryCard(rows,canRate){
- const head=`<div style="margin-bottom:12px"><h3>Riwayat Setoran</h3><p class="muted">Setoran terakhir beserta penilaian dan catatan musyrif.</p></div>`;
+ const head=`<div style="margin-bottom:12px"><h3>Riwayat Setoran</h3><p class="muted">Setoran terakhir beserta penilaian dan catatan ustadz.</p></div>`;
  if(!rows.length){
   return `<div class="card" style="margin-bottom:16px">${head}<p class="muted">Belum ada penilaian setoran untuk santri ini.${canRate?" Tekan \"+ Tambah Setoran\" untuk mencatat penilaian pertama.":""}</p></div>`;
  }
@@ -189,10 +189,10 @@ function setoranHistoryCard(rows,canRate){
 function setoranNotesCard(rows){
  const notes=rows.filter(row=>row.notes).slice(0,6);
  if(!notes.length){
-  return `<div class="card" style="margin-bottom:16px"><h3>Catatan Musyrif</h3><p class="muted" style="margin-top:8px">Belum ada catatan untuk santri ini.</p></div>`;
+  return `<div class="card" style="margin-bottom:16px"><h3>Catatan Ustadz</h3><p class="muted" style="margin-top:8px">Belum ada catatan untuk santri ini.</p></div>`;
  }
  return `<div class="card" style="margin-bottom:16px">
-  <h3>Catatan Musyrif</h3><p class="muted">Fokus penguatan berikutnya.</p>
+  <h3>Catatan Ustadz</h3><p class="muted">Fokus penguatan berikutnya.</p>
   <div class="list">${notes.map(row=>{
    const meta=decisionMeta(row.decision);
    return `<div class="list-item"><div class="grow"><b>${escapeHtml(row.ref)}</b>
@@ -245,7 +245,7 @@ function setoranMurajaahCard(rows){
 function setoranActivityCard(rows,updatedAt){
  const events=rows.slice(0,10).map(row=>({
   at:String(row.created_at||""),
-  text:`${row.created_by_name||"Musyrif"} menilai ${row.ref} — ${decisionMeta(row.decision).label}`
+  text:`${row.created_by_name||"Ustadz"} menilai ${row.ref} — ${decisionMeta(row.decision).label}`
  }));
  if(updatedAt)events.push({at:String(updatedAt),text:"Isian progress diperbarui oleh santri"});
  events.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
@@ -352,7 +352,7 @@ export function studentProgressPage(){
  }
 
  const start=selected.startDate||null;
- const roleLabel=isMember?"Santri":state.persona==="musyrif"?"Musyrif":"Admin Pondok";
+ const roleLabel=isMember?"Santri":state.persona==="musyrif"?"Ustadz":"Admin Pondok";
  const tab=isMember?{href:"#report",label:"Buka Report"}:{href:"#tabel-progress",label:"Buka Tabel Progress"};
  const summary=data?summarize(data):null;
  const pending=loading||(isMember&&pulling);
@@ -384,7 +384,7 @@ export function studentProgressPage(){
    ${isMember?"":`<a class="btn" href="#halaqah" style="display:inline-flex;margin-bottom:12px">← Kembali ke Halaqah</a>`}
    <p class="eyebrow">${isMember?"Progress Saya":"Pondok / Halaqah / Progress Santri"}</p>
    <h1>${escapeHtml(student.name)}</h1>
-   <p class="muted">${escapeHtml(selected.halaqahName||"—")} · Musyrif: ${escapeHtml(selected.musyrifName||"—")} · ${escapeHtml(student.status||"Aktif")}</p>
+   <p class="muted">${escapeHtml(selected.halaqahName||"—")} · Ustadz: ${escapeHtml(selected.musyrifName||"—")} · ${escapeHtml(student.status||"Aktif")}</p>
   </div>
   <div class="row" style="flex-wrap:wrap;justify-content:flex-end"><a class="btn primary" href="${isMember?"#report":"#tabel-progress"}">${isMember?"Report":"Tabel Progress"}</a><span class="badge success">${roleLabel} · Monitoring</span></div>
  </div>

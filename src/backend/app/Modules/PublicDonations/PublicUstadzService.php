@@ -21,6 +21,7 @@ final class PublicUstadzService
     {
         $start = new DateTimeImmutable('first day of this month 00:00:00', new DateTimeZone('Asia/Jakarta'));
         $end = $start->modify('+1 month');
+        $donationTableReady = (bool) $this->pdo->query("SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'donation_transfers' LIMIT 1")->fetchColumn();
 
         $sql = <<<'SQL'
 SELECT mp.id,
@@ -30,7 +31,7 @@ SELECT mp.id,
        COALESCE(students.santri_aktif, 0) AS santri_aktif,
        COALESCE(reviews.setoran_dinilai, 0) AS setoran_dinilai,
        COALESCE(reviews.hafalan_mutqin, 0) AS hafalan_mutqin,
-       COALESCE(donations.total_idr, 0) AS donasi_bulan_ini
+       __DONATION_AMOUNT__ AS donasi_bulan_ini
 FROM musyrif_profiles mp
 JOIN users u ON u.id = mp.user_id AND u.status = 'active' AND u.deleted_at IS NULL
 LEFT JOIN pondoks p ON p.id = mp.pondok_id AND p.status = 'active' AND p.deleted_at IS NULL
@@ -65,22 +66,33 @@ LEFT JOIN (
     ) entries
     GROUP BY entries.reviewer_id
 ) reviews ON reviews.reviewer_id = mp.user_id
+__DONATION_JOIN__
+WHERE mp.status = 'active'
+  AND (mp.type = 'platform' OR p.id IS NOT NULL)
+ORDER BY COALESCE(students.santri_aktif, 0) DESC, u.name ASC
+SQL;
+
+        $sql = str_replace(
+            ['__DONATION_AMOUNT__', '__DONATION_JOIN__'],
+            [
+                $donationTableReady ? 'COALESCE(donations.total_idr, 0)' : 'NULL',
+                $donationTableReady ? <<<'DONATION_SQL'
 LEFT JOIN (
     SELECT musyrif_profile_id, SUM(amount_idr) AS total_idr
     FROM donation_transfers
     WHERE status = 'verified' AND sent_at >= :month_start AND sent_at < :month_end
     GROUP BY musyrif_profile_id
 ) donations ON donations.musyrif_profile_id = mp.id
-WHERE mp.status = 'active'
-  AND (mp.type = 'platform' OR p.id IS NOT NULL)
-ORDER BY COALESCE(students.santri_aktif, 0) DESC, u.name ASC
-SQL;
-
+DONATION_SQL
+                : '',
+            ],
+            $sql
+        );
         $query = $this->pdo->prepare($sql);
-        $query->execute([
+        $query->execute($donationTableReady ? [
             'month_start' => $start->format('Y-m-d H:i:s'),
             'month_end' => $end->format('Y-m-d H:i:s'),
-        ]);
+        ] : []);
         $items = array_map(static fn (array $row): array => [
             'id' => (int) $row['id'],
             'name' => (string) $row['name'],
@@ -89,7 +101,7 @@ SQL;
             'santri_aktif' => (int) $row['santri_aktif'],
             'setoran_dinilai' => (int) $row['setoran_dinilai'],
             'hafalan_mutqin' => (int) $row['hafalan_mutqin'],
-            'donasi_bulan_ini' => (int) $row['donasi_bulan_ini'],
+            'donasi_bulan_ini' => $row['donasi_bulan_ini'] !== null ? (int) $row['donasi_bulan_ini'] : null,
         ], $query->fetchAll(PDO::FETCH_ASSOC));
 
         return [

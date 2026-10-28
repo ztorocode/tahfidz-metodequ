@@ -69,8 +69,8 @@ async function copyText(link){
 const users=[
  {name:"Ahmad Fauzi",email:"member@metodequ.id",role:"Member",type:"Personal",scope:"Personal",status:"Aktif"},
  {name:"Siti Aisyah",email:"siti@example.com",role:"Santri",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Musyrif",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Musyrif",type:"Platform",scope:"MetodeQu",status:"Aktif"},
+ {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Ustadz",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
+ {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Ustadz",type:"Platform",scope:"MetodeQu",status:"Aktif"},
  {name:"Admin Pondok",email:"admin@metodequ.id",role:"Admin Pondok",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
  {name:"Super Admin",email:"superadmin@metodequ.id",role:"Super Admin",type:"Platform",scope:"MetodeQu",status:"Aktif"}
 ];
@@ -84,7 +84,7 @@ export function superAdminDashboard(){
 
 export function userManagementPage(){
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Manajemen User</h1><p class="muted">Daftar akun lintas Personal dan Pondok. Data masih prototype/demo.</p></div><span class="badge success">${users.length} sample user</span></div>
- <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.126</b><span class="muted">Member / Santri</span></div><div class="kpi"><b>109</b><span class="muted">Musyrif</span></div><div class="kpi"><b>48</b><span class="muted">Admin Pondok</span></div><div class="kpi"><b>1</b><span class="muted">Super Admin</span></div></div>
+ <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.126</b><span class="muted">Member / Santri</span></div><div class="kpi"><b>109</b><span class="muted">Ustadz</span></div><div class="kpi"><b>48</b><span class="muted">Admin Pondok</span></div><div class="kpi"><b>1</b><span class="muted">Super Admin</span></div></div>
  <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${users.map(user=>`<tr><td><b>${user.name}</b></td><td>${user.email}</td><td>${user.role}</td><td>${user.type}</td><td>${user.scope}</td><td><span class="badge success">${user.status}</span></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
@@ -130,7 +130,7 @@ export function platformMusyrifPage(){
  }else if(!items.length){
   body='<tr class="platform-musyrif-empty"><td colspan="6"><span class="muted">Belum ada ustadz terdaftar.</span></td></tr>';
  }else{
-  body=items.map(item=>`<tr><td data-label="Musyrif"><b>${esc(item.name)}</b></td><td data-label="Email">${esc(item.email)}</td><td data-label="User dampingan">${item.dampingan}</td><td data-label="Tipe">${item.type==="platform"?"Platform":"Pondok"}</td><td data-label="Scope">${esc(item.scope)}</td><td data-label="Status">${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
+  body=items.map(item=>`<tr><td data-label="Ustadz"><b>${esc(item.name)}</b></td><td data-label="Email">${esc(item.email)}</td><td data-label="User dampingan">${item.dampingan}</td><td data-label="Tipe">${item.type==="platform"?"Platform":"Pondok"}</td><td data-label="Scope">${esc(item.scope)}</td><td data-label="Status">${item.status==="active"?'<span class="badge success">Aktif</span>':'<span class="badge">Nonaktif</span>'}</td></tr>`).join("");
  }
  return `<div class="platform-musyrif-page"><div class="row between platform-musyrif-head" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Ustadz Platform</h1><p class="muted">Ustadz yang dikelola MetodeQu — dampingan aktif: ${d&&!d.error?(d.dampingan_total??0):"—"} user.</p></div><span class="badge platform-musyrif-summary ${d&&!d.error?"success":""}">${badge}</span></div>
  <div class="grid-2 platform-musyrif-grid"><div class="card platform-musyrif-invite-card"><h3>Undang Ustadz</h3><div class="stack">
@@ -140,7 +140,7 @@ export function platformMusyrifPage(){
  <button class="btn full" id="platAddBtn" type="button">Form +Ustadz</button>
  <h3 style="margin-top:16px">Undangan Terkirim</h3><div class="list" id="platInviteList">${inviteListBody()}</div>
  </div></div>
- <div class="card platform-musyrif-list-card"><h3>Daftar Musyrif</h3><div class="table-wrap platform-musyrif-table-wrap"><table class="table platform-musyrif-table"><thead><tr><th>Ustadz</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
+ <div class="card platform-musyrif-list-card"><h3>Daftar Ustadz</h3><div class="table-wrap platform-musyrif-table-wrap"><table class="table platform-musyrif-table"><thead><tr><th>Ustadz</th><th>Email</th><th>User dampingan</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div></div></div>
  <div class="modal-backdrop hidden" id="platInviteModal">
   <div class="modal-card">
    <div><p class="eyebrow">Undangan</p><h2>Kirim Undangan</h2></div>
@@ -180,7 +180,7 @@ export function bindPlatformMusyrif(){
  document.querySelector("#platInviteBtn")?.addEventListener("click",()=>{
   const m=inviteModal();if(!m)return;
   const msg=document.querySelector("#platMsg");
-  if(msg){msg.textContent="Maksimal 20 email per kirim. Nama & WA diisi musyrif saat menerima undangan. Berlaku 7 hari.";msg.style.color="";}
+  if(msg){msg.textContent="Maksimal 20 email per kirim. Nama & WA diisi ustadz saat menerima undangan. Berlaku 7 hari.";msg.style.color="";}
   m.classList.remove("hidden");
  });
  document.querySelector("#platInviteClose")?.addEventListener("click",()=>inviteModal()?.classList.add("hidden"));

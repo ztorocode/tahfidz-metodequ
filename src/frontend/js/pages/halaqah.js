@@ -306,7 +306,7 @@ function musyrifList(items,opts={}){
  if(expandedHalaqahId===undefined&&items.length)expandedHalaqahId=items[0].id;
  const limit=5;
  const heading=opts.platform
-  ?`<p class="eyebrow">MetodeQu Platform</p>
+  ?`<p class="eyebrow">Mutqeen Platform</p>
     <div class="row between" style="gap:12px;flex-wrap:wrap;align-items:flex-end">
      <h1 style="margin:0">Halaqah Saya</h1>
      <button class="btn primary" type="button" data-platform-halaqah-add ${items.length>=limit?"disabled":""}>+ Buat Halaqah</button>
@@ -314,7 +314,7 @@ function musyrifList(items,opts={}){
     <p class="muted">Halaqah yang Anda buat dan ampu di platform: <b style="color:var(--text)">${items.length}/${limit}</b>${items.length>=limit?" · batas maksimal tercapai":""}.</p>
     <div class="modal-backdrop hidden" id="platformHalaqahModal">
      <div class="modal-card">
-      <div><p class="eyebrow">MetodeQu Platform</p><h2>Buat Halaqah</h2></div>
+      <div><p class="eyebrow">Mutqeen Platform</p><h2>Buat Halaqah</h2></div>
       <form class="stack" id="platformHalaqahForm" style="margin-top:16px">
        <div><label class="label">Nama Halaqah</label><input class="input" id="platformHalaqahName" placeholder="Contoh: Halaqah Al-Ikhlas" required></div>
        <small class="muted">Halaqah ini Anda ampu sendiri (tanpa pondok). Batas maksimal ${limit} halaqah. Santri dapat ditambahkan setelah halaqah dibuat.</small>
@@ -328,7 +328,7 @@ function musyrifList(items,opts={}){
     </div>
     <div class="modal-backdrop hidden" id="platformHalaqahEditModal">
      <div class="modal-card">
-       <div><p class="eyebrow">MetodeQu Platform</p><h2>Edit Halaqah</h2></div>
+       <div><p class="eyebrow">Mutqeen Platform</p><h2>Edit Halaqah</h2></div>
        <form class="stack" id="platformHalaqahEditForm" style="margin-top:16px">
         <div><label class="label">Nama Halaqah</label><input class="input" id="platformHalaqahEditName" placeholder="Contoh: Halaqah Al-Ikhlas" required></div>
         <small class="muted">Halaqah ini Anda ampu sendiri (tanpa pondok). Nama dapat diubah kapan saja.</small>

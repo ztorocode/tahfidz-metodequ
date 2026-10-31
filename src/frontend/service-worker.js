@@ -1,10 +1,10 @@
-const CACHE='mutqeen-camfixb4d2';
+const CACHE='mutqeen-profacc31a';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
- './assets/css/components.css?v=b9f2d4e1','./assets/css/responsive.css?v=f28a6c10','./assets/css/halaqah-camera.css?v=camfixb4d2','./assets/css/landing.css?v=b8c14e72',
+ './assets/css/components.css?v=profacc31a','./assets/css/responsive.css?v=f28a6c10','./assets/css/halaqah-camera.css?v=camfixb4d2','./assets/css/landing.css?v=b8c14e72',
  './assets/images/icon.svg?v=81bed469','./assets/css/donasi.css?v=5a9031cd',
- './js/app.js?v=camfixb4d2','./js/store.js?v=81bed469',
+ './js/app.js?v=profacc31a','./js/store.js?v=81bed469',
  './js/pages/login.js?v=6e2da185',
  './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=5a9031cd','./js/pages/donatur-auth.js?v=5a9031cd',
  './js/pages/terima-undangan.js?v=b8c14e72',

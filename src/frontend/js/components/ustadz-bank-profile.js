@@ -2,8 +2,8 @@ import {getState} from "../store.js?v=81bed469";
 
 export function ustadzBankProfileSection(){
  if(getState().persona!=="musyrif")return "";
- return `<div class="stack" style="padding-top:8px;border-top:1px solid var(--border)">
-  <div><p class="eyebrow">Donasi</p><h3>Rekening Donasi</h3><small class="muted">Rekening ini dapat ditampilkan kepada donatur jika Anda mengizinkannya.</small></div>
+ return `<div class="stack">
+  <small class="muted">Rekening ini dapat ditampilkan kepada donatur jika Anda mengizinkannya.</small>
   <form id="profileDonorBankForm" class="stack">
    <div><label class="label" for="profileDonorBankName">Nama bank</label><input class="input" id="profileDonorBankName" maxlength="100" required placeholder="Nama bank"></div>
    <div><label class="label" for="profileDonorBankNumber">Nomor rekening</label><input class="input" id="profileDonorBankNumber" maxlength="35" inputmode="numeric" required></div>

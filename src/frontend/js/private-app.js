@@ -1,6 +1,6 @@
 import {view,routeName} from "./router.js?v=camfixb4d2";
 import {getState,setState} from "./store.js?v=81bed469";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=7c3e1a90";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=profacc31a";
 import {bindLogin} from "./pages/login.js?v=b8c14e72";
 import {bindInvite} from "./pages/terima-undangan.js?v=b8c14e72";
 import {toast} from "./utils/helpers.js?v=81bed469";

@@ -81,3 +81,16 @@
 .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--muted);display:grid;place-items:center;font-size:18px;line-height:1;cursor:pointer}
 .password-toggle:hover,.password-toggle:focus-visible{background:var(--surface-3);color:var(--text);outline:none}
 .password-toggle:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+
+/* Accordion pada modal Edit Profil (profil, kata sandi, dan rekening donasi). */
+.profile-accordion-list{display:grid;gap:10px;margin-top:18px}
+.profile-accordion{min-width:0;overflow:hidden;border:1px solid var(--border);border-radius:13px;background:var(--surface)}
+.profile-accordion[open]{border-color:var(--brand)}
+.profile-accordion>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;font-weight:750;color:var(--text);user-select:none}
+.profile-accordion>summary::-webkit-details-marker{display:none}
+.profile-accordion>summary::after{content:"";flex:none;width:9px;height:9px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s ease;margin-right:3px}
+.profile-accordion[open]>summary{color:var(--brand);background:var(--brand-soft)}
+.profile-accordion[open]>summary::after{transform:rotate(225deg)}
+.profile-accordion>summary:focus-visible{outline:3px solid var(--brand);outline-offset:-3px;border-radius:12px}
+.profile-accordion-content{padding:16px;border-top:1px solid var(--border)}
+.profile-accordion-content .stack{min-width:0}

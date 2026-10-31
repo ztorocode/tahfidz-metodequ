@@ -1,6 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
-import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=3ac9e7d1";
+import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -103,20 +103,34 @@ function accountMenu(){
 
 function profileModal(){
  const account=currentAccount();
+ const bankSection=ustadzBankProfileSection();
  return `<div class="modal-backdrop hidden" id="profileModal">
   <div class="modal-card" style="max-height:calc(100dvh - 36px);overflow:auto">
    <div class="row between"><div><p class="eyebrow">Akun</p><h2>Edit Profil</h2></div><button class="btn" id="closeProfileBtn" type="button">Tutup</button></div>
-   <div class="stack">
-    <div><label class="label">Nama</label><input class="input" id="profileName" value="${account.name}"></div>
-    <div><label class="label">Email</label><input class="input" id="profileEmail" type="email" value="${account.email}" disabled><small class="muted">Email tidak dapat diubah.</small></div>
-    <div><label class="label">Nomor WhatsApp</label><input class="input" id="profilePhone" value="${account.phone}"></div>
-    <small class="muted" id="profileMessage"></small>
-    <button class="btn primary full" id="saveProfileBtn" type="button">Simpan Profil</button>
-    <div><label class="label">Password lama</label><input class="input" id="profileCurrentPassword" type="password" autocomplete="current-password"></div>
-    <div><label class="label">Password baru</label><input class="input" id="profileNewPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
-    <small class="muted" id="passwordMessage"></small>
-    <button class="btn full" id="changePasswordBtn" type="button">Ganti Password</button>
-    ${ustadzBankProfileSection()}
+   <div class="profile-accordion-list">
+    <details class="profile-accordion" name="edit-profile-sections" open>
+     <summary>Profil</summary>
+     <div class="profile-accordion-content stack">
+      <div><label class="label" for="profileName">Nama</label><input class="input" id="profileName" value="${account.name}"></div>
+      <div><label class="label" for="profileEmail">Email</label><input class="input" id="profileEmail" type="email" value="${account.email}" disabled><small class="muted">Email tidak dapat diubah.</small></div>
+      <div><label class="label" for="profilePhone">Nomor WhatsApp</label><input class="input" id="profilePhone" value="${account.phone}"></div>
+      <small class="muted" id="profileMessage" role="status"></small>
+      <button class="btn primary full" id="saveProfileBtn" type="button">Simpan Profil</button>
+     </div>
+    </details>
+    <details class="profile-accordion" name="edit-profile-sections">
+     <summary>Ganti Password</summary>
+     <div class="profile-accordion-content stack">
+      <div><label class="label" for="profileCurrentPassword">Password lama</label><input class="input" id="profileCurrentPassword" type="password" autocomplete="current-password"></div>
+      <div><label class="label" for="profileNewPassword">Password baru</label><input class="input" id="profileNewPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+      <small class="muted" id="passwordMessage" role="status"></small>
+      <button class="btn full" id="changePasswordBtn" type="button">Ganti Password</button>
+     </div>
+    </details>
+    ${bankSection?`<details class="profile-accordion" name="edit-profile-sections">
+     <summary>Rekening Donasi</summary>
+     <div class="profile-accordion-content">${bankSection}</div>
+    </details>`:""}
    </div>
   </div>
  </div>`;
@@ -193,9 +207,21 @@ export function bindShell(){
  const modal=document.querySelector("#profileModal");
  document.querySelector("#editProfileBtn")?.addEventListener("click",()=>{
   menu?.classList.add("hidden");
+  // Selalu mulai dari Profil agar form lain tidak tampil sekaligus.
+  const sections=[...(modal?.querySelectorAll(".profile-accordion")||[])];
+  sections.forEach((section,index)=>{section.open=index===0;});
   modal?.classList.remove("hidden");
   bindUstadzBankProfile();
   document.querySelector("#profileName")?.focus();
+ });
+ // Hanya satu panel terbuka, termasuk pada browser yang belum mendukung details[name].
+ modal?.querySelectorAll(".profile-accordion").forEach(section=>{
+  section.addEventListener("toggle",()=>{
+   if(!section.open)return;
+   modal.querySelectorAll(".profile-accordion").forEach(other=>{
+    if(other!==section&&other.open)other.open=false;
+   });
+  });
  });
  document.querySelector("#closeProfileBtn")?.addEventListener("click",()=>modal?.classList.add("hidden"));
  modal?.addEventListener("click",event=>{if(event.target===modal)modal.classList.add("hidden")});

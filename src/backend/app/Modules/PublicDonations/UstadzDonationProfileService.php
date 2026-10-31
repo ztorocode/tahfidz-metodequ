@@ -30,24 +30,27 @@ final class UstadzDonationProfileService
     public function show(int $userId): array
     {
         $profileId = $this->profileId($userId);
-        $q = $this->pdo->prepare('SELECT bank_name, account_number, account_holder, is_public FROM ustadz_public_banks WHERE musyrif_profile_id = :id');
-        $q->execute(['id' => $profileId]);
-        $bank = $q->fetch(PDO::FETCH_ASSOC);
+        $q = $this->pdo->prepare("SELECT meta_value, on_off FROM user_meta WHERE user_id = :id AND meta_key = 'donation_bank' LIMIT 1");
+        $q->execute(['id' => $userId]);
+        $bankMeta = $q->fetch(PDO::FETCH_ASSOC);
+        $bankValue = is_array($bankMeta) ? json_decode((string) $bankMeta['meta_value'], true) : null;
+        $bank = is_array($bankValue) ? [
+            'bank_name' => (string) ($bankValue['bank_name'] ?? ''),
+            'account_number' => (string) ($bankValue['account_number'] ?? ''),
+            'account_holder' => (string) ($bankValue['account_holder'] ?? ''),
+            'is_public' => (int) $bankMeta['on_off'] === 1,
+        ] : null;
         $h = $this->pdo->prepare("SELECT id, name FROM halaqahs WHERE musyrif_profile_id = :id AND deleted_at IS NULL AND status = 'active' ORDER BY name");
         $h->execute(['id' => $profileId]);
-        $p = $this->pdo->prepare('SELECT id, halaqah_id, caption, created_at FROM ustadz_activity_photos WHERE musyrif_profile_id = :id ORDER BY created_at DESC LIMIT 30');
-        $p->execute(['id' => $profileId]);
+        $p = $this->pdo->prepare('SELECT id, halaqah_id, created_at, on_off FROM halaqah_photos WHERE user_id = :id AND on_off = 1 ORDER BY created_at DESC LIMIT 30');
+        $p->execute(['id' => $userId]);
         return [
-            'bank' => $bank === false ? null : [
-                'bank_name' => (string) $bank['bank_name'],
-                'account_number' => (string) $bank['account_number'],
-                'account_holder' => (string) $bank['account_holder'],
-                'is_public' => (bool) $bank['is_public'],
-            ],
+            'bank' => $bank,
             'halaqahs' => array_map(static fn (array $v): array => ['id' => (int) $v['id'], 'name' => $v['name']], $h->fetchAll(PDO::FETCH_ASSOC)),
             'photos' => array_map(static fn (array $v): array => [
-                'id' => (int) $v['id'], 'halaqah_id' => $v['halaqah_id'] !== null ? (int) $v['halaqah_id'] : null,
-                'caption' => $v['caption'], 'created_at' => $v['created_at'],
+                'id' => (int) $v['id'], 'halaqah_id' => (int) $v['halaqah_id'],
+                'caption' => 'Aktivitas Halaqah', 'created_at' => $v['created_at'],
+                'on_off' => (int) $v['on_off'],
                 'url' => '/api/public/ustadz/photo?id=' . (int) $v['id'],
             ], $p->fetchAll(PDO::FETCH_ASSOC)),
         ];
@@ -55,7 +58,7 @@ final class UstadzDonationProfileService
 
     public function saveBank(int $userId, array $input): void
     {
-        $id = $this->profileId($userId);
+        $this->profileId($userId);
         $name = trim((string) ($input['bank_name'] ?? ''));
         $accountNumber = preg_replace('/[\s-]+/', '', (string) ($input['account_number'] ?? '')) ?? '';
         $holder = trim((string) ($input['account_holder'] ?? ''));
@@ -65,13 +68,17 @@ final class UstadzDonationProfileService
             mb_strlen($holder) < 3 || mb_strlen($holder) > 150) {
             throw new RegistrationException('Isi nama bank, nomor rekening 5-30 digit, dan nama penerima dengan benar.', 422);
         }
+        $metaValue = json_encode([
+            'bank_name' => $name,
+            'account_number' => $accountNumber,
+            'account_holder' => $holder,
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $q = $this->pdo->prepare(
-            'INSERT INTO ustadz_public_banks (musyrif_profile_id, bank_name, account_number, account_holder, is_public)
-             VALUES (:id,:bank,:number,:holder,:pub)
-             ON DUPLICATE KEY UPDATE bank_name = VALUES(bank_name), account_number = VALUES(account_number),
-             account_holder = VALUES(account_holder), is_public = VALUES(is_public)'
+            "INSERT INTO user_meta (user_id, meta_key, meta_value, on_off)
+             VALUES (:id, 'donation_bank', :value, :enabled)
+             ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value), on_off = VALUES(on_off)"
         );
-        $q->execute(['id' => $id, 'bank' => $name, 'number' => $accountNumber, 'holder' => $holder, 'pub' => $public ? 1 : 0]);
+        $q->execute(['id' => $userId, 'value' => $metaValue, 'enabled' => $public ? 1 : 0]);
     }
 
     public function uploadPhoto(int $userId, array $input, array $upload): void
@@ -79,13 +86,6 @@ final class UstadzDonationProfileService
         $profileId = $this->profileId($userId);
         if (($input['consent'] ?? '') !== 'yes') {
             throw new RegistrationException('Konfirmasi izin publikasi foto diperlukan.', 422);
-        }
-        $caption = trim((string) ($input['caption'] ?? ''));
-        if ($caption === '') {
-            $caption = 'Aktivitas Halaqah';
-        }
-        if (mb_strlen($caption) < 3 || mb_strlen($caption) > 180) {
-            throw new RegistrationException('Keterangan foto harus 3-180 karakter.', 422);
         }
         $halaqahId = filter_var($input['halaqah_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
         if ($halaqahId === null) {
@@ -98,8 +98,8 @@ final class UstadzDonationProfileService
                 throw new RegistrationException('Halaqah tidak sesuai dengan akun.', 403);
             }
         }
-        $count = $this->pdo->prepare('SELECT COUNT(*) FROM ustadz_activity_photos WHERE musyrif_profile_id = :profile');
-        $count->execute(['profile' => $profileId]);
+        $count = $this->pdo->prepare('SELECT COUNT(*) FROM halaqah_photos WHERE user_id = :user_id');
+        $count->execute(['user_id' => $userId]);
         if ((int) $count->fetchColumn() >= 30) {
             throw new RegistrationException('Maksimal 30 foto. Hapus foto lama sebelum mengunggah.', 422);
         }
@@ -155,11 +155,10 @@ final class UstadzDonationProfileService
         }
         try {
             $q = $this->pdo->prepare(
-                'INSERT INTO ustadz_activity_photos
-                 (musyrif_profile_id, halaqah_id, filename, caption, published, consent_confirmed_at)
-                 VALUES (:profile, :halaqah, :filename, :caption, 1, CURRENT_TIMESTAMP(3))'
+                'INSERT INTO halaqah_photos (user_id, halaqah_id, filename, on_off)
+                 VALUES (:user_id, :halaqah, :filename, 1)'
             );
-            $q->execute(['profile' => $profileId, 'halaqah' => $halaqahId, 'filename' => $filename, 'caption' => $caption]);
+            $q->execute(['user_id' => $userId, 'halaqah' => $halaqahId, 'filename' => $filename]);
         } catch (\Throwable $e) {
             @unlink($path);
             throw $e;
@@ -168,15 +167,15 @@ final class UstadzDonationProfileService
 
     public function deletePhoto(int $userId, int $id): void
     {
-        $profileId = $this->profileId($userId);
-        $q = $this->pdo->prepare('SELECT filename FROM ustadz_activity_photos WHERE id = :id AND musyrif_profile_id = :profile LIMIT 1');
-        $q->execute(['id' => $id, 'profile' => $profileId]);
+        $this->profileId($userId);
+        $q = $this->pdo->prepare('SELECT filename FROM halaqah_photos WHERE id = :id AND user_id = :user_id LIMIT 1');
+        $q->execute(['id' => $id, 'user_id' => $userId]);
         $filename = $q->fetchColumn();
         if (!is_string($filename)) {
             throw new RegistrationException('Foto tidak ditemukan.', 404);
         }
-        $delete = $this->pdo->prepare('DELETE FROM ustadz_activity_photos WHERE id = :id AND musyrif_profile_id = :profile');
-        $delete->execute(['id' => $id, 'profile' => $profileId]);
+        $delete = $this->pdo->prepare('DELETE FROM halaqah_photos WHERE id = :id AND user_id = :user_id');
+        $delete->execute(['id' => $id, 'user_id' => $userId]);
         if (preg_match('/^[a-f0-9]{32}\.jpg$/', $filename)) {
             @unlink(dirname(__DIR__, 3) . '/storage/ustadz-activities/' . $filename);
         }

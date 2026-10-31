@@ -40,11 +40,12 @@ final class PublicUstadzDetailsService
         }
 
         $bank = null;
-        if ($this->tableExists('ustadz_public_banks')) {
-            $b = $this->pdo->prepare('SELECT bank_name, account_number, account_holder FROM ustadz_public_banks WHERE musyrif_profile_id = :id AND is_public = 1 LIMIT 1');
-            $b->execute(['id' => $id]);
-            $row = $b->fetch(PDO::FETCH_ASSOC);
-            if (is_array($row)) {
+        if ($this->tableExists('user_meta')) {
+            $b = $this->pdo->prepare("SELECT meta_value FROM user_meta WHERE user_id = :user_id AND meta_key = 'donation_bank' AND on_off = 1 LIMIT 1");
+            $b->execute(['user_id' => $ustadz['user_id']]);
+            $value = $b->fetchColumn();
+            $row = is_string($value) ? json_decode($value, true) : null;
+            if (is_array($row) && isset($row['bank_name'], $row['account_number'], $row['account_holder'])) {
                 $bank = [
                     'bank_name' => (string) $row['bank_name'],
                     'account_number' => (string) $row['account_number'],
@@ -100,19 +101,20 @@ final class PublicUstadzDetailsService
         ], $h->fetchAll(PDO::FETCH_ASSOC));
 
         $photos = [];
-        if ($this->tableExists('ustadz_activity_photos')) {
+        if ($this->tableExists('halaqah_photos')) {
             $p = $this->pdo->prepare(
-                'SELECT ph.id, ph.caption, ph.created_at, h.name AS halaqah_name
-                 FROM ustadz_activity_photos ph
-                 LEFT JOIN halaqahs h ON h.id = ph.halaqah_id
-                 WHERE ph.musyrif_profile_id = :id AND ph.published = 1
-                 ORDER BY ph.created_at DESC, ph.id DESC LIMIT 24'
+                "SELECT ph.id, ph.created_at, h.name AS halaqah_name
+                 FROM halaqah_photos ph
+                 JOIN halaqahs h ON h.id = ph.halaqah_id
+                   AND h.musyrif_profile_id = :profile AND h.status = 'active' AND h.deleted_at IS NULL
+                 WHERE ph.user_id = :user_id AND ph.on_off = 1
+                 ORDER BY ph.created_at DESC, ph.id DESC LIMIT 24"
             );
-            $p->execute(['id' => $id]);
+            $p->execute(['profile' => $id, 'user_id' => $ustadz['user_id']]);
             $photos = array_map(static fn (array $v): array => [
                 'id' => (int) $v['id'],
-                'caption' => (string) $v['caption'],
-                'halaqah_name' => $v['halaqah_name'] !== null ? (string) $v['halaqah_name'] : null,
+                'caption' => 'Aktivitas Halaqah',
+                'halaqah_name' => (string) $v['halaqah_name'],
                 'created_at' => (string) $v['created_at'],
                 'url' => '/api/public/ustadz/photo?id=' . (int) $v['id'],
             ], $p->fetchAll(PDO::FETCH_ASSOC));
@@ -200,15 +202,17 @@ final class PublicUstadzDetailsService
 
     public function sendPhoto(int $id): never
     {
-        if (!$this->tableExists('ustadz_activity_photos')) {
+        if (!$this->tableExists('halaqah_photos')) {
             Response::json(['success' => false, 'message' => 'Foto tidak ditemukan.'], 404);
         }
         $q = $this->pdo->prepare(
-            "SELECT ph.filename FROM ustadz_activity_photos ph
-             JOIN musyrif_profiles mp ON mp.id = ph.musyrif_profile_id AND mp.status = 'active'
-             JOIN users u ON u.id = mp.user_id AND u.status = 'active' AND u.deleted_at IS NULL
+            "SELECT ph.filename FROM halaqah_photos ph
+             JOIN halaqahs h ON h.id = ph.halaqah_id AND h.status = 'active' AND h.deleted_at IS NULL
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+               AND mp.user_id = ph.user_id AND mp.status = 'active'
+             JOIN users u ON u.id = ph.user_id AND u.status = 'active' AND u.deleted_at IS NULL
              LEFT JOIN pondoks p ON p.id = mp.pondok_id AND p.status = 'active' AND p.deleted_at IS NULL
-             WHERE ph.id = :id AND ph.published = 1 AND (mp.type = 'platform' OR p.id IS NOT NULL) LIMIT 1"
+             WHERE ph.id = :id AND ph.on_off = 1 AND (mp.type = 'platform' OR p.id IS NOT NULL) LIMIT 1"
         );
         $q->execute(['id' => $id]);
         $fileName = $q->fetchColumn();

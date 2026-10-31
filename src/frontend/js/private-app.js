@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=camfixb4d2";
+import {view,routeName} from "./router.js?v=donproof31";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=profacc31a";
 import {bindLogin} from "./pages/login.js?v=b8c14e72";
@@ -12,6 +12,7 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
 import {bindPlatformMusyrif} from "./pages/super-admin.js?v=b8c14e72";
 import {bindReview} from "./pages/review.js?v=81bed469";
+import {bindDonationNotifications} from "./pages/notifications.js?v=donproof31";
 import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=7c3e1a90";
 let deferredPrompt=null;
 export function renderPrivate(){
@@ -129,6 +130,7 @@ function bindPageActions(){
  if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
  if(routeName().split("?")[0]==="submission")bindSubmission();
  if(routeName().split("?")[0]==="review")bindReview();
+ if(routeName().split("?")[0]==="notifications")bindDonationNotifications();
  if(routeName().split("?")[0]==="musyrif")bindMusyrifDashboard();
  if(routeName().split("?")[0]==="platform-musyrif")bindPlatformMusyrif();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));

@@ -12,6 +12,11 @@ return static function (Router $router): void {
     $router->get('/api/public/ustadz/photo', [$public, 'photo']);
     $router->get('/api/ustadz/santri', [$public, 'students']);
     $router->post('/api/donatur/activate', [$public, 'activateDonor']);
+    $receipt = new \App\Modules\PublicDonations\DonationConfirmationController();
+    $router->post('/api/donatur/donation/confirm', [$receipt, 'confirm']);
+    $router->get('/api/ustadz/donations', [$receipt, 'reports']);
+    $router->post('/api/ustadz/donations/review', [$receipt, 'review']);
+    $router->get('/api/donations/proof', [$receipt, 'proof']);
 
     $profile = new \App\Modules\PublicDonations\UstadzDonationProfileController();
     $router->get('/api/ustadz/donation-profile', [$profile, 'show']);

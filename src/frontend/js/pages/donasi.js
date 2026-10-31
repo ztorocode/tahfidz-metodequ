@@ -1,5 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=5a9031cd";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donproof31";
+import {openDonationConfirmation} from "./donation-confirmation.js?v=donproof31";
 
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -54,6 +55,8 @@ function bankView(detail){
    +'<span>Nomor rekening</span><strong class="donasi-account-number">'+escapeHtml(bank.account_number)+'</strong>'
    +'<span>Atas nama</span><strong>'+escapeHtml(bank.account_holder)+'</strong></div>'
    +'<button type="button" class="btn primary donasi-copy" data-copy-account="'+escapeHtml(bank.account_number)+'">Salin Nomor Rekening</button>'
+   +'<div class="donasi-confirm-area"><button type="button" class="btn primary donasi-confirm-btn" data-confirm-transfer>Konfirmasi Bukti Transfer</button>'
+   +'<p class="donasi-confirm-note">Mohon konfirmasi bukti transfer agar sistem bisa mengirim notifikasi kepada ustadz dan mendukung transparansi laporan kepada publik. Nominal donasi ditampilkan setelah diverifikasi ustadz.</p></div>'
    +'<p class="donasi-caution">Periksa kembali nama penerima di aplikasi bank sebelum transfer. Mutqeen tidak menerima atau meneruskan dana.</p>';
 }
 function halaqahView(item){
@@ -95,6 +98,7 @@ export function bindDonationList(){
  const open=async(mode,id,name,button)=>{
   openedBy=button;
   overlay.dataset.ustadzId=String(id);
+  overlay.dataset.ustadzName=name;
   const ticket=++sequence;
   title.textContent=mode==="bank"?"Donasi untuk "+name:"Aktivitas "+name;
   body.innerHTML='<div class="donasi-state">Memuat informasi ustadz...</div>';
@@ -125,6 +129,11 @@ export function bindDonationList(){
  const observer=new MutationObserver(()=>{if(!page.isConnected){document.removeEventListener("keydown",onKey);document.body.classList.remove("donasi-modal-open");observer.disconnect()}});
  observer.observe(document.querySelector("#app")||document.body,{childList:true});
  body.addEventListener("click",async event=>{
+  const confirmButton=event.target.closest("[data-confirm-transfer]");
+  if(confirmButton&&body.contains(confirmButton)){
+   openDonationConfirmation(Number(overlay.dataset.ustadzId||0),overlay.dataset.ustadzName||"Ustadz",confirmButton);
+   return;
+  }
   const studentButton=event.target.closest("[data-students-halaqah]");
   if(studentButton&&body.contains(studentButton)){
    const halaqahId=Number(studentButton.dataset.studentsHalaqah||0);

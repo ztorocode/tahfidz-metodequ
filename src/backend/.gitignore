@@ -8,3 +8,6 @@ storage/setoran/*
 storage/ustadz-activities/*
 !storage/ustadz-activities/.gitkeep
 
+
+storage/donation-proofs/*
+!storage/donation-proofs/.gitkeep

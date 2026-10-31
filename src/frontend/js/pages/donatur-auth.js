@@ -7,13 +7,14 @@ export function isDonorAuthenticated(){
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
-export function openDonorModal(ustadzId,halaqahId,trigger=null){
+export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
  document.querySelector("#donorAuthOverlay")?.remove();
  const overlay=document.createElement("div");
  overlay.id="donorAuthOverlay";
  overlay.className="donasi-overlay";
+ if(options.purpose==="confirmation")overlay.style.zIndex="1200";
  overlay.innerHTML='<section class="donasi-dialog donor-auth-dialog" role="dialog" aria-modal="true" aria-labelledby="donorAuthTitle">'
-  +'<header class="donasi-dialog-head"><h2 id="donorAuthTitle">Akses Progres Santri</h2><button class="donasi-dialog-close" type="button" id="donorClose" aria-label="Tutup">×</button></header>'
+  +'<header class="donasi-dialog-head"><h2 id="donorAuthTitle">'+(options.purpose==="confirmation"?"Konfirmasi Bukti Transfer":"Akses Progres Santri")+'</h2><button class="donasi-dialog-close" type="button" id="donorClose" aria-label="Tutup">×</button></header>'
   +'<div class="donasi-dialog-body" id="donorAuthBody"></div></section>';
  document.body.appendChild(overlay);
  document.body.classList.add("donasi-modal-open");
@@ -29,6 +30,7 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null){
  function onKey(e){if(e.key==="Escape"){e.preventDefault();close()}}
  function goToStudents(){
   close();
+  if(typeof options.onAuthenticated==="function"){options.onAuthenticated();return;}
   const target="#donasi-santri?ustadz="+ustadzId+"&halaqah="+halaqahId;
   if(location.hash===target)window.dispatchEvent(new Event("app:render"));
   else location.hash=target;
@@ -36,7 +38,9 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null){
  const render=(mode,error="")=>{
   const errorText=error?'<p class="donor-auth-error" role="alert">'+escapeHtml(error)+'</p>':"";
   if(mode==="choice"){
-   body.innerHTML='<p>Untuk melihat nama dan progres santri, masuk atau buat akun Donatur terlebih dahulu.</p>'
+   body.innerHTML='<p>'+(options.purpose==="confirmation"
+    ?"Masuk atau daftar sebagai Donatur agar bukti transfer dapat dikirim dan ditindaklanjuti ustadz."
+    :"Untuk melihat nama dan progres santri, masuk atau buat akun Donatur terlebih dahulu.")+'</p>'
     +errorText+'<div class="donor-auth-choices"><button class="btn primary" type="button" data-donor-screen="login">Masuk</button>'
     +'<button class="btn" type="button" data-donor-screen="register">Daftar sebagai Donatur</button></div>';
   }else if(mode==="login"){
@@ -57,10 +61,12 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null){
     +'<div class="donor-auth-secondary"><button type="button" data-donor-screen="login">Sudah punya akun? Masuk</button></div>';
   }else if(mode==="activate"){
    body.innerHTML='<p>Akun <strong>'+escapeHtml(getState().authUser?.name||"Mutqeen")+'</strong> sudah login tetapi belum mempunyai role Donatur.</p>'
-    +'<p>Aktifkan role Donatur untuk melihat nama dan progres santri. Role akun lainnya tetap tersedia.</p>'
+    +'<p>'+(options.purpose==="confirmation"
+     ?"Aktifkan role Donatur agar dapat mengirim bukti transfer."
+     :"Aktifkan role Donatur untuk melihat nama dan progres santri. Role akun lainnya tetap tersedia.")+'</p>'
     +errorText+'<form data-donor-form="activate" class="donor-auth-form"><button class="btn primary" type="submit">Aktifkan sebagai Donatur</button></form>';
   }else{
-   body.innerHTML='<p>Registrasi diterima. Verifikasi akun melalui link yang dikirim ke email atau WhatsApp. Setelah terverifikasi, masuk untuk melihat nama dan progres santri.</p>'
+   body.innerHTML='<p>Registrasi diterima. Verifikasi akun melalui link yang dikirim ke email atau WhatsApp. Setelah terverifikasi, masuk untuk melanjutkan.</p>'
     +'<button class="btn primary" type="button" data-donor-screen="login">Masuk setelah verifikasi</button>';
   }
   body.querySelector("input")?.focus();

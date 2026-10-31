@@ -126,3 +126,9 @@ tidak menghapus role lain. `GET /api/ustadz/santri` memerlukan sesi valid
 untuk akun yang bukan Donatur. Tidak ada migrasi karena `user_roles.role`
 menggunakan VARCHAR(50). Pembukaan akses Donatur tidak memverifikasi pembayaran
 donasi, karena proses verifikasi transfer terpisah dari pengelolaan role.
+
+## Konfirmasi bukti transfer Donatur
+
+Popup Donate memiliki tombol **Konfirmasi Bukti Transfer** dengan pilihan kamera atau upload gambar. Donatur mengisi nominal rupiah dan waktu transfer (WIB). Login + role `donatur` diperlukan saat mengirim, bukan saat membuka popup. Berkas tersimpan privat di `src/backend/storage/donation-proofs`, di luar webroot, maksimum 5 MB dan dikonversi ke JPG menggunakan PHP GD. Directory harus writable oleh proses PHP dan persisten.
+
+Jalankan migrasi `20261031_023_donation_transfer_proofs` setelah 019 (023 menambah `donor_user_id`, `proof_filename` ke `donation_transfers`). Endpoint `POST /api/donatur/donation/confirm` (multipart `ustadz_id`, `amount_idr`, `sent_at` dengan waktu Jakarta `YYYY-MM-DDTHH:mm`, `proof`) mencatat status `reported` dan menambah notifikasi ke tabel `notifications` untuk user ustadz. Di menu Notifikasi, ustadz mengambil daftar konfirmasi via `GET /api/ustadz/donations`, melihat foto privat via `GET /api/donations/proof?id=...` menggunakan Bearer, lalu `POST /api/ustadz/donations/review` dengan id dan status `verified` atau `rejected`. Foto hanya boleh dibuka pemilik laporan atau ustadz penerima. Hanya status verified dihitung dalam total publik. Bukti transfer **tidak** dipublikasikan.

@@ -30,7 +30,13 @@
 .donasi-bank{display:grid;grid-template-columns:minmax(115px,1fr) minmax(0,1.8fr);gap:18px;padding:24px;background:#f1f8f4;border:1px solid #d7e9dd;border-radius:16px;align-items:start}
 .donasi-bank span{color:#607b6b}.donasi-bank strong{overflow-wrap:anywhere;color:#15372a;font-size:17px}
 .donasi-bank .donasi-account-number{font-size:clamp(22px,4vw,30px);letter-spacing:.04em;user-select:all}
-.donasi-copy{margin-top:18px}
+.donasi-account-row{display:flex;align-items:center;gap:12px;min-width:0}
+.donasi-account-row .donasi-account-number{flex:0 1 auto;min-width:0;overflow-wrap:anywhere;margin:0}
+.donasi-copy-icon{flex:none;width:42px;height:42px;display:inline-grid;place-items:center;border:1px solid #b7dac5;border-radius:11px;background:#fff;color:#0f6b4d;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.donasi-copy-icon:hover{background:#e5f4ea;border-color:#0f6b4d}
+.donasi-copy-icon:focus-visible{outline:3px solid #83cfae;outline-offset:2px}
+.donasi-copy-icon svg{display:block}
+@media(max-width:620px){.donasi-copy-icon{width:40px;height:40px}}
 .donasi-caution{font-size:12px;line-height:1.6;color:#637a6c;margin-top:18px!important}
 .donasi-dialog-section{font-size:19px;margin:30px 0 14px}
 .donasi-empty{padding:20px;border-radius:14px;background:#f1f7f3;color:#587366;line-height:1.6}

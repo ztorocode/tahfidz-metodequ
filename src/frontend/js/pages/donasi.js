@@ -1,5 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donproof31";
+import {toast} from "../utils/helpers.js?v=81bed469";
 import {openDonationConfirmation} from "./donation-confirmation.js?v=donamt31";
 
 function escapeHtml(value){
@@ -52,9 +53,11 @@ function bankView(detail){
  if(!bank)return '<div class="donasi-empty">Ustadz belum mempublikasikan nomor rekening untuk donasi.</div>';
  return '<p>Transfer langsung ke rekening yang dicantumkan ustadz berikut.</p>'
    +'<div class="donasi-bank"><span>Bank</span><strong>'+escapeHtml(bank.bank_name)+'</strong>'
-   +'<span>Nomor rekening</span><strong class="donasi-account-number">'+escapeHtml(bank.account_number)+'</strong>'
+   +'<span>Nomor rekening</span><div class="donasi-account-row"><strong class="donasi-account-number">'+escapeHtml(bank.account_number)+'</strong>'
+   +'<button type="button" class="donasi-copy-icon" data-copy-account="'+escapeHtml(bank.account_number)+'" aria-label="Salin nomor rekening" title="Salin nomor rekening">'
+   +'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+   +'<rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg></button></div>'
    +'<span>Atas nama</span><strong>'+escapeHtml(bank.account_holder)+'</strong></div>'
-   +'<button type="button" class="btn primary donasi-copy" data-copy-account="'+escapeHtml(bank.account_number)+'">Salin Nomor Rekening</button>'
    +'<div class="donasi-confirm-area"><button type="button" class="btn primary donasi-confirm-btn" data-confirm-transfer>Konfirmasi Bukti Transfer</button>'
    +'<p class="donasi-confirm-note">Mohon konfirmasi bukti transfer agar sistem bisa mengirim notifikasi kepada ustadz dan mendukung transparansi laporan kepada publik. Nominal donasi ditampilkan setelah diverifikasi ustadz.</p></div>'
    +'<p class="donasi-caution">Periksa kembali nama penerima di aplikasi bank sebelum transfer. Mutqeen tidak menerima atau meneruskan dana.</p>';
@@ -148,8 +151,12 @@ export function bindDonationList(){
   const copy=event.target.closest("[data-copy-account]");
   if(!copy)return;
   const value=copy.dataset.copyAccount||"";
-  try{await navigator.clipboard.writeText(value);copy.textContent="Nomor rekening tersalin";}
-  catch{copy.textContent="Tidak bisa menyalin. Pilih nomor rekening di atas."}
+  try{
+   await navigator.clipboard.writeText(value);
+   toast("Nomor rekening disalin.");
+  }catch{
+   toast("Gagal menyalin. Pilih angka rekening untuk menyalin manual.");
+  }
  });
  async function loadList(){
   box.setAttribute("aria-busy","true");

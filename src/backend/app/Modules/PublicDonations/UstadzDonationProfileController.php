@@ -56,7 +56,35 @@ final class UstadzDonationProfileController
             Response::json(['success' => true, 'message' => 'Foto aktivitas telah dipublikasikan.'], 201);
         } catch (RegistrationException $e) {
             Response::json(['success' => false, 'message' => $e->getMessage()], $e->statusCode);
+        } catch (\PDOException $e) {
+            $this->logUploadFailure($e);
+            $missingTable = $e->getCode() === '42S02' || (int) ($e->errorInfo[1] ?? 0) === 1146;
+            Response::json([
+                'success' => false,
+                'message' => $missingTable
+                    ? 'Tabel foto aktivitas belum tersedia. Admin server perlu menjalankan migrasi database terbaru.'
+                    : 'Gagal mencatat foto ke database. Hubungi admin server untuk memeriksa log.',
+            ], 503);
+        } catch (\Throwable $e) {
+            $reference = bin2hex(random_bytes(4));
+            $this->logUploadFailure($e, $reference);
+            Response::json([
+                'success' => false,
+                'message' => 'Server gagal memproses foto. Kode error: ' . $reference . '. Hubungi admin server.',
+            ], 500);
         }
+    }
+
+    private function logUploadFailure(\Throwable $exception, ?string $reference = null): void
+    {
+        error_log(sprintf(
+            '[Mutqeen foto aktivitas] %s%s: %s (%s:%d)',
+            $reference !== null ? '[' . $reference . '] ' : '',
+            get_class($exception),
+            $exception->getMessage(),
+            $exception->getFile(),
+            $exception->getLine(),
+        ));
     }
 
     public function deletePhoto(Request $request): never

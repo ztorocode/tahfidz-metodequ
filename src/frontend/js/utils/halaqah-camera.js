@@ -193,7 +193,12 @@ async function savePhoto(){
    method:"POST",headers:headers(),body:form
   });
   const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.success)throw new Error(result.message||"Foto gagal disimpan.");
+  if(!response.ok||!result.success){
+   const detail=result.error||result.message||("HTTP "+response.status);
+   throw new Error(detail==="Internal Server Error"
+    ?"Server gagal menyimpan foto (HTTP "+response.status+"). Periksa log PHP, izin storage, ekstensi GD dan migrasi foto aktivitas."
+    :detail);
+  }
   closeCamera();
   status("Foto aktivitas berhasil disimpan.");
   await loadPhotos(hid);

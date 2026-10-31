@@ -137,16 +137,21 @@ final class UstadzDonationProfileService
         imagecopyresampled($target, $source, 0, 0, 0, 0, $width, $height, $originalWidth, $originalHeight);
         imagedestroy($source);
         $directory = dirname(__DIR__, 3) . '/storage/ustadz-activities';
-        if (!is_dir($directory) && !mkdir($directory, 0750, true) && !is_dir($directory)) {
+        if (!is_dir($directory) && !@mkdir($directory, 0750, true) && !is_dir($directory)) {
             imagedestroy($target);
-            throw new \RuntimeException('Direktori foto tidak dapat dibuat.');
+            throw new RegistrationException('Folder penyimpanan foto tidak dapat dibuat. Hubungi admin server untuk memperbaiki izin direktori.', 503);
+        }
+        if (!is_writable($directory)) {
+            imagedestroy($target);
+            throw new RegistrationException('Folder penyimpanan foto tidak memiliki izin tulis. Hubungi admin server.', 503);
         }
         $filename = bin2hex(random_bytes(16)) . '.jpg';
         $path = $directory . '/' . $filename;
-        $saved = imagejpeg($target, $path, 82);
+        $saved = @imagejpeg($target, $path, 82);
         imagedestroy($target);
         if (!$saved) {
-            throw new \RuntimeException('Gagal menyimpan foto.');
+            @unlink($path);
+            throw new RegistrationException('Foto gagal ditulis ke server. Periksa izin folder penyimpanan dan ruang disk.', 503);
         }
         try {
             $q = $this->pdo->prepare(

@@ -5,4 +5,6 @@ storage/cache/*
 !storage/cache/.gitkeep
 storage/setoran/*
 !storage/setoran/.gitkeep
+storage/ustadz-activities/*
+!storage/ustadz-activities/.gitkeep
 

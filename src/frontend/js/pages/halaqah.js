@@ -1,6 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {badge,statusTone,toast} from "../utils/helpers.js?v=81bed469";
-import {bindHalaqahCamera} from "../utils/halaqah-camera.js?v=camerab7a1";
+import {bindHalaqahCamera} from "../utils/halaqah-camera.js?v=camfixb4d2";
 
 let selectedHalaqahId=null;
 /** Halaqah yang sedang diedit lewat modal edit admin pondok. */

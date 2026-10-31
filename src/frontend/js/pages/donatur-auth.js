@@ -38,11 +38,22 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
  const render=(mode,error="")=>{
   const errorText=error?'<p class="donor-auth-error" role="alert">'+escapeHtml(error)+'</p>':"";
   if(mode==="choice"){
-   body.innerHTML='<p>'+(options.purpose==="confirmation"
-    ?"Masuk atau daftar sebagai Donatur agar bukti transfer dapat dikirim dan ditindaklanjuti ustadz."
-    :"Untuk melihat nama dan progres santri, masuk atau buat akun Donatur terlebih dahulu.")+'</p>'
-    +errorText+'<div class="donor-auth-choices"><button class="btn primary" type="button" data-donor-screen="login">Masuk</button>'
-    +'<button class="btn" type="button" data-donor-screen="register">Daftar sebagai Donatur</button></div>';
+   if(options.purpose==="confirmation"){
+    body.innerHTML='<div class="donor-confirm-gratitude">'
+     +'<p class="donor-confirm-thanks">Jazakallohu khoiron.</p>'
+     +'<p class="donor-confirm-prayer">Insyaallah menjadi pahala jariyah bagi donatur.</p>'
+     +'</div>'+errorText
+     +'<button type="button" class="btn donor-confirm-close" data-donor-close>Tutup</button>'
+     +'<div class="donor-confirm-actions">'
+     +'<button type="button" class="btn primary" data-donor-screen="login">Login</button>'
+     +'<button type="button" class="btn" data-donor-screen="register">Daftar</button>'
+     +'</div>'
+     +'<p class="donor-confirm-note">Login sebagai donatur untuk melihat aktifitas detail progress halaqah.</p>';
+   }else{
+    body.innerHTML='<p>Untuk melihat nama dan progres santri, masuk atau buat akun Donatur terlebih dahulu.</p>'
+     +errorText+'<div class="donor-auth-choices"><button class="btn primary" type="button" data-donor-screen="login">Masuk</button>'
+     +'<button class="btn" type="button" data-donor-screen="register">Daftar sebagai Donatur</button></div>';
+   }
   }else if(mode==="login"){
    body.innerHTML='<p>Masuk ke akun Mutqeen Anda.</p>'+errorText
     +'<form data-donor-form="login" class="donor-auth-form">'
@@ -76,6 +87,7 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
  document.addEventListener("keydown",onKey);
  window.addEventListener("hashchange",close);
  body.addEventListener("click",e=>{
+  if(e.target.closest("[data-donor-close]")){close();return;}
   const button=e.target.closest("[data-donor-screen]");
   if(button&&body.contains(button)&&!pending)render(button.dataset.donorScreen);
  });

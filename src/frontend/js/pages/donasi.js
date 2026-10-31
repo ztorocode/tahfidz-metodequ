@@ -1,5 +1,5 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donproof31";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=thanksdon31";
 import {toast} from "../utils/helpers.js?v=81bed469";
 import {openDonationConfirmation} from "./donation-confirmation.js?v=donamt31";
 

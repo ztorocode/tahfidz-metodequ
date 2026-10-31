@@ -1,5 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
+import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=3ac9e7d1";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
@@ -103,7 +104,7 @@ function accountMenu(){
 function profileModal(){
  const account=currentAccount();
  return `<div class="modal-backdrop hidden" id="profileModal">
-  <div class="modal-card">
+  <div class="modal-card" style="max-height:calc(100dvh - 36px);overflow:auto">
    <div class="row between"><div><p class="eyebrow">Akun</p><h2>Edit Profil</h2></div><button class="btn" id="closeProfileBtn" type="button">Tutup</button></div>
    <div class="stack">
     <div><label class="label">Nama</label><input class="input" id="profileName" value="${account.name}"></div>
@@ -115,6 +116,7 @@ function profileModal(){
     <div><label class="label">Password baru</label><input class="input" id="profileNewPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
     <small class="muted" id="passwordMessage"></small>
     <button class="btn full" id="changePasswordBtn" type="button">Ganti Password</button>
+    ${ustadzBankProfileSection()}
    </div>
   </div>
  </div>`;
@@ -192,6 +194,7 @@ export function bindShell(){
  document.querySelector("#editProfileBtn")?.addEventListener("click",()=>{
   menu?.classList.add("hidden");
   modal?.classList.remove("hidden");
+  bindUstadzBankProfile();
   document.querySelector("#profileName")?.focus();
  });
  document.querySelector("#closeProfileBtn")?.addEventListener("click",()=>modal?.classList.add("hidden"));

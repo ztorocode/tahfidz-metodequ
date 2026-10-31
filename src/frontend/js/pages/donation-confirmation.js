@@ -41,9 +41,18 @@ export function openDonationConfirmation(ustadzId,ustadzName,trigger){
     <button type="button" class="btn" data-proof-remove>Ganti Foto</button>
    </div>
    <form id="donationProofForm" class="donation-proof-form">
-    <label>Nominal transfer (Rp)
-     <input type="number" name="amount_idr" min="1" max="1000000000000" step="1" inputmode="numeric" placeholder="Contoh: 100000" required>
-    </label>
+    <div class="donation-amount-field">
+     <span class="donation-amount-label" id="donationAmountLabel">Nominal transfer (Rp)</span>
+     <div class="donation-amount-options" role="group" aria-labelledby="donationAmountLabel">
+      <button type="button" class="btn" data-proof-amount="100000" aria-pressed="false">Rp100.000</button>
+      <button type="button" class="btn" data-proof-amount="300000" aria-pressed="false">Rp300.000</button>
+      <button type="button" class="btn" data-proof-amount="500000" aria-pressed="false">Rp500.000</button>
+     </div>
+     <label class="donation-amount-custom">Atau isi nominal lain (Rp)
+      <input type="number" data-proof-custom-amount min="1" max="1000000000000" step="1" inputmode="numeric" placeholder="Masukkan nominal lain">
+     </label>
+     <input type="hidden" name="amount_idr" data-proof-amount-value value="">
+    </div>
     <label>Tanggal dan waktu transfer (WIB)
      <input type="datetime-local" name="sent_at" value="${jakartaNow()}" required>
     </label>
@@ -145,6 +154,12 @@ export function openDonationConfirmation(ustadzId,ustadzName,trigger){
   if(busy)return;
   const form=$("#donationProofForm");
   if(!form.reportValidity())return;
+  const amount=Number($("[data-proof-amount-value]").value);
+  if(!Number.isSafeInteger(amount)||amount<1||amount>1000000000000){
+   message("Pilih Rp100.000, Rp300.000, Rp500.000, atau isi nominal lain.",true);
+   $("[data-proof-custom-amount]").focus();
+   return;
+  }
   if(!photo){message("Ambil foto atau upload bukti transfer terlebih dahulu.",true);return;}
   if(!isDonorAuthenticated()){
    message("Masuk sebagai Donatur untuk mengirim bukti transfer.");
@@ -185,6 +200,23 @@ export function openDonationConfirmation(ustadzId,ustadzName,trigger){
   }catch(err){message(err?.message||"Konfirmasi gagal dikirim.",true);}
   finally{busy=false;if(btn.isConnected){btn.disabled=false;btn.textContent="Kirim Konfirmasi";}}
  }
+ const customAmount=$("[data-proof-custom-amount]");
+ const selectedAmount=$("[data-proof-amount-value]");
+ const amountButtons=[...overlay.querySelectorAll("[data-proof-amount]")];
+ const setAmount=(value,activeButton=null)=>{
+  selectedAmount.value=value;
+  amountButtons.forEach(button=>{
+   const active=button===activeButton;
+   button.classList.toggle("is-selected",active);
+   button.setAttribute("aria-pressed",String(active));
+  });
+ };
+ amountButtons.forEach(button=>button.addEventListener("click",()=>{
+  customAmount.value="";
+  setAmount(button.dataset.proofAmount,button);
+ }));
+ customAmount.addEventListener("input",()=>setAmount(customAmount.value));
+
  $("[data-proof-close]").addEventListener("click",close);
  overlay.addEventListener("click",event=>{if(event.target===overlay)close();});
  $("[data-proof-camera]").addEventListener("click",camera);

@@ -41,7 +41,7 @@ final class PublicUstadzDetailsService
 
         $bank = null;
         if ($this->tableExists('user_meta')) {
-            $b = $this->pdo->prepare("SELECT meta_value FROM user_meta WHERE user_id = :user_id AND meta_key = 'donation_bank' AND on_off = 1 LIMIT 1");
+            $b = $this->pdo->prepare("SELECT meta_value FROM user_meta WHERE user_id = :user_id AND meta_key = 'donation_bank' AND on_off = 'on' LIMIT 1");
             $b->execute(['user_id' => $ustadz['user_id']]);
             $value = $b->fetchColumn();
             $row = is_string($value) ? json_decode($value, true) : null;
@@ -107,7 +107,7 @@ final class PublicUstadzDetailsService
                  FROM halaqah_photos ph
                  JOIN halaqahs h ON h.id = ph.halaqah_id
                    AND h.musyrif_profile_id = :profile AND h.status = 'active' AND h.deleted_at IS NULL
-                 WHERE ph.user_id = :user_id AND ph.on_off = 1
+                 WHERE ph.user_id = :user_id AND ph.on_off = 'on'
                  ORDER BY ph.created_at DESC, ph.id DESC LIMIT 24"
             );
             $p->execute(['profile' => $id, 'user_id' => $ustadz['user_id']]);
@@ -212,7 +212,7 @@ final class PublicUstadzDetailsService
                AND mp.user_id = ph.user_id AND mp.status = 'active'
              JOIN users u ON u.id = ph.user_id AND u.status = 'active' AND u.deleted_at IS NULL
              LEFT JOIN pondoks p ON p.id = mp.pondok_id AND p.status = 'active' AND p.deleted_at IS NULL
-             WHERE ph.id = :id AND ph.on_off = 1 AND (mp.type = 'platform' OR p.id IS NOT NULL) LIMIT 1"
+             WHERE ph.id = :id AND ph.on_off = 'on' AND (mp.type = 'platform' OR p.id IS NOT NULL) LIMIT 1"
         );
         $q->execute(['id' => $id]);
         $fileName = $q->fetchColumn();

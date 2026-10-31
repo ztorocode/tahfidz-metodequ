@@ -38,11 +38,11 @@ final class UstadzDonationProfileService
             'bank_name' => (string) ($bankValue['bank_name'] ?? ''),
             'account_number' => (string) ($bankValue['account_number'] ?? ''),
             'account_holder' => (string) ($bankValue['account_holder'] ?? ''),
-            'is_public' => (int) $bankMeta['on_off'] === 1,
+            'is_public' => (string) $bankMeta['on_off'] === 'on',
         ] : null;
         $h = $this->pdo->prepare("SELECT id, name FROM halaqahs WHERE musyrif_profile_id = :id AND deleted_at IS NULL AND status = 'active' ORDER BY name");
         $h->execute(['id' => $profileId]);
-        $p = $this->pdo->prepare('SELECT id, halaqah_id, created_at, on_off FROM halaqah_photos WHERE user_id = :id AND on_off = 1 ORDER BY created_at DESC LIMIT 30');
+        $p = $this->pdo->prepare("SELECT id, halaqah_id, created_at, on_off FROM halaqah_photos WHERE user_id = :id AND on_off = 'on' ORDER BY created_at DESC LIMIT 30");
         $p->execute(['id' => $userId]);
         return [
             'bank' => $bank,
@@ -50,7 +50,7 @@ final class UstadzDonationProfileService
             'photos' => array_map(static fn (array $v): array => [
                 'id' => (int) $v['id'], 'halaqah_id' => (int) $v['halaqah_id'],
                 'caption' => 'Aktivitas Halaqah', 'created_at' => $v['created_at'],
-                'on_off' => (int) $v['on_off'],
+                'on_off' => (string) $v['on_off'],
                 'url' => '/api/public/ustadz/photo?id=' . (int) $v['id'],
             ], $p->fetchAll(PDO::FETCH_ASSOC)),
         ];
@@ -78,7 +78,7 @@ final class UstadzDonationProfileService
              VALUES (:id, 'donation_bank', :value, :enabled)
              ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value), on_off = VALUES(on_off)"
         );
-        $q->execute(['id' => $userId, 'value' => $metaValue, 'enabled' => $public ? 1 : 0]);
+        $q->execute(['id' => $userId, 'value' => $metaValue, 'enabled' => $public ? 'on' : 'off']);
     }
 
     public function uploadPhoto(int $userId, array $input, array $upload): void
@@ -155,8 +155,8 @@ final class UstadzDonationProfileService
         }
         try {
             $q = $this->pdo->prepare(
-                'INSERT INTO halaqah_photos (user_id, halaqah_id, filename, on_off)
-                 VALUES (:user_id, :halaqah, :filename, 1)'
+                "INSERT INTO halaqah_photos (user_id, halaqah_id, filename, on_off)
+                 VALUES (:user_id, :halaqah, :filename, 'on')"
             );
             $q->execute(['user_id' => $userId, 'halaqah' => $halaqahId, 'filename' => $filename]);
         } catch (\Throwable $e) {

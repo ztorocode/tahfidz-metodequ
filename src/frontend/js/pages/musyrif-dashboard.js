@@ -181,33 +181,23 @@ export function bindMusyrifDashboard(){
 
 function donationSettingsPanel(){
  return '<section class="card donor-settings">'
-  +'<h2>Informasi untuk Donatur</h2>'
-  +'<p class="muted">Nomor rekening dan foto yang Anda setujui akan dapat dilihat publik melalui halaman Donasi. Jangan publikasikan foto santri tanpa izin yang sah.</p>'
-  +'<div class="donor-settings-grid"><form id="donorBankForm" class="stack">'
-  +'<h3>Rekening Donasi</h3>'
-  +'<div><label class="label" for="donorBankName">Nama bank</label><input class="input" id="donorBankName" maxlength="100" required placeholder="Nama bank"></div>'
-  +'<div><label class="label" for="donorBankNumber">Nomor rekening</label><input class="input" id="donorBankNumber" maxlength="35" inputmode="numeric" required></div>'
-  +'<div><label class="label" for="donorBankHolder">Atas nama</label><input class="input" id="donorBankHolder" maxlength="150" required></div>'
-  +'<label class="donor-check"><input type="checkbox" id="donorBankPublic"> Izinkan nomor rekening dan nama penerima ditampilkan secara publik.</label>'
-  +'<button type="submit" class="btn primary" id="donorBankSave">Simpan Rekening</button><p class="donor-feedback" id="donorBankMessage" role="status"></p>'
-  +'</form><form id="donorPhotoForm" class="stack" enctype="multipart/form-data">'
-  +'<h3>Foto Aktivitas Halaqah</h3>'
+  +'<h2>Foto Aktivitas untuk Donatur</h2>'
+  +'<p class="muted">Unggah hanya foto aktivitas halaqah yang memang boleh dipublikasikan. Pengaturan rekening donasi sekarang tersedia di Edit Profil.</p>'
+  +'<form id="donorPhotoForm" class="stack" enctype="multipart/form-data">'
   +'<div><label class="label" for="donorPhotoInput">Unggah foto JPG, PNG, atau WebP (maks. 2 MB)</label><input class="input" id="donorPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" required></div>'
   +'<div><label class="label" for="donorPhotoCaption">Keterangan foto</label><input class="input" id="donorPhotoCaption" maxlength="180" placeholder="Contoh: Kegiatan murajaah pekanan" required></div>'
   +'<div><label class="label" for="donorPhotoHalaqah">Halaqah</label><select class="input" id="donorPhotoHalaqah"><option value="">Aktivitas umum</option></select></div>'
   +'<label class="donor-check"><input type="checkbox" id="donorPhotoConsent" required> Saya memiliki izin untuk mempublikasikan foto ini, termasuk persetujuan pihak yang tampak di dalamnya bila diperlukan.</label>'
   +'<button type="submit" class="btn primary" id="donorPhotoSave">Unggah Foto</button><p class="donor-feedback" id="donorPhotoMessage" role="status"></p>'
   +'<div id="donorPhotoList"></div>'
-  +'</form></div></section>';
+  +'</form></section>';
 }
 
 function bindDonationSettings(){
- const bankForm=document.querySelector("#donorBankForm");
  const photoForm=document.querySelector("#donorPhotoForm");
- if(!bankForm||!photoForm)return;
+ if(!photoForm)return;
  const token=getState().authToken;
  const headers={Authorization:"Bearer "+token,Accept:"application/json"};
- const bankStatus=document.querySelector("#donorBankMessage");
  const photoStatus=document.querySelector("#donorPhotoMessage");
  const status=(node,message,error=false)=>{
   if(!node)return;
@@ -215,7 +205,7 @@ function bindDonationSettings(){
   node.style.color=error?"var(--danger)":"var(--brand)";
  };
  if(!token){
-  status(bankStatus,"Masuk dengan akun ustadz yang terverifikasi untuk mengatur informasi publik.",true);
+  status(photoStatus,"Masuk dengan akun ustadz yang terverifikasi untuk mengatur foto publik.",true);
   return;
  }
  async function load(){
@@ -223,12 +213,8 @@ function bindDonationSettings(){
    const response=await fetch("/api/ustadz/donation-profile",{headers,cache:"no-store"});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||!result.success)throw new Error(result.message||"Gagal memuat informasi donasi.");
-   if(!bankForm.isConnected)return;
-   const data=result.data||{},bank=data.bank||{};
-   document.querySelector("#donorBankName").value=bank.bank_name||"";
-   document.querySelector("#donorBankNumber").value=bank.account_number||"";
-   document.querySelector("#donorBankHolder").value=bank.account_holder||"";
-   document.querySelector("#donorBankPublic").checked=bank.is_public===true;
+   if(!photoForm.isConnected)return;
+   const data=result.data||{};
    document.querySelector("#donorPhotoHalaqah").innerHTML='<option value="">Aktivitas umum</option>'
      +(Array.isArray(data.halaqahs)?data.halaqahs:[]).map(h=>'<option value="'+Number(h.id)+'">'+esc(h.name)+'</option>').join("");
    const list=document.querySelector("#donorPhotoList");
@@ -237,27 +223,9 @@ function bindDonationSettings(){
     +photos.map(p=>'<div class="donor-photo-row"><span>'+esc(p.caption)+'</span><button type="button" class="btn" data-remove-donor-photo="'+Number(p.id)+'">Hapus</button></div>').join("")
     :'<small class="muted">Belum ada foto yang dipublikasikan.</small>';
   }catch(err){
-   status(bankStatus,err.message||"Gagal memuat informasi donasi.",true);
+   status(photoStatus,err.message||"Gagal memuat informasi donasi.",true);
   }
  }
- bankForm.addEventListener("submit",async event=>{
-  event.preventDefault();
-  const button=document.querySelector("#donorBankSave");
-  const payload={
-   bank_name:document.querySelector("#donorBankName").value.trim(),
-   account_number:document.querySelector("#donorBankNumber").value.trim(),
-   account_holder:document.querySelector("#donorBankHolder").value.trim(),
-   is_public:document.querySelector("#donorBankPublic").checked
-  };
-  button.disabled=true;
-  try{
-   const response=await fetch("/api/ustadz/donation-profile/bank",{method:"POST",headers:{...headers,"Content-Type":"application/json"},body:JSON.stringify(payload)});
-   const result=await response.json().catch(()=>({}));
-   if(!response.ok||!result.success)throw new Error(result.message||"Gagal menyimpan rekening.");
-   status(bankStatus,payload.is_public?"Rekening tersimpan dan tampil di halaman donasi.":"Rekening tersimpan, tetapi belum dipublikasikan.");
-  }catch(err){status(bankStatus,err.message||"Gagal menyimpan rekening.",true)}
-  finally{button.disabled=false}
- });
  photoForm.addEventListener("submit",async event=>{
   event.preventDefault();
   const file=document.querySelector("#donorPhotoInput").files?.[0];

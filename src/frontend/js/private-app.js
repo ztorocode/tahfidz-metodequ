@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=7c3e1a90";
+import {view,routeName} from "./router.js?v=camerab7a1";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=7c3e1a90";
 import {bindLogin} from "./pages/login.js?v=b8c14e72";

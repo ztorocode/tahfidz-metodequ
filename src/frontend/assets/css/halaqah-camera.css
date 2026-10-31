@@ -1,0 +1,16 @@
+
+.halaqah-activity-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.halaqah-activity-header .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.halaqah-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-top:14px}
+.halaqah-photo-card{overflow:hidden;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+.halaqah-photo-card img{width:100%;height:140px;object-fit:cover;display:block}
+.halaqah-photo-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px}
+.halaqah-photo-footer small{font-size:11px;color:var(--muted)}
+.halaqah-photo-footer .btn{padding:7px 9px;font-size:12px}
+.halaqah-camera-dialog{width:min(540px,100%);max-height:calc(100dvh - 36px);overflow:auto}
+.halaqah-camera-media{width:100%;aspect-ratio:3/4;max-height:55dvh;background:#111;border-radius:12px;overflow:hidden;display:grid;place-items:center;margin:12px 0}
+.halaqah-camera-media video,.halaqah-camera-media img{width:100%;height:100%;object-fit:contain}
+.halaqah-camera-media [hidden],.halaqah-camera-actions[hidden]{display:none}
+.halaqah-camera-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.halaqah-camera-actions .btn{flex:1;min-height:45px}
+.halaqah-camera-dialog small{display:block;margin:10px 0;color:var(--muted);line-height:1.45}

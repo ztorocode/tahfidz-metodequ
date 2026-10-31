@@ -1,5 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {badge,statusTone,toast} from "../utils/helpers.js?v=81bed469";
+import {bindHalaqahCamera} from "../utils/halaqah-camera.js?v=camerab7a1";
 
 let selectedHalaqahId=null;
 /** Halaqah yang sedang diedit lewat modal edit admin pondok. */
@@ -427,6 +428,9 @@ function programCard(item,isAdmin){
 }
 
 function detail(item,isAdmin){
+ if(!isAdmin&&getState().persona==="musyrif"&&Number(item.numericId)>0){
+  queueMicrotask(()=>bindHalaqahCamera(Number(item.numericId)));
+ }
  return `<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap">
   <div>
    <button class="btn" type="button" data-halaqah-back style="margin-bottom:12px">← Kembali ke daftar</button>
@@ -454,6 +458,36 @@ function detail(item,isAdmin){
  </div>
  <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Ustadz"}</b><span class="muted">Akses aktif</span></div>
  ${programCard(item,isAdmin)}
+
+ ${!isAdmin&&getState().persona==="musyrif"&&Number(item.numericId)>0?`<section class="card" style="margin-bottom:16px" id="halaqahActivityPanel" data-halaqah-id="${item.numericId}">
+  <div class="halaqah-activity-header">
+   <div><h3>Aktivitas Halaqah</h3><p class="muted">Foto kegiatan untuk donatur.</p></div>
+   <button type="button" class="btn primary" data-halaqah-camera-open="${item.numericId}" aria-label="Buka kamera untuk foto aktivitas">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h-4l-2 3H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-4l-2-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    Foto
+   </button>
+  </div>
+  <p class="muted" id="halaqahPhotoStatus" role="status" aria-live="polite"></p>
+  <div id="halaqahActivityList" style="margin-top:10px" aria-live="polite">Memuat foto aktivitas…</div>
+  <div class="modal-backdrop hidden" id="halaqahCameraModal" role="dialog" aria-modal="true" aria-labelledby="halaqahCameraTitle">
+   <div class="modal-card halaqah-camera-dialog">
+    <div class="row between" style="gap:12px"><h2 id="halaqahCameraTitle">Foto Aktivitas</h2><button type="button" class="btn" data-halaqah-camera-close>Tutup</button></div>
+    <div class="halaqah-camera-media">
+     <video id="halaqahCameraVideo" autoplay playsinline muted></video>
+     <img id="halaqahCameraPreview" alt="Preview foto aktivitas" hidden>
+    </div>
+    <p id="halaqahCameraStatus" class="muted" role="status" aria-live="polite"></p>
+    <small>Foto tampil di halaman donasi publik. Dengan menekan Simpan, Anda menyatakan telah mendapat izin publikasi dari pihak yang terlihat pada foto.</small>
+    <div class="halaqah-camera-actions">
+     <button type="button" class="btn primary" id="halaqahCameraShot" data-halaqah-camera-shot>Ambil Foto</button>
+    </div>
+    <div class="halaqah-camera-actions" id="halaqahCameraPreviewActions" hidden>
+     <button type="button" class="btn" data-halaqah-camera-retake>Ulangi</button>
+     <button type="button" class="btn primary" id="halaqahCameraSave" data-halaqah-camera-save>Simpan</button>
+    </div>
+   </div>
+  </div>
+ </section>`:""}
  <div class="card">
   <div class="row between" style="margin-bottom:10px"><div><h3>Daftar Santri</h3><p class="muted">Santri yang terdaftar di halaqah ini.</p></div></div>
   ${item.students.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Santri</th><th>Mutqin</th><th>Setoran pending</th><th>Status</th><th>Aksi</th></tr></thead><tbody>

@@ -35,7 +35,7 @@ final class UstadzDonationProfileService
         $bank = $q->fetch(PDO::FETCH_ASSOC);
         $h = $this->pdo->prepare("SELECT id, name FROM halaqahs WHERE musyrif_profile_id = :id AND deleted_at IS NULL AND status = 'active' ORDER BY name");
         $h->execute(['id' => $profileId]);
-        $p = $this->pdo->prepare('SELECT id, caption, created_at FROM ustadz_activity_photos WHERE musyrif_profile_id = :id ORDER BY created_at DESC LIMIT 30');
+        $p = $this->pdo->prepare('SELECT id, halaqah_id, caption, created_at FROM ustadz_activity_photos WHERE musyrif_profile_id = :id ORDER BY created_at DESC LIMIT 30');
         $p->execute(['id' => $profileId]);
         return [
             'bank' => $bank === false ? null : [
@@ -46,7 +46,9 @@ final class UstadzDonationProfileService
             ],
             'halaqahs' => array_map(static fn (array $v): array => ['id' => (int) $v['id'], 'name' => $v['name']], $h->fetchAll(PDO::FETCH_ASSOC)),
             'photos' => array_map(static fn (array $v): array => [
-                'id' => (int) $v['id'], 'caption' => $v['caption'], 'created_at' => $v['created_at'],
+                'id' => (int) $v['id'], 'halaqah_id' => $v['halaqah_id'] !== null ? (int) $v['halaqah_id'] : null,
+                'caption' => $v['caption'], 'created_at' => $v['created_at'],
+                'url' => '/api/public/ustadz/photo?id=' . (int) $v['id'],
             ], $p->fetchAll(PDO::FETCH_ASSOC)),
         ];
     }
@@ -79,10 +81,16 @@ final class UstadzDonationProfileService
             throw new RegistrationException('Konfirmasi izin publikasi foto diperlukan.', 422);
         }
         $caption = trim((string) ($input['caption'] ?? ''));
+        if ($caption === '') {
+            $caption = 'Aktivitas Halaqah';
+        }
         if (mb_strlen($caption) < 3 || mb_strlen($caption) > 180) {
             throw new RegistrationException('Keterangan foto harus 3-180 karakter.', 422);
         }
         $halaqahId = filter_var($input['halaqah_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) ?: null;
+        if ($halaqahId === null) {
+            throw new RegistrationException('Halaqah wajib dipilih untuk setiap foto aktivitas.', 422);
+        }
         if ($halaqahId !== null) {
             $h = $this->pdo->prepare("SELECT 1 FROM halaqahs WHERE id = :id AND musyrif_profile_id = :profile AND status = 'active' AND deleted_at IS NULL");
             $h->execute(['id' => $halaqahId, 'profile' => $profileId]);

@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donproof31";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=proofauthfix31";
 
 function jakartaNow(){
  const parts=new Intl.DateTimeFormat("en-GB",{

@@ -1,7 +1,7 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=thanksdon31";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=proofauthfix31";
 import {toast} from "../utils/helpers.js?v=81bed469";
-import {openDonationConfirmation} from "./donation-confirmation.js?v=donamt31";
+import {openDonationConfirmation} from "./donation-confirmation.js?v=proofauthfix31";
 
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));

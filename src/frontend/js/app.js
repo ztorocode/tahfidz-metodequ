@@ -1,7 +1,7 @@
 import {getState,setState} from "./store.js?v=81bed469";
-import {loginPage,bindLogin} from "./pages/login.js?v=donoronly4e27";
+import {loginPage,bindLogin} from "./pages/login.js?v=donoronlycf9b3";
 import {landingPage,bindLanding} from "./pages/landing.js?v=d2f91a63";
-import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donoronly4e27";
+import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donoronlycf9b3";
 
 const PRIVATE_RUNTIME="./private-app.js?v=userslive9f2";
 const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
@@ -118,7 +118,7 @@ window.addEventListener("hashchange",guardedRender);
 window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=donoronly4e27"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=donoronlycf9b3"));
 }
 
 if(!location.hash&&getState().loggedIn)location.hash="dashboard";

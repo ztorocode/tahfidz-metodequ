@@ -69,7 +69,7 @@ function statusView(route){
  const state=getState(),data=enrollment;
  const name=state.authUser?.name||"Santri";
  const page=route==="progress"?"Progress":route==="report"?"Report":"Dashboard Santri";
- const header='<div style="margin-bottom:20px"><p class="eyebrow">Santri / '+safe(page)+'</p><h1>Assalamu\\u0027alaikum, '+safe(name)+'</h1></div>';
+ const header='<div style="margin-bottom:20px"><p class="eyebrow">Santri / '+safe(page)+'</p><h1>Assalamu&#39;alaikum, '+safe(name)+'</h1></div>';
  if(!data){
   return header+'<div class="card" role="status">'+(loading
    ?'<h2>Memeriksa keanggotaan halaqah...</h2><p class="muted">Status diambil dari database.</p>'

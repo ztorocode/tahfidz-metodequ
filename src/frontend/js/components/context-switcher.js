@@ -10,7 +10,9 @@ export function pondokList(){
 }
 
 export function canPersonal(){
+ // Santri wajib halaqah, tidak ada mode hafalan pribadi.
  const s=getState();
+ if(s.persona==="member")return false;
  const u=s.authUser;
  if(u)return (u.roles||[]).includes("member");
  return s.persona!=="admin";

@@ -1,6 +1,6 @@
 import {getState,setState,resetState} from "../store.js?v=81bed469";
 import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=logoutcachefix934";
-import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
+import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
 
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
@@ -90,7 +90,7 @@ function accountMenu(){
     <div class="grow"><b>${account.name}</b><small class="muted" style="display:block">${account.role} · ${account.email}</small></div>
    </div>
    <button class="account-action" id="editProfileBtn" type="button">Edit Profil</button>
-   ${getState().persona==="super_admin"?"":`<button class="account-action" id="switchAccountBtn" type="button">Ganti Konteks</button>
+   ${["super_admin","member"].includes(getState().persona)?"":`<button class="account-action" id="switchAccountBtn" type="button">Ganti Konteks</button>
    <div class="account-switcher hidden" id="accountSwitcher">
     <small class="muted" style="display:block;padding:4px 2px">Pilih konteks aktif</small>
     ${getState().persona==="musyrif"&&getState().musyrifContexts?.platform?`<button class="account-choice ${getState().context==="platform"?"active":""}" data-switch-context="platform" type="button"><span class="avatar">MP</span><span><b>Platform Mutqeen</b><small class="muted" style="display:block">Ustadz platform</small></span></button>`:""}

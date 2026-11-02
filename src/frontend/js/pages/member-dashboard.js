@@ -79,7 +79,7 @@ export function memberDashboard(){
  const data=getProgressContext(state);
 
  const name=state.profileOverrides?.member?.name||state.authUser?.name||member.name;
- const contextLabel=isPondok?ownPondokName(state):"Personal";
+ const contextLabel=isPondok?ownPondokName(state):"Halaqah";
 
  // Hari ini diturunkan dari tanggal mulai program (bukan nama hari kalender).
  // Harus sama persis dengan halaman Progress (termasuk konteks Personal),
@@ -137,7 +137,7 @@ export function memberDashboard(){
  const dayLabel=isFriday?"Jum'at":(today.dayName||(tKey?dayNameOf(tKey):"Hari ini"));
  const targetText=idle?(notice||"Libur hafalan"):target?escapeHtml(target)+" halaman":"Belum diisi";
  const startLine=start?("Mulai "+fmtLong(new Date(start+"T00:00:00"))+(today.dayNum?" · hari ini Hari ke-"+today.dayNum:"")):null;
- const programTitle=isPondok?(halaqah?.name||"Belum ada halaqah"):"Hafalan pribadi";
+ const programTitle=halaqah?.name||"Program Tahfidz";
 
 
  return `

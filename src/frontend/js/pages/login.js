@@ -2,8 +2,9 @@ import {setState} from "../store.js?v=81bed469";
 
 // Akun demonstrasi nyata: identitas publik saja. Password tidak disimpan di frontend.
 const realDemoAccounts=[
- {id:"member",role:"Santri Demo",email:"santri@mutqeen.id"},
- {id:"musyrif-platform",role:"Ustadz Demo",email:"ustadz@mutqeen.id"}
+ {id:"member",role:"Santri Demo",email:"santri@mutqeen.id",password:"849d8e1ec54d1d699aa82eeb"},
+ {id:"musyrif-platform",role:"Ustadz Demo",email:"ustadz@mutqeen.id",password:"G-t8yoBfwAYibqgjBTTJ9gNm"},
+ {id:"donatur",role:"Donatur Demo",email:"donatur@mutqeen.id",password:"DemoDonatur2026!"}
 ];
 
 const demoAccounts=[
@@ -27,12 +28,12 @@ function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&am
 
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
-  <div><b style="font-size:13px">Akun demo Mutqeen</b><small class="muted" style="display:block">Klik salah satu akun untuk mengisi email. Login tetap menggunakan password akun asli.</small></div>
+  <div><b style="font-size:13px">Akun demo Mutqeen</b><small class="muted" style="display:block">Klik akun untuk mengisi email dan password secara otomatis. Login menggunakan database.</small></div>
   ${realDemoAccounts.map(account=>`<button type="button" class="list-item" data-real-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
    <span class="avatar">${esc(account.role.slice(0,1))}</span>
    <div class="grow"><b>${esc(account.role)}</b><small class="muted" style="display:block">Email: ${esc(account.email)}</small></div>
   </button>`).join("")}
-  <small class="muted">Password tidak ditampilkan karena kedua akun terhubung ke database production.</small>
+  <small class="muted">Akun demo publik. Siapa pun dapat login dan mengakses data sesuai hak akses role.</small>
  </div>`;
 }
 
@@ -284,7 +285,8 @@ export function bindLogin(){
    const email=document.querySelector("#loginEmail");
    const password=document.querySelector("#loginPassword");
    if(email)email.value=account.email;
-   if(password){password.value="";password.focus();}
+   if(password)password.value=account.password;
+   document.querySelector("#loginBtn")?.focus();
   }));
   document.querySelectorAll("[data-demo-account]").forEach(item=>item.addEventListener("click",()=>{
    const account=demoAccounts.find(entry=>entry.id===item.dataset.demoAccount);

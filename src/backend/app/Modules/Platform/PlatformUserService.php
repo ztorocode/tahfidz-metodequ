@@ -41,9 +41,46 @@ final class PlatformUserService
         $conditions = ['u.deleted_at IS NULL'];
         $args = [];
         if ($search !== '') {
-            $conditions[] = '(u.name LIKE ? OR u.email LIKE ? OR u.phone_e164 LIKE ?)';
             $pattern = '%' . $search . '%';
-            array_push($args, $pattern, $pattern, $pattern);
+            // Search the visible scope as well as identity columns. Pondok scope
+            // can come from membership, halaqah, or a pondok musyrif profile.
+            $matches = [
+                'u.name LIKE ?',
+                'u.email LIKE ?',
+                'u.phone_e164 LIKE ?',
+                "EXISTS (
+                    SELECT 1 FROM pondok_memberships pm
+                    JOIN pondoks p ON p.id = pm.pondok_id
+                    WHERE pm.user_id = u.id AND pm.status = 'active'
+                      AND p.status = 'active' AND p.deleted_at IS NULL AND p.name LIKE ?
+                )",
+                "EXISTS (
+                    SELECT 1 FROM halaqah_memberships hm
+                    JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
+                    JOIN pondoks p ON p.id = h.pondok_id
+                    WHERE hm.user_id = u.id AND hm.status = 'active'
+                      AND p.status = 'active' AND p.deleted_at IS NULL AND p.name LIKE ?
+                )",
+                "EXISTS (
+                    SELECT 1 FROM musyrif_profiles mp
+                    JOIN pondoks p ON p.id = mp.pondok_id
+                    WHERE mp.user_id = u.id AND mp.status = 'active'
+                      AND p.status = 'active' AND p.deleted_at IS NULL AND p.name LIKE ?
+                )",
+            ];
+            array_push($args, $pattern, $pattern, $pattern, $pattern, $pattern, $pattern);
+
+            // "Mutqeen" is a displayed scope, not stored in the users table.
+            if (mb_stripos('Mutqeen', $search) !== false) {
+                $matches[] = "(
+                    EXISTS (SELECT 1 FROM user_roles r WHERE r.user_id = u.id
+                            AND r.role = 'super_admin' AND r.status = 'active')
+                    OR EXISTS (SELECT 1 FROM musyrif_profiles mp WHERE mp.user_id = u.id
+                               AND mp.type = 'platform' AND mp.status = 'active')
+                )";
+            }
+
+            $conditions[] = '(' . implode(' OR ', $matches) . ')';
         }
         if ($role !== '') {
             $conditions[] = "EXISTS (SELECT 1 FROM user_roles role_filter WHERE role_filter.user_id = u.id AND role_filter.role = ? AND role_filter.status = 'active')";

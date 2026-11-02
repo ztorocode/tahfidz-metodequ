@@ -1,4 +1,4 @@
-import {getState} from "../store.js?v=81bed469";
+import {getState,setState} from "../store.js?v=81bed469";
 import {toast} from "../utils/helpers.js?v=81bed469";
 
 function esc(value=""){
@@ -209,12 +209,10 @@ function openUserEditModal(user,trigger){
    toast(message);
    if(Number(getState().authUser?.id)===Number(user.id)&&
       (result.data?.email_changed||result.data?.session_revoked)){
-    const st=getState();
-    // Backend mengakhiri sesi lama ketika identitas/role/status diubah.
-    // Akun Super Admin yang sedang diedit harus masuk ulang.
-    const {setState}=await import("../store.js?v=81bed469");
-    setState({loggedIn:false,authToken:null,authUser:null,demoSession:false});
+    // Sesi target dicabut setelah perubahan identitas/role/status.
+    saving=false;
     close();
+    setState({loggedIn:false,authToken:null,authUser:null,demoSession:false});
     location.hash="login";
     return;
    }

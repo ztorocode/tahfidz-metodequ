@@ -155,9 +155,9 @@ final class PlatformUserService
         }
         if (!is_array($roles) || $roles === [] || count($roles) > count(self::ROLES)) {
             $errors['roles'] = 'Pilih minimal satu role.';
-        } elseif (count($roles) !== count(array_unique($roles)) ||
-            array_diff($roles, self::ROLES) !== [] ||
-            count(array_filter($roles, 'is_string')) !== count($roles)) {
+        } elseif (count(array_filter($roles, 'is_string')) !== count($roles) ||
+            count($roles) !== count(array_unique($roles)) ||
+            array_diff($roles, self::ROLES) !== []) {
             $errors['roles'] = 'Daftar role tidak valid.';
         }
         if ($errors !== []) {
@@ -281,7 +281,11 @@ final class PlatformUserService
                 error_log('MetodeQu admin email verification failed: ' . $e->getMessage());
             }
         }
-        return ['email_changed' => $emailChanged, 'email_sent' => $sent];
+        return [
+            'email_changed' => $emailChanged,
+            'email_sent' => $sent,
+            'session_revoked' => $emailChanged || $phoneChanged || $rolesChanged || $statusChanged,
+        ];
     }
 
     private function normalizePhone(string $value): ?string

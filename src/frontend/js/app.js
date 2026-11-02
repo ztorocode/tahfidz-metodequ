@@ -1,5 +1,5 @@
 import {getState,setState} from "./store.js?v=81bed469";
-import {loginPage,bindLogin} from "./pages/login.js?v=donoronlycf9b3";
+import {loginPage,bindLogin} from "./pages/login.js?v=realacct73ab";
 import {landingPage,bindLanding} from "./pages/landing.js?v=d2f91a63";
 import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donoronlycf9b3";
 
@@ -118,7 +118,7 @@ window.addEventListener("hashchange",guardedRender);
 window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=donoronlycf9b3"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=realacct73ab"));
 }
 
 if(!location.hash&&getState().loggedIn)location.hash="dashboard";

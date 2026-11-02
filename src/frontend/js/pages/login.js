@@ -1,9 +1,7 @@
 import {setState} from "../store.js?v=81bed469";
 
 const demoAccounts=[
- {id:"member",role:"Santri Demo",persona:"member",context:"personal",phone:"08975835238",email:"santri@mutqeen.id",password:"member123"},
  {id:"musyrif-pondok",role:"Ustadz Pondok",persona:"musyrif",context:"pondok",musyrifType:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
- {id:"musyrif-platform",role:"Ustadz Demo",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"087820007878",email:"ustadz@mutqeen.id",password:"musyrif123"},
  {id:"admin-pondok",role:"Admin Pondok Jamil",persona:"admin",context:"pondok",phone:"+62 819 0011 2255",email:"admin@pondokjamil.com",password:"PondokJamil123!"},
  {id:"super-admin",role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
@@ -22,19 +20,7 @@ function normalizePhone(value=""){return value.replace(/\D/g,"")}
 function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]))}
 
 function demoAccountsInfo(){
- return `<div class="stack" style="margin-top:4px">
-  <div><b style="font-size:13px">Akun login demo</b><small class="muted" style="display:block">Gunakan salah satu akun berikut untuk mencoba role berbeda.</small></div>
-  ${demoAccounts.filter(account=>account.id==="member"||account.id==="musyrif-platform").map(account=>`<button type="button" class="list-item" data-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
-   <span class="avatar">${account.role.slice(0,1)}</span>
-   <div class="grow">
-    <b>${account.role}</b>
-    <small class="muted" style="display:block">WA: ${account.phone}</small>
-    <small class="muted" style="display:block">Email: ${account.email}</small>
-    <small class="muted" style="display:block">Password: ${account.password}</small>
-   </div>
-  </button>`).join("")}
-  <small class="muted">Login WhatsApp memakai kode OTP yang dikirim ke nomor Anda.</small>
- </div>`;
+ return '<small class="muted">Login WhatsApp menggunakan OTP. Untuk akun Santri atau Ustadz, pilih tab Email jika ingin masuk dengan password.</small>';
 }
 
 function loginForm(method="whatsapp"){
@@ -46,9 +32,9 @@ function loginForm(method="whatsapp"){
  </div>
  <div id="authFields" class="stack">
   ${whatsapp
-   ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" placeholder="+62 812 3456 7890" value="${donorLogin?"":"08975835238"}"></div>`
-   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" value="${donorLogin?"":"santri@mutqeen.id"}"></div>
-      <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="${donorLogin?"":"member123"}"><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
+   ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" placeholder="+62 812 3456 7890" value=""></div>`
+   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" value=""></div>
+      <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value=""><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
  </div>
  <small class="muted" id="loginMessage"></small>
  <button class="btn primary full" id="loginBtn">${whatsapp?"Kirim kode OTP":"Masuk"}</button>`;
@@ -89,7 +75,7 @@ function loginCard(){
 export function loginPage(){return `<section class="auth">
 <div class="auth-hero"><div><div class="brand" style="padding:0;color:white"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div></div>
 <div><p class="eyebrow" style="color:#86e5bd">Teman setia perjalanan tahfidz</p><h1 style="font-size:44px;max-width:520px">Hafalan yang sedikit, tapi mutqin.</h1><p style="max-width:520px;color:#d9f2e7">Platform pendamping tahfidz yang menghubungkan pembinaan santri dengan dukungan yang lebih transparan kepada ustadz.</p></div>
-<div><small>${donorReturnRoute()?"Akses laporan santri":"Prototype demo · Personal & Pondok"}</small></div></div>
+<div><small>${donorReturnRoute()?"Akses laporan santri":"Personal & Pondok"}</small></div></div>
 <div class="auth-card-wrap"><div class="auth-card stack" id="authCard">${loginCard()}</div></div></section>`}
 
 async function postRegistration(payload){

@@ -66,7 +66,7 @@ final class RegisterRepository
             'password_hash' => $passwordHash,
         ]);
 
-        if (!in_array($role, ['member', 'admin', 'musyrif', 'super_admin'], true)) {
+        if (!in_array($role, ['member', 'admin', 'musyrif', 'super_admin', 'donatur'], true)) {
             throw new \InvalidArgumentException('Role tidak valid.');
         }
         $roleStmt = $this->pdo->prepare(

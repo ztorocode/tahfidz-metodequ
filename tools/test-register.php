@@ -25,7 +25,7 @@ $service = new RegistrationService(
     new RegisterValidator(),
 );
 
-$tables = ['users', 'auth_credentials', 'pondoks', 'pondok_memberships'];
+$tables = ['users', 'user_roles', 'auth_credentials', 'pondoks', 'pondok_memberships'];
 $before = [];
 foreach ($tables as $table) {
     $before[$table] = (int) $pdo->query('SELECT COUNT(*) FROM ' . $table)->fetchColumn();
@@ -91,6 +91,26 @@ try {
         smokeFail('Admin Pondok membership was not created correctly.');
     }
 
+    // Pendaftaran Donatur tidak boleh otomatis menambahkan role Member.
+    $donor = $service->register([
+        'mode' => 'donatur',
+        'name' => 'Smoke Donatur',
+        'email' => 'smoke.donatur.register@invalid.example',
+        'phone' => '+6281911100004',
+        'password' => 'SmokeDonatur8!',
+    ]);
+    if (($donor['account_type'] ?? null) !== 'donatur') {
+        smokeFail('Donatur account type mismatch.');
+    }
+
+    $roleStmt = $pdo->prepare('SELECT role, status FROM user_roles WHERE user_id = ?');
+    $roleStmt->execute([$donor['user']['id']]);
+    $roles = $roleStmt->fetchAll(PDO::FETCH_ASSOC);
+    if (count($roles) !== 1 || $roles[0]['role'] !== 'donatur' || $roles[0]['status'] !== 'active') {
+        smokeFail('Donatur must have exactly one active role: donatur.');
+    }
+
+    echo 'DONATUR_SINGLE_ROLE=OK' . PHP_EOL;
     echo 'PERSONAL_REGISTER=OK' . PHP_EOL;
     echo 'PASSWORD_HASH=OK' . PHP_EOL;
     echo 'PONDOK_REGISTER=OK' . PHP_EOL;

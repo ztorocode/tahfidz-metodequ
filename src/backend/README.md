@@ -117,9 +117,9 @@ Tidak ada migrasi database.
 
 ## Akun Donatur dan akses progres santri
 
-Registrasi dengan `POST /api/auth/register` dan `mode=donatur` membuat role
-`member` ditambah `donatur`, lalu mengikuti proses verifikasi email/WhatsApp
-yang sudah berlaku. Akun yang sudah login bisa menambahkan role Donatur melalui
+Registrasi baru dengan `POST /api/auth/register` dan `mode=donatur` hanya
+membuat **satu role aktif: `donatur`** (tanpa `member`), lalu mengikuti verifikasi
+email/WhatsApp yang sudah berlaku. Akun lama yang sudah login masih bisa menambahkan role melalui
 `POST /api/donatur/activate` dengan Bearer token; operasi bersifat idempoten dan
 tidak menghapus role lain. `GET /api/ustadz/santri` memerlukan sesi valid
 **dan** role Donatur aktif; mengembalikan 401 untuk sesi tidak valid atau 403

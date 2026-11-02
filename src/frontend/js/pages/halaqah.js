@@ -225,6 +225,10 @@ function halaqahCols(items){
  return Math.min(4,Math.max(1,(items||[]).length));
 }
 
+function halaqahInviteCode(item){
+ const id=Number(item.numericId||0);
+ return Number.isSafeInteger(id)&&id>0&&id<=999999?String(id).padStart(6,"0"):null;
+}
 function adminList(items){
  return `<div style="margin-bottom:18px">
   <p class="eyebrow">Pondok / Halaqah</p>
@@ -236,6 +240,7 @@ function adminList(items){
     <div class="grow" style="min-width:0">
      <div class="row between" style="gap:8px"><b>${escapeHtml(item.name)}</b>${badge("Aktif","success")}</div>
      <div class="row between" style="gap:8px;margin-top:4px"><small class="muted">Ustadz ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))}</small><small class="muted"><b style="color:var(--text)">${item.students.length}</b> santri</small></div>
+     ${halaqahInviteCode(item)?`<small class="muted" style="display:block;margin-top:7px">Kode pendaftaran: <b>${halaqahInviteCode(item)}</b></small>`:""}
     </div>
     <div class="row" style="gap:8px;flex:0 0 auto;align-items:flex-start">
      <button class="btn" type="button" data-halaqah-edit="${item.id}" aria-label="Edit halaqah" title="Edit halaqah" style="padding:8px 10px">${pencilIcon()}</button>
@@ -393,7 +398,7 @@ function musyrifList(items,opts={}){
    const open=item.id===expandedHalaqahId;
    return `<div class="card halaqah-acc${open?" open":""}">
     <button class="halaqah-acc-head" type="button" data-halaqah-toggle="${item.id}" aria-expanded="${open}">
-     <h3>${escapeHtml(item.name)}</h3>
+     <div><h3>${escapeHtml(item.name)}</h3>${halaqahInviteCode(item)?`<small class="muted" style="display:block;margin-top:6px">Kode pendaftaran: <b>${halaqahInviteCode(item)}</b></small>`:""}</div>
      <span class="halaqah-acc-meta">${item.students.length} santri ${chevronIcon(open?"up":"down")}</span>
     </button>
     ${open?`<div class="halaqah-acc-body">
@@ -436,6 +441,7 @@ function detail(item,isAdmin){
    <button class="btn" type="button" data-halaqah-back style="margin-bottom:12px">← Kembali ke daftar</button>
    <p class="eyebrow">Pondok / Halaqah</p>
    <h1>${escapeHtml(item.name)}</h1>
+   ${halaqahInviteCode(item)?`<p class="muted">Kode pendaftaran halaqah: <b>${halaqahInviteCode(item)}</b></p>`:""}
    <p class="muted">Ustadz: ${escapeHtml(item.musyrifName||musyrifName(item.musyrifId))} · ${item.students.length} santri</p>
   </div>
   ${isAdmin?`<button class="btn primary" type="button" data-halaqah-santri="${item.id}">+Santri</button>

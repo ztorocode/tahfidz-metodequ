@@ -85,6 +85,95 @@ final class StudentHalaqahCatalogService
         ],$stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+
+    /**
+     * Cari maksimal lima halaqah aktif berdasarkan nama halaqah, nama ustadz,
+     * atau kode 6 digit (ID database dengan zero-padding).
+     * Tidak mengambil semua halaqah ke browser.
+     *
+     * @return array{items:array<int,array<string,mixed>>,pending_halaqah_id:?int}
+     */
+    public function search(int $userId, string $query): array
+    {
+        $query = trim($query);
+        $exactCode = preg_match('/^[0-9]{6}$/D', $query) === 1
+            ? (int) $query : 0;
+        if (mb_strlen($query) > 100 || ($exactCode === 0 && mb_strlen($query) < 2)) {
+            return ['items' => [], 'pending_halaqah_id' => null];
+        }
+
+        $pending = $this->pdo->prepare(
+            "SELECT halaqah_id FROM student_halaqah_applications
+             WHERE user_id = :user_id AND status = 'pending'
+             ORDER BY requested_at DESC LIMIT 1"
+        );
+        $pending->execute(['user_id' => $userId]);
+        $pendingId = $pending->fetchColumn();
+
+        // LIKE escape '!' supaya % dan _ dari input diperlakukan literal.
+        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query);
+        $contains = '%' . $escaped . '%';
+        $prefix = $escaped . '%';
+
+        $stmt = $this->pdo->prepare(
+            "SELECT h.id, h.name, h.program_start_date, h.pondok_id,
+                    p.name AS pondok_name, mentor.name AS musyrif_name,
+                    (SELECT COUNT(DISTINCT hm.user_id)
+                     FROM halaqah_memberships hm
+                     JOIN users student ON student.id = hm.user_id
+                       AND student.status = 'active' AND student.deleted_at IS NULL
+                     WHERE hm.halaqah_id = h.id AND hm.status = 'active') AS members_count,
+                    (SELECT a.status FROM student_halaqah_applications a
+                     WHERE a.halaqah_id = h.id AND a.user_id = :user_id
+                     LIMIT 1) AS application_status
+             FROM halaqahs h
+             JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id AND mp.status = 'active'
+             JOIN users mentor ON mentor.id = mp.user_id
+                AND mentor.status = 'active' AND mentor.deleted_at IS NULL
+             LEFT JOIN pondoks p ON p.id = h.pondok_id
+             WHERE h.status = 'active' AND h.deleted_at IS NULL
+               AND (h.pondok_id IS NULL OR (p.status = 'active' AND p.deleted_at IS NULL))
+               AND (h.name LIKE :halaqah_name ESCAPE '!'
+                 OR mentor.name LIKE :mentor_name ESCAPE '!'
+                 OR (h.id = :exact_id AND :code_enabled = 1))
+             ORDER BY CASE
+                 WHEN h.id = :sort_exact AND :sort_enabled = 1 THEN 0
+                 WHEN h.name LIKE :prefix_name ESCAPE '!' THEN 1
+                 WHEN mentor.name LIKE :prefix_mentor ESCAPE '!' THEN 2
+                 ELSE 3 END, h.name, h.id
+             LIMIT 5"
+        );
+        $stmt->execute([
+            'user_id' => $userId,
+            'halaqah_name' => $contains,
+            'mentor_name' => $contains,
+            'exact_id' => $exactCode,
+            'code_enabled' => $exactCode > 0 ? 1 : 0,
+            'sort_exact' => $exactCode,
+            'sort_enabled' => $exactCode > 0 ? 1 : 0,
+            'prefix_name' => $prefix,
+            'prefix_mentor' => $prefix,
+        ]);
+
+        $items = array_map(static fn(array $row): array => [
+            'id' => (int) $row['id'],
+            'code' => str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT),
+            'name' => (string) $row['name'],
+            'scope' => $row['pondok_id'] === null ? 'platform' : 'pondok',
+            'pondok_name' => $row['pondok_name'] !== null ? (string) $row['pondok_name'] : null,
+            'musyrif_name' => (string) $row['musyrif_name'],
+            'members_count' => (int) $row['members_count'],
+            'program_start_date' => $row['program_start_date'] !== null
+                ? (string) $row['program_start_date'] : null,
+            'application_status' => $row['application_status'],
+        ], $stmt->fetchAll(PDO::FETCH_ASSOC));
+
+        return [
+            'items' => $items,
+            'pending_halaqah_id' => $pendingId !== false ? (int) $pendingId : null,
+        ];
+    }
+
     /** @return array<string,mixed> */
     public function apply(int $userId, int $halaqahId): array
     {

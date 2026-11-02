@@ -36,6 +36,23 @@ final class StudentHalaqahCatalogController
         Response::json(['success'=>true,'data'=>$this->service()->catalog((int)$actor['id'])]);
     }
 
+    public function search(Request $request): never
+    {
+        $actor = $this->actor($request);
+        if (!in_array('member', $actor['roles'] ?? [], true)) {
+            Response::json(['success' => false, 'message' => 'Khusus Santri.'], 403);
+        }
+        $query = trim((string) ($request->query['q'] ?? ''));
+        if (mb_strlen($query) > 100) {
+            Response::json(['success' => false, 'message' => 'Pencarian terlalu panjang.'], 422);
+        }
+        header('Cache-Control: private, no-store');
+        Response::json([
+            'success' => true,
+            'data' => $this->service()->search((int) $actor['id'], $query),
+        ]);
+    }
+
     public function apply(Request $request):never
     {
         try{

@@ -2,7 +2,7 @@ import {getState} from "../store.js?v=81bed469";
 import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=halaqahbrowse65";
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-let catalogToken=null,catalog=null,catalogLoading=false,catalogError="";
+let searchSession="",searchQuery="",searchSelection=null,pendingHalaqahId=null;
 let applicationsToken=null,applications=null,applicationsLoading=false,applicationsError="";
 
 function sessionKey(){
@@ -23,67 +23,174 @@ const dateText=value=>value
  ?new Date(value+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})
  :"Belum ditentukan";
 
-function loadCatalog(force=false){
+function sessionSearchReset(){
  const token=sessionKey();
- if(!token)return;
- if(catalogToken!==token){catalogToken=token;catalog=null;catalogError="";catalogLoading=false;}
- if(catalogLoading||(!force&&(catalog!==null||catalogError!=="")))return;
- catalogLoading=true;catalogError="";
- request("/api/students/halaqahs")
- .then(data=>{if(sessionKey()===token)catalog=Array.isArray(data)?data:[];})
- .catch(e=>{if(sessionKey()===token)catalogError=e?.message||"Gagal memuat daftar halaqah.";})
- .finally(()=>{if(sessionKey()===token){catalogLoading=false;if(location.hash.split("?")[0]==="#daftar-halaqah")window.dispatchEvent(new Event("app:render"));}});
-}
-
-export function studentHalaqahPage(){
- loadCatalog();
- const header='<div style="margin-bottom:18px"><p class="eyebrow">Santri / Pendaftaran</p><h1>Daftar Halaqah</h1>'
-  +'<p class="muted">Pilih halaqah yang ingin diikuti. Pendaftaran akan ditinjau oleh Ustadz atau admin pondok sebelum Anda menjadi anggota.</p></div>'
-  +'<div class="row" style="margin-bottom:18px;gap:10px"><a class="btn" href="#dashboard">Kembali ke Dashboard</a>'
-  +'<button class="btn soft" type="button" id="reloadHalaqahCatalog">Muat ulang</button></div>';
- if(catalog===null){
-  return header+'<div class="card" role="status">'+esc(catalogLoading?"Memuat daftar halaqah…":catalogError||"Tidak dapat memuat daftar halaqah.")+'</div>';
+ if(searchSession!==token){
+  searchSession=token;searchQuery="";searchSelection=null;pendingHalaqahId=null;
  }
- if(!catalog.length)return header+'<div class="card"><h3>Belum ada halaqah yang menerima pendaftaran</h3><p class="muted">Hubungi pengelola program untuk informasi lebih lanjut.</p></div>';
- const pending=catalog.some(h=>h.application_status==="pending");
- return header+(pending?'<div class="card" style="margin-bottom:18px"><b>Pendaftaran sedang diproses</b><p class="muted">Anda sudah mengajukan pendaftaran. Tunggu persetujuan Ustadz sebelum mengajukan ke halaqah lain.</p></div>':"")
- +'<div class="grid-2">'+catalog.map(h=>{
-   const applied=h.application_status;
-   const locked=pending&&applied!=="pending";
-   const action=applied==="pending"?"Menunggu persetujuan":applied==="approved"?"Sudah bergabung":"Mendaftar ke halaqah ini";
-   const disabled=applied==="pending"||applied==="approved"||locked;
-   return '<article class="card" style="display:flex;flex-direction:column;gap:12px">'
-     +'<div><small class="muted">'+esc(h.scope==="platform"?"Platform Mutqeen":h.pondok_name||"Pondok")+'</small>'
-     +'<h2 style="margin-top:6px">'+esc(h.name)+'</h2></div>'
-     +'<div class="list">'
-     +'<div class="list-item"><div class="grow"><b>Ustadz pembimbing</b><small class="muted" style="display:block">'+esc(h.musyrif_name)+'</small></div></div>'
-     +'<div class="list-item"><div class="grow"><b>Jumlah anggota</b><small class="muted" style="display:block">'+Number(h.members_count)+' santri aktif</small></div></div>'
-     +'<div class="list-item"><div class="grow"><b>Mulai program</b><small class="muted" style="display:block">'+esc(dateText(h.program_start_date))+'</small></div></div>'
-     +'</div>'
-     +(applied==="rejected"?'<small class="muted">Pendaftaran sebelumnya ditolak. Anda dapat mendaftar kembali.</small>':"")
-     +(h.scope==="platform"?'<small class="muted">Catatan: fitur Progress untuk halaqah Platform belum tersedia.</small>':"")
-     +'<button class="btn primary full" type="button" data-apply-halaqah="'+Number(h.id)+'"'
-     +(disabled?' disabled aria-disabled="true"':"")+ '>'+esc(locked?"Ada pendaftaran lain menunggu":action)+'</button>'
-     +'</article>';
-  }).join("")+'</div>';
 }
-
+function detailHtml(h){
+ if(!h)return "";
+ const applied=h.application_status;
+ const locked=pendingHalaqahId!==null&&pendingHalaqahId!==Number(h.id);
+ const disabled=applied==="pending"||applied==="approved"||locked;
+ const action=applied==="pending"?"Menunggu persetujuan":applied==="approved"?"Sudah bergabung":
+  locked?"Ada pendaftaran lain menunggu":"Mendaftar ke halaqah ini";
+ return '<article class="card student-halaqah-detail">'
+  +'<div class="student-halaqah-detail-head"><small class="muted">'+esc(h.scope==="platform"?"Platform Mutqeen":h.pondok_name||"Pondok")+'</small>'
+  +'<h2>'+esc(h.name)+'</h2><span class="student-halaqah-code">Kode: '+esc(h.code)+'</span></div>'
+  +'<div class="student-halaqah-meta"><div><b>Ustadz pembimbing</b><span>'+esc(h.musyrif_name||"Belum ditentukan")+'</span></div>'
+  +'<div><b>Jumlah anggota</b><span>'+Number(h.members_count||0)+' santri aktif</span></div>'
+  +'<div><b>Mulai program</b><span>'+esc(dateText(h.program_start_date))+'</span></div></div>'
+  +(applied==="rejected"?'<p class="muted">Pendaftaran sebelumnya ditolak. Anda dapat mendaftar kembali.</p>':"")
+  +(locked?'<p class="muted">Anda masih mempunyai pendaftaran lain yang menunggu persetujuan.</p>':"")
+  +(h.scope==="platform"?'<p class="muted">Fitur Progress halaqah Platform belum tersedia.</p>':"")
+  +'<button class="btn primary full" type="button" data-apply-halaqah="'+Number(h.id)+'"'+
+    (disabled?' disabled aria-disabled="true"':"")+'>'+esc(action)+'</button>'
+  +'</article>';
+}
+export function studentHalaqahPage(){
+ sessionSearchReset();
+ return '<section class="student-halaqah-search-page">'
+  +'<div class="student-halaqah-heading"><p class="eyebrow">Santri / Pendaftaran</p><h1>Daftar Halaqah</h1>'
+  +'<p class="muted">Cari nama halaqah atau nama ustadz pembimbing. Anda juga bisa memasukkan kode halaqah 6 digit yang diberikan ustadz.</p></div>'
+  +'<form id="studentHalaqahSearchForm" role="search" autocomplete="off">'
+  +'<label for="studentHalaqahSearch" class="label">Cari halaqah</label>'
+  +'<div class="student-halaqah-search-wrap">'
+  +'<input class="input student-halaqah-search-input" id="studentHalaqahSearch" name="q" type="search" maxlength="100"'
+  +' placeholder="Nama halaqah, ustadz, atau kode 6 digit" aria-autocomplete="list" aria-controls="studentHalaqahSuggestions"'
+  +' aria-expanded="false" value="'+esc(searchQuery)+'" spellcheck="false">'
+  +'<div class="student-halaqah-suggestions" id="studentHalaqahSuggestions" role="listbox" aria-label="Hasil pencarian halaqah" hidden></div>'
+  +'</div><p class="muted student-halaqah-hint">Ketik minimal 2 huruf. Saran yang muncul maksimal 5 halaqah.</p>'
+  +'<p class="student-halaqah-status muted" id="studentHalaqahSearchStatus" role="status" aria-live="polite"></p>'
+  +'</form>'
+  +'<div id="studentHalaqahSelected" aria-live="polite">'+detailHtml(searchSelection)+'</div>'
+  +'</section>';
+}
 export function bindStudentHalaqah(){
- document.querySelector("#reloadHalaqahCatalog")?.addEventListener("click",()=>{catalog=null;loadCatalog(true);window.dispatchEvent(new Event("app:render"));});
- document.querySelectorAll("[data-apply-halaqah]:not([disabled])").forEach(button=>button.addEventListener("click",async()=>{
-  const id=Number(button.dataset.applyHalaqah);
-  const h=catalog?.find(x=>x.id===id);
-  if(!h||!confirm("Daftar ke halaqah "+h.name+"? Pendaftaran memerlukan persetujuan Ustadz."))return;
+ const input=document.querySelector("#studentHalaqahSearch");
+ const list=document.querySelector("#studentHalaqahSuggestions");
+ const panel=document.querySelector("#studentHalaqahSelected");
+ const status=document.querySelector("#studentHalaqahSearchStatus");
+ const form=document.querySelector("#studentHalaqahSearchForm");
+ if(!input||!list||!panel||!status||!form)return;
+ let timer=null,seq=0,items=[],active=-1,loading=false;
+ function updateActive(){
+  const options=[...list.querySelectorAll('[role="option"]')];
+  options.forEach((item,i)=>item.setAttribute("aria-selected",String(i===active)));
+  if(active>=0&&options[active]){
+   input.setAttribute("aria-activedescendant",options[active].id);
+   options[active].scrollIntoView({block:"nearest"});
+  }else input.removeAttribute("aria-activedescendant");
+ }
+ function suggestions(html){
+  list.innerHTML=html;
+  list.hidden=!html;
+  input.setAttribute("aria-expanded",String(Boolean(html)));
+  if(!html){active=-1;input.removeAttribute("aria-activedescendant")}
+ }
+ function choose(h){
+  if(!h)return;
+  searchSelection={...h};
+  searchQuery=h.name;
+  input.value=h.name;
+  panel.innerHTML=detailHtml(searchSelection);
+  status.textContent="";
+  items=[];suggestions("");
+  input.blur();
+ }
+ const suitable=query=>/^[0-9]+$/.test(query)?query.length===6:query.length>=2;
+ async function runSearch(query,autoSelectCode=false){
+  const run=++seq;
+  clearTimeout(timer);
+  if(!suitable(query)){
+   items=[];loading=false;suggestions("");
+   status.textContent=query&&/^[0-9]+$/.test(query)?"Masukkan kode halaqah tepat 6 digit.":"";
+   return;
+  }
+  loading=true;status.textContent="Mencari halaqah...";
+  suggestions("");
+  try{
+   const data=await request("/api/students/halaqahs/search?q="+encodeURIComponent(query));
+   if(run!==seq||!input.isConnected||input.value.trim()!==query)return;
+   pendingHalaqahId=data.pending_halaqah_id??null;
+   items=Array.isArray(data.items)?data.items.slice(0,5):[];
+   if(!items.length){
+    status.textContent="Halaqah tidak ditemukan. Periksa nama ustadz atau kode 6 digit.";
+    return;
+   }
+   if(autoSelectCode&&/^[0-9]{6}$/.test(query)&&items.length===1){
+    choose(items[0]);return;
+   }
+   status.textContent=items.length+" hasil ditemukan. Pilih halaqah yang sesuai.";
+   active=-1;
+   suggestions(items.map((h,i)=>'<button type="button" role="option" class="student-halaqah-suggestion"'
+    +' id="studentHalaqahOption'+i+'" data-halaqah-index="'+i+'" aria-selected="false">'
+    +'<strong>'+esc(h.name)+'</strong><span>'+esc(h.musyrif_name||"Ustadz belum ditentukan")
+    +' · '+esc(h.scope==="platform"?"Platform Mutqeen":h.pondok_name||"Pondok")+'</span>'
+    +'<small>Kode '+esc(h.code)+'</small></button>').join(""));
+  }catch(error){
+   if(run!==seq||!input.isConnected)return;
+   items=[];suggestions("");
+   status.textContent=error?.message||"Pencarian gagal. Coba lagi.";
+  }finally{if(run===seq)loading=false}
+ }
+ input.addEventListener("input",()=>{
+  const query=input.value.trim();
+  searchQuery=query;searchSelection=null;panel.innerHTML="";
+  clearTimeout(timer);seq++;items=[];active=-1;suggestions("");
+  if(!suitable(query)){
+   status.textContent=/^[0-9]+$/.test(query)?"Masukkan 6 digit kode halaqah.":"";
+   return;
+  }
+  status.textContent="Mencari halaqah...";
+  timer=setTimeout(()=>runSearch(query,/^[0-9]{6}$/.test(query)),250);
+ });
+ input.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){suggestions("");status.textContent="";return}
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){
+   if(!items.length||list.hidden)return;
+   e.preventDefault();
+   active=(active+(e.key==="ArrowDown"?1:-1)+items.length)%items.length;
+   updateActive();
+  }else if(e.key==="Enter"&&active>=0&&items[active]){
+   e.preventDefault();choose(items[active]);
+  }
+ });
+ list.addEventListener("click",e=>{
+  const option=e.target.closest("[data-halaqah-index]");
+  if(!option)return;
+  const index=Number(option.dataset.halaqahIndex);
+  if(Number.isInteger(index)&&items[index])choose(items[index]);
+ });
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(active>=0&&items[active]){choose(items[active]);return}
+  const query=input.value.trim();
+  if(!suitable(query)){status.textContent="Masukkan minimal 2 huruf atau kode 6 digit.";return}
+  if(items.length===1){choose(items[0]);return}
+  if(!loading)await runSearch(query,/^[0-9]{6}$/.test(query));
+  if(items.length>1)status.textContent="Pilih salah satu saran yang sesuai.";
+ });
+ panel.addEventListener("click",async event=>{
+  const button=event.target.closest("[data-apply-halaqah]:not([disabled])");
+  if(!button||!searchSelection)return;
+  const chosen={...searchSelection};
+  if(Number(button.dataset.applyHalaqah)!==Number(chosen.id))return;
+  if(!confirm("Daftar ke halaqah "+chosen.name+"? Pendaftaran akan ditinjau oleh ustadz."))return;
   button.disabled=true;button.textContent="Mengirim pendaftaran...";
   try{
-   await request("/api/students/halaqahs/apply",{method:"POST",body:JSON.stringify({halaqah_id:id})});
+   await request("/api/students/halaqahs/apply",{method:"POST",body:JSON.stringify({halaqah_id:chosen.id})});
+   searchSelection={...chosen,application_status:"pending"};
+   pendingHalaqahId=Number(chosen.id);
+   panel.innerHTML=detailHtml(searchSelection);
+   status.textContent="Pendaftaran terkirim. Menunggu persetujuan ustadz.";
    await loadMemberEnrollment(true);
-   catalog=null;loadCatalog(true);
-  }catch(e){
-   alert(e?.message||"Pendaftaran gagal.");
-   catalog=null;loadCatalog(true);
+  }catch(error){
+   status.textContent=error?.message||"Pendaftaran gagal.";
+   if(searchSelection?.id===chosen.id)panel.innerHTML=detailHtml(searchSelection);
   }
- }));
+ });
 }
 
 function loadApplications(force=false){

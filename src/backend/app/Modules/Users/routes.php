@@ -12,6 +12,7 @@ return static function (Router $router): void {
     $router->get('/api/users/me/enrollment', [new StudentEnrollmentController(), 'show']);
     $catalog = new StudentHalaqahCatalogController();
     $router->get('/api/students/halaqahs', [$catalog, 'catalog']);
+    $router->get('/api/students/halaqahs/search', [$catalog, 'search']);
     $router->post('/api/students/halaqahs/apply', [$catalog, 'apply']);
     $router->get('/api/students/halaqahs/applications', [$catalog, 'applications']);
     $router->post('/api/students/halaqahs/applications/review', [$catalog, 'review']);

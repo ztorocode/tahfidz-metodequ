@@ -166,3 +166,17 @@ Daftar santri yang ditampilkan adalah tiga contoh statis dari modul
 tidak dibuat di tabel users, tidak bisa mengakses API santri asli, dan
 tidak bisa mengirim bukti transfer ke API production. Login pengguna sungguhan
 tetap melalui `POST /api/auth/login` dan Bearer token server.
+
+## Pencarian pendaftaran halaqah
+Halaman Santri `#daftar-halaqah` hanya menampilkan satu input nama halaqah,
+nama ustadz, atau kode enam digit. Tidak memuat katalog penuh. Setelah pengguna
+mengetik minimal 2 karakter (atau kode tepat 6 digit), aplikasi memanggil endpoint
+`GET /api/students/halaqahs/search?q=...` dengan Bearer token ber-role Member.
+Query backend membatasi `LIMIT 5`, memfilter halaqah aktif, serta mengirim
+status pendaftaran pengguna dan penanda pending. Saran dan detail pilihan bukan
+data contoh. Pendaftaran tetap lewat `POST /api/students/halaqahs/apply`.
+
+Kode 6 digit saat ini adalah ID halaqah yang dipadatkan dengan angka nol di depan,
+misalnya ID 5 menjadi `000005`; ditampilkan kepada Ustadz dan Admin di Manajemen
+Halaqah. Tidak ada migrasi. Kode ini identitas untuk pencarian, bukan password
+atau token rahasia. Kode enam digit tersedia untuk ID 1 hingga 999999.

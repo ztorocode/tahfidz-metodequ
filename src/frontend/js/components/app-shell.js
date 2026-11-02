@@ -3,10 +3,10 @@ import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-s
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
 
-const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
-const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
-const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["notifications","Notifikasi"]];
-const adminNav=[["admin","Dashboard"],["kelola-musyrif","Ustadz"],["kelola-santri","Santri"],["halaqah","Halaqah"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
+const memberNav=[["dashboard","Dashboard"],["daftar-halaqah","Halaqah"],["progress","Progress"],["report","Report"]];
+const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
+const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
+const adminNav=[["admin","Dashboard"],["kelola-musyrif","Ustadz"],["kelola-santri","Santri"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];
 const superAdminNav=[["super-admin","Dashboard"],["users","Manajemen User"],["pondoks","Pondok"],["platform-musyrif","Ustadz Platform"],["platform-settings","Pengaturan"]];
 const memberMobileNav=memberNav;
 

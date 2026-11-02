@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=studentgateba73";
+import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=halaqahbrowse51";
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let catalogToken=null,catalog=null,catalogLoading=false,catalogError="";

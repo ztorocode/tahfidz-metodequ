@@ -1,9 +1,8 @@
-import {view,routeName} from "./router.js?v=studentgateba73";
+import {view,routeName} from "./router.js?v=halaqahbrowse51";
 import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
-import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=halaqahbrowse51";
-import {bindStudentHalaqah,bindHalaqahApplications} from "./pages/student-halaqah.js?v=halaqahbrowse51";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=studentheader39";
+import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=studentgateba73";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=halaqahbrowse51";
 import {bindLogin} from "./pages/login.js?v=logoutfix8c26";
 import {bindInvite} from "./pages/terima-undangan.js?v=b8c14e72";
 import {toast} from "./utils/helpers.js?v=81bed469";
@@ -26,8 +25,6 @@ export function renderPrivate(){
  app.innerHTML=(rawName==="login"||rawName==="terima-undangan"||!getState().loggedIn)?html:renderLayout(html);
  if(rawName==="login")bindLogin();else if(rawName==="terima-undangan"){bindInvite();}else bindLayout();
  bindMemberEnrollment();
- bindStudentHalaqah();
- bindHalaqahApplications();
  bindMemberProgress();
  if(rawName==="users"&&getState().persona==="super_admin")bindUserManagementPage();
  bindPageActions();renderInstall();

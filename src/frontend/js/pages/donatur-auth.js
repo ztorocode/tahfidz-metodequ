@@ -1,8 +1,9 @@
 import {getState,setState} from "../store.js?v=81bed469";
+import {isDemoDonorEmail,isDemoDonorCredentials,isDemoDonorSession,startDemoDonorSession} from "../utils/donatur-demo.js?v=donorlocal72";
 
 export function isDonorAuthenticated(){
  const s=getState();
- return Boolean(s.loggedIn&&s.authToken&&Array.isArray(s.authUser?.roles)&&(s.authUser.roles.includes("donatur")||s.authUser.roles.includes("donatur_demo")));
+ return isDemoDonorSession()||Boolean(s.loggedIn&&s.authToken&&Array.isArray(s.authUser?.roles)&&(s.authUser.roles.includes("donatur")||s.authUser.roles.includes("donatur_demo")));
 }
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -52,7 +53,8 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
    }else{
     body.innerHTML='<p>Untuk melihat nama dan progres santri, masuk atau buat akun Donatur terlebih dahulu.</p>'
      +errorText+'<div class="donor-auth-choices"><button class="btn primary" type="button" data-donor-screen="login">Masuk</button>'
-     +'<button class="btn" type="button" data-donor-screen="register">Daftar sebagai Donatur</button></div>';
+     +'<button class="btn" type="button" data-donor-screen="register">Daftar sebagai Donatur</button>'
+    +'<button class="btn" type="button" data-donor-demo>Coba Donatur Demo</button></div>';
    }
   }else if(mode==="login"){
    body.innerHTML='<p>Masuk ke akun Mutqeen Anda.</p>'+errorText
@@ -88,6 +90,8 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
  window.addEventListener("hashchange",close);
  body.addEventListener("click",e=>{
   if(e.target.closest("[data-donor-close]")){close();return;}
+  const demo=e.target.closest("[data-donor-demo]");
+  if(demo&&!pending){startDemoDonorSession();goToStudents();return;}
   const button=e.target.closest("[data-donor-screen]");
   if(button&&body.contains(button)&&!pending)render(button.dataset.donorScreen);
  });
@@ -103,6 +107,14 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
   button.textContent="Memproses...";
   pending=true;
   try{
+   if(mode==="login"&&isDemoDonorEmail(values.get("email"))){
+    if(!isDemoDonorCredentials(values.get("email"),String(values.get("password")||""))){
+     throw new Error("Password Donatur Demo tidak sesuai.");
+    }
+    startDemoDonorSession();
+    goToStudents();
+    return;
+   }
    let path,payload;
    const headers={"Accept":"application/json","Content-Type":"application/json"};
    if(mode==="register"){

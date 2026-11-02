@@ -1,6 +1,7 @@
 import {setState} from "../store.js?v=81bed469";
+import {isDemoDonorEmail,isDemoDonorCredentials,startDemoDonorSession} from "../utils/donatur-demo.js?v=donorlocal72";
 
-// Akun demonstrasi nyata: identitas publik saja. Password tidak disimpan di frontend.
+// Santri dan ustadz demo menggunakan akun backend; Donatur Demo memakai sesi simulasi browser.
 const realDemoAccounts=[
  {id:"member",role:"Santri Demo",email:"santri@mutqeen.id",password:"849d8e1ec54d1d699aa82eeb"},
  {id:"musyrif-platform",role:"Ustadz Demo",email:"ustadz@mutqeen.id",password:"G-t8yoBfwAYibqgjBTTJ9gNm"},
@@ -28,7 +29,7 @@ function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&am
 
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
-  <div><b style="font-size:13px">Akun demo Mutqeen</b><small class="muted" style="display:block">Klik akun untuk mengisi email dan password secara otomatis. Login menggunakan database.</small></div>
+  <div><b style="font-size:13px">Akun demo Mutqeen</b><small class="muted" style="display:block">Klik akun untuk mengisi login. Donatur Demo menggunakan data simulasi, tanpa akses data santri asli.</small></div>
   ${realDemoAccounts.map(account=>`<button type="button" class="list-item" data-real-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
    <span class="avatar">${esc(account.role.slice(0,1))}</span>
    <div class="grow"><b>${esc(account.role)}</b><small class="muted" style="display:block">Email: ${esc(account.email)}</small></div>
@@ -334,6 +335,17 @@ export function bindLogin(){
    const password=document.querySelector("#loginPassword")?.value||"";
    if(!email||!password){
     if(message){message.textContent="Email dan password wajib diisi.";message.style.color="var(--danger)";}
+    return;
+   }
+   // Password Donatur Demo berlaku hanya untuk tampilan simulasi lokal.
+   // Tidak mengirim kredensial demo ke API produksi.
+   if(isDemoDonorEmail(email)){
+    if(!isDemoDonorCredentials(email,password)){
+     if(message){message.textContent="Password Donatur Demo tidak sesuai.";message.style.color="var(--danger)";}
+     return;
+    }
+    startDemoDonorSession();
+    location.hash=donorReturnRoute()||"donasi";
     return;
    }
    if(button){button.disabled=true;button.textContent="Masuk...";}

@@ -1,5 +1,6 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donordemo941";
+import {isDemoDonorSession,demoStudentsData} from "../utils/donatur-demo.js?v=donorlocal72";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donorlocal72";
 import {toast} from "../utils/helpers.js?v=81bed469";
 import {openDonationConfirmation} from "./donation-confirmation.js?v=proofauthfix31";
 
@@ -214,22 +215,23 @@ export async function bindDonationStudents(){
  const state=getState();
  if(!isDonorAuthenticated()){promptDonorAccess(true);return;}
  try{
-  const response=await fetch("/api/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{
+  const demo=isDemoDonorSession();
+  const response=demo?null:await fetch("/api/ustadz/santri?ustadz_id="+ustadzId+"&halaqah_id="+halaqahId,{
    headers:{Accept:"application/json",Authorization:"Bearer "+state.authToken},cache:"no-store"
   });
-  const result=await response.json().catch(()=>({}));
-  if(response.status===401){
+  const result=demo?{success:true,data:demoStudentsData()}:await response.json().catch(()=>({}));
+  if(!demo&&response.status===401){
    setState({loggedIn:false,demoSession:false,authToken:null,authUser:null});
    if(list.isConnected)promptDonorAccess(true);
    return;
   }
-  if(response.status===403){
+  if(!demo&&response.status===403){
    const session=getState();
    setState({authUser:{...session.authUser,roles:(session.authUser?.roles||[]).filter(role=>role!=="donatur")}});
    if(list.isConnected)promptDonorAccess(true);
    return;
   }
-  if(!response.ok||!result.success)throw new Error(result.message||"Daftar santri belum dapat dimuat.");
+  if((!demo&&!response.ok)||!result.success)throw new Error(result.message||"Daftar santri belum dapat dimuat.");
   if(!list.isConnected)return;
   const data=result.data||{};
   const students=Array.isArray(data.students)?data.students:[];

@@ -157,3 +157,12 @@ dari endpoint `GET /api/ustadz/santri` dengan `data.demo=true`; nama dan progres
 santri asli tidak pernah dibaca dari database pada jalur ini. Aktivasi role Donatur
 melalui `POST /api/donatur/activate` diblokir untuk akun demo. Laporan bukti
 transfer juga mensyaratkan role `donatur`, sehingga role demo tidak dapat mengirimnya.
+
+## Donatur Demo tanpa akun production
+Login simulasi Donatur Demo di halaman login dan popup berjalan sepenuhnya
+di browser menggunakan `demoSession: true` dan tanpa token autentikasi backend.
+Daftar santri yang ditampilkan adalah tiga contoh statis dari modul
+`js/utils/donatur-demo.js`, dengan peringatan MODE DEMO. Akun demo ini
+tidak dibuat di tabel users, tidak bisa mengakses API santri asli, dan
+tidak bisa mengirim bukti transfer ke API production. Login pengguna sungguhan
+tetap melalui `POST /api/auth/login` dan Bearer token server.

@@ -1,12 +1,12 @@
-const CACHE='mutqeen-usereditb27';
+const CACHE='mutqeen-donordemo941';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
  './assets/css/components.css?v=progdayfix6e4','./assets/css/responsive.css?v=f28a6c10','./assets/css/halaqah-camera.css?v=camfixb4d2','./assets/css/landing.css?v=b8c14e72',
  './assets/images/icon.svg?v=81bed469','./assets/css/donasi.css?v=thanksdon31','./assets/css/platform-user-edit.css?v=usereditb27',
- './js/app.js?v=usereditb27','./js/store.js?v=81bed469',
- './js/pages/login.js?v=demofill3dc2',
- './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=donoronlycf9b3','./js/pages/donatur-auth.js?v=donoronlycf9b3','./js/pages/donation-confirmation.js?v=proofauthfix31',
+ './js/app.js?v=donordemo941','./js/store.js?v=81bed469',
+ './js/pages/login.js?v=donordemo941',
+ './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=donordemo941','./js/pages/donatur-auth.js?v=donordemo941','./js/pages/donation-confirmation.js?v=proofauthfix31',
  './js/pages/terima-undangan.js?v=b8c14e72',
  './js/utils/helpers.js?v=81bed469'
 ];

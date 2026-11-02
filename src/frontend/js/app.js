@@ -1,7 +1,7 @@
 import {getState,setState} from "./store.js?v=81bed469";
-import {loginPage,bindLogin} from "./pages/login.js?v=demofill3dc2";
+import {loginPage,bindLogin} from "./pages/login.js?v=donordemo941";
 import {landingPage,bindLanding} from "./pages/landing.js?v=d2f91a63";
-import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donoronlycf9b3";
+import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donordemo941";
 
 const PRIVATE_RUNTIME="./private-app.js?v=usereditb27";
 const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
@@ -95,7 +95,7 @@ async function render(){
  // Donatur murni tidak memiliki dashboard santri/Member.
  // Laporan dan akses santri tetap melalui halaman donasi publik yang memvalidasi token.
  const current=getState();
- if(current.loggedIn&&current.authUser?.roles?.length===1&&current.authUser.roles[0]==="donatur"){
+ if(current.loggedIn&&current.authUser?.roles?.length===1&&(current.authUser.roles[0]==="donatur"||current.authUser.roles[0]==="donatur_demo")){
   location.hash="donasi";
   return;
  }
@@ -118,7 +118,7 @@ window.addEventListener("hashchange",guardedRender);
 window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=usereditb27"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=donordemo941"));
 }
 
 if(!location.hash&&getState().loggedIn)location.hash="dashboard";

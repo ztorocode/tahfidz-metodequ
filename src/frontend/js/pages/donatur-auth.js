@@ -2,7 +2,7 @@ import {getState,setState} from "../store.js?v=81bed469";
 
 export function isDonorAuthenticated(){
  const s=getState();
- return Boolean(s.loggedIn&&s.authToken&&Array.isArray(s.authUser?.roles)&&s.authUser.roles.includes("donatur"));
+ return Boolean(s.loggedIn&&s.authToken&&Array.isArray(s.authUser?.roles)&&(s.authUser.roles.includes("donatur")||s.authUser.roles.includes("donatur_demo")));
 }
 function escapeHtml(value){
  return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -137,7 +137,7 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
      musyrifType:user.musyrif_type||null,musyrifContexts:user.musyrif_contexts||null,
      myPondoks:user.pondoks||[],activePondokId:user.pondoks?.[0]?.id??null,
      realHalaqahs:[],realMusyrifs:[],realSantris:[],halaqahs:[]});
-    if(roles.includes("donatur"))goToStudents();
+    if(roles.includes("donatur")||roles.includes("donatur_demo"))goToStudents();
     else render("activate");
     return;
    }

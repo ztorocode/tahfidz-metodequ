@@ -136,7 +136,7 @@ export function bindLogin(){
   if(roles.includes("super_admin")){persona="super_admin";context="platform";}
   else if(roles.includes("admin")){persona="admin";context=myPondoks.length?"pondok":"personal";}
   else if(roles.includes("musyrif")){persona="musyrif";}
-   else if(roles.includes("donatur")&&!roles.includes("member")){persona="donatur";context="personal";}
+   else if((roles.includes("donatur")||roles.includes("donatur_demo"))&&!roles.includes("member")){persona="donatur";context="personal";}
   const rawMusyrifContexts=user.musyrif_contexts||null;
   const legacyPondoks=myPondoks.filter(p=>p.role==="musyrif");
   const musyrifContexts=roles.includes("musyrif")
@@ -150,7 +150,7 @@ export function bindLogin(){
   }
   const displayName=user.name||email;
   const initials=displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
-  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Ustadz":persona==="donatur"?"Donatur":"Member";
+  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Ustadz":persona==="donatur"?(roles.includes("donatur_demo")?"Donatur Demo":"Donatur"):"Member";
   const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
   const profileOverrides={member:profile,[persona]:profile};
   const musyrifType=user.musyrif_type??(roles.includes("musyrif")

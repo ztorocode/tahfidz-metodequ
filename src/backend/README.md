@@ -148,3 +148,12 @@ pengguna harus melakukan verifikasi email baru sebelum login lagi. Bila email
 gagal dikirim, gunakan endpoint kirim ulang verifikasi yang sudah tersedia.
 Perubahan identitas, role, atau status mencabut sesi aktif target. Semua
 perubahan disimpan dalam satu transaksi. Tidak perlu migrasi database.
+
+## Donatur Demo (akses aman)
+
+Akun publik `donatur@mutqeen.id` ditanamkan ke database oleh operator dengan
+role khusus `donatur_demo`, bukan `donatur`. Sesi ini hanya mendapat data contoh
+dari endpoint `GET /api/ustadz/santri` dengan `data.demo=true`; nama dan progres
+santri asli tidak pernah dibaca dari database pada jalur ini. Aktivasi role Donatur
+melalui `POST /api/donatur/activate` diblokir untuk akun demo. Laporan bukti
+transfer juga mensyaratkan role `donatur`, sehingga role demo tidak dapat mengirimnya.

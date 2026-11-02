@@ -1,5 +1,5 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donoronlycf9b3";
+import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donordemo941";
 import {toast} from "../utils/helpers.js?v=81bed469";
 import {openDonationConfirmation} from "./donation-confirmation.js?v=proofauthfix31";
 
@@ -234,7 +234,9 @@ export async function bindDonationStudents(){
   const data=result.data||{};
   const students=Array.isArray(data.students)?data.students:[];
   title.textContent="Santri "+(data.halaqah_name||"Halaqah");
-  context.textContent=count(students.length)+" santri aktif dibimbing oleh "+(data.ustadz_name||"Ustadz")+".";
+  context.textContent=data.demo
+   ?"MODE DEMO: Semua nama dan progres berikut adalah simulasi, bukan data santri asli."
+   :count(students.length)+" santri aktif dibimbing oleh "+(data.ustadz_name||"Ustadz")+".";
   list.innerHTML=students.length?students.map(student=>{
    const pct=student.progress_percent==null?null:Math.max(0,Math.min(100,Number(student.progress_percent)||0));
    const detail=pct===null?"Belum ada catatan progres harian":

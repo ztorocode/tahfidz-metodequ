@@ -43,13 +43,31 @@ final class PublicUstadzController
         if ($actor === null) {
             Response::json(['success' => false, 'message' => 'Login diperlukan untuk melihat nama dan progres santri.'], 401);
         }
-        if (!in_array('donatur', $actor['roles'] ?? [], true)) {
+        $isDemo = in_array('donatur_demo', $actor['roles'] ?? [], true);
+        if (!$isDemo && !in_array('donatur', $actor['roles'] ?? [], true)) {
             Response::json(['success' => false, 'message' => 'Role Donatur diperlukan untuk melihat nama dan progres santri.'], 403);
         }
         $profileId = filter_var($request->query['ustadz_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         $halaqahId = filter_var($request->query['halaqah_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
         if (!$profileId || !$halaqahId) {
             Response::json(['success' => false, 'message' => 'Halaqah tidak valid.'], 422);
+        }
+        // Tidak pernah query nama atau progres asli untuk sesi demo.
+        if ($isDemo) {
+            Response::json([
+                'success' => true,
+                'data' => [
+                    'demo' => true,
+                    'halaqah_name' => 'Halaqah Contoh',
+                    'ustadz_name' => 'Ustadz Contoh',
+                    'santri_aktif' => 3,
+                    'students' => [
+                        ['name' => 'Santri Demo 1', 'progress_percent' => 40, 'progress_week' => 1, 'progress_day' => 'senin', 'progress_updated_at' => null],
+                        ['name' => 'Santri Demo 2', 'progress_percent' => 75, 'progress_week' => 1, 'progress_day' => 'selasa', 'progress_updated_at' => null],
+                        ['name' => 'Santri Demo 3', 'progress_percent' => null, 'progress_week' => null, 'progress_day' => null, 'progress_updated_at' => null],
+                    ],
+                ],
+            ]);
         }
         $data = (new PublicUstadzDetailsService($pdo))->students((int) $profileId, (int) $halaqahId);
         if ($data === null) {
@@ -68,6 +86,10 @@ final class PublicUstadzController
         $actor = $sessions->userFromToken(SessionService::bearerToken($request->headers));
         if ($actor === null) {
             Response::json(['success' => false, 'message' => 'Silakan masuk terlebih dahulu.'], 401);
+        }
+
+        if (in_array('donatur_demo', $actor['roles'] ?? [], true)) {
+            Response::json(['success' => false, 'message' => 'Akun demo tidak dapat diubah menjadi Donatur production.'], 403);
         }
 
         $stmt = $pdo->prepare(

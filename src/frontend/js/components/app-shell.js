@@ -144,7 +144,7 @@ export function shell(content){
  const myPondoks=s.myPondoks||[];
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
- const activeContext=s.persona==="super_admin"?"Platform Mutqeen":s.persona==="musyrif"?(s.context==="platform"?"Platform Mutqeen":pondokName):s.context==="personal"?"Personal":pondokName;
+ const activeContext=s.persona==="super_admin"?"Platform Mutqeen":s.persona==="musyrif"?(s.context==="platform"?"Platform Mutqeen":pondokName):s.persona==="member"?(activePondok?.name||"Belum ada halaqah"):s.context==="personal"?"Personal":pondokName;
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
  <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>

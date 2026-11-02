@@ -1,4 +1,5 @@
-import {view,routeName} from "./router.js?v=donproof31";
+import {view,routeName} from "./router.js?v=progdayfix6e4";
+import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=profacc31a";
 import {bindLogin} from "./pages/login.js?v=b8c14e72";
@@ -22,6 +23,7 @@ export function renderPrivate(){
  const name=routeName(),html=view();
  app.innerHTML=(rawName==="login"||rawName==="terima-undangan"||!getState().loggedIn)?html:renderLayout(html);
  if(rawName==="login")bindLogin();else if(rawName==="terima-undangan"){bindInvite();}else bindLayout();
+ bindMemberProgress();
  bindPageActions();renderInstall();
 }
 function pondokId(){

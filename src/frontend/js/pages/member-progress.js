@@ -324,7 +324,7 @@ function dayBody(data,week,day){
  '</div>';
 }
 
-function dayCard(data,week,item,index,startOverride){
+function dayCard(data,week,item,index,startOverride,locked=false){
  const open=data.openDay===item.id;
  const dayNumber=((week-1)*6)+index+1;
  const pct=dayProgress(data,week,item.id);
@@ -341,7 +341,7 @@ function dayCard(data,week,item,index,startOverride){
    '<span class="member-progress-day-title"><b>'+dayName+'</b>'+label+'</span>'+
    '<strong data-progress-percent="'+item.id+'">'+pct+'%</strong>'+
   '</button>'+
-  (open?dayBody(data,week,item.id):"")+
+  (open?'<div class="member-progress-day-panel">'+dayBody(data,week,item.id)+(locked?musyrifPendingOverlay():"")+'</div>':"")+
  '</article>';
 }
 
@@ -383,8 +383,8 @@ function fridayCard(date){
 }
 
 /** Susun hari-hari pekan + kartu Jum'at libur sesuai urutan tanggal. */
-function weekDaysHtml(data,week,start,fridayDate){
- const cards=days.map((item,index)=>dayCard(data,week,item,index,start));
+function weekDaysHtml(data,week,start,fridayDate,locked=false){
+ const cards=days.map((item,index)=>dayCard(data,week,item,index,start,locked));
  if(!start||!fridayDate){
   // Tanpa tanggal mulai program → perilaku lama: Jum'at di akhir daftar.
   cards.push(fridayCard(null));
@@ -575,18 +575,41 @@ export function memberProgressPage(){
  syncWeek(week);
  const start=myProgramStart();
  const fridayDate=start?fridayOf(start,week):null;
- const overlay=musyrifPendingOverlay();
- return '<section class="member-progress-page"'+(overlay?' style="position:relative"':"")+'>'
+ const pending=needsMusyrifPendingOverlay();
+ const notice=pending?'<div class="card member-progress-pending-notice" role="status">Mohon tunggu acc musyrif pembimbing. Hari tetap bisa dibuka, tetapi pengisian progres belum diizinkan.</div>':"";
+ return '<section class="member-progress-page">'
   +myHalaqahCard()
+  +notice
   +'<div class="member-progress-weeks" role="tablist" aria-label="Pilih pekan">'+
    weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")+
   '</div>'
   +'<div class="member-progress-days">'+
-   weekDaysHtml(data,week,start,fridayDate).join("")+
+   weekDaysHtml(data,week,start,fridayDate,pending).join("")+
   '</div>'
   +rabthModal()
-  +overlay
   +'</section>';
+}
+
+/** Bind to rendered headers, including on mobile where parent click delegation may not receive the event. */
+export function bindMemberProgress(){
+ if(!onProgressPage())return;
+ const page=document.querySelector(".member-progress-page");
+ if(!page)return;
+ page.querySelectorAll("[data-progress-day-toggle]").forEach(button=>{
+  button.addEventListener("click",event=>{
+   event.preventDefault();
+   event.stopPropagation(); // Prevent the document-level fallback from toggling twice.
+   const day=button.dataset.progressDayToggle;
+   if(!days.some(item=>item.id===day))return;
+   if(isReviewRoute()){
+    reviewOpenDay=reviewOpenDay===day?null:day;
+   }else{
+    const data=getProgressContext(getState());
+    setProgressContextPatch({openDay:data.openDay===day?null:day,openDate:null});
+   }
+   window.dispatchEvent(new Event("app:render"));
+  });
+ });
 }
 
 function updatePercent(day){

@@ -111,7 +111,7 @@ async function postRegistration(payload){
 }
 
 export function bindLogin(){
- const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":"dashboard";
+ const homeRoute=persona=>persona==="super_admin"?"super-admin":persona==="admin"?"admin":persona==="musyrif"?"musyrif":persona==="donatur"?"donasi":"dashboard";
   // Cache daftar milik akun sebelumnya: dikosongkan tiap ganti sesi agar tidak bocor
   // (login pun memakai localStorage yang sama antar akun di satu peramban).
   const emptyCache={realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null};
@@ -136,6 +136,7 @@ export function bindLogin(){
   if(roles.includes("super_admin")){persona="super_admin";context="platform";}
   else if(roles.includes("admin")){persona="admin";context=myPondoks.length?"pondok":"personal";}
   else if(roles.includes("musyrif")){persona="musyrif";}
+   else if(roles.includes("donatur")&&!roles.includes("member")){persona="donatur";context="personal";}
   const rawMusyrifContexts=user.musyrif_contexts||null;
   const legacyPondoks=myPondoks.filter(p=>p.role==="musyrif");
   const musyrifContexts=roles.includes("musyrif")
@@ -149,7 +150,7 @@ export function bindLogin(){
   }
   const displayName=user.name||email;
   const initials=displayName.split(/\s+/).map(w=>w[0]).join("").slice(0,2).toUpperCase();
-  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Ustadz":"Member";
+  const roleLabel=persona==="super_admin"?"Super Admin":persona==="admin"?"Admin Pondok":persona==="musyrif"?"Ustadz":persona==="donatur"?"Donatur":"Member";
   const profile={name:displayName,email,phone:user.phone||"",role:roleLabel,initials};
   const profileOverrides={member:profile,[persona]:profile};
   const musyrifType=user.musyrif_type??(roles.includes("musyrif")

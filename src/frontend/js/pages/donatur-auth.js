@@ -62,7 +62,7 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
     +'<button class="btn primary" type="submit">Masuk</button></form>'
     +'<div class="donor-auth-secondary"><button type="button" data-donor-screen="register">Belum punya akun? Daftar Donatur</button></div>';
   }else if(mode==="register"){
-   body.innerHTML='<p>Daftar akun Donatur. Role Member tetap tersedia pada akun ini.</p>'+errorText
+   body.innerHTML='<p>Daftar akun Donatur. Akun baru hanya memiliki role Donatur.</p>'+errorText
     +'<form data-donor-form="register" class="donor-auth-form">'
     +'<label>Nama lengkap<input name="name" autocomplete="name" minlength="2" maxlength="150" required></label>'
     +'<label>Email<input type="email" name="email" autocomplete="email" maxlength="190" required></label>'
@@ -131,7 +131,7 @@ export function openDonorModal(ustadzId,halaqahId,trigger=null,options={}){
     if(!session.token||!session.user)throw new Error("Sesi login tidak tersedia.");
     const user=session.user;
     const roles=Array.isArray(user.roles)?user.roles:[];
-    const persona=roles.includes("super_admin")?"super_admin":roles.includes("admin")?"admin":roles.includes("musyrif")?"musyrif":"member";
+    const persona=roles.includes("super_admin")?"super_admin":roles.includes("admin")?"admin":roles.includes("musyrif")?"musyrif":roles.includes("member")?"member":"donatur";
     const context=persona==="super_admin"?"platform":persona==="musyrif"&&user.musyrif_type==="platform"?"platform":persona==="admin"?"pondok":"personal";
     setState({loggedIn:true,demoSession:false,authToken:session.token,authUser:user,persona,context,
      musyrifType:user.musyrif_type||null,musyrifContexts:user.musyrif_contexts||null,

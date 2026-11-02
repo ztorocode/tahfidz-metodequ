@@ -66,12 +66,13 @@ try {
 
     // Verifikasi tipe, panjang, dan indeks unik sebelum mengisi.
     $info = $pdo->query(
-        "SELECT data_type, character_maximum_length, collation_name
+        "SELECT data_type AS code_type, character_maximum_length AS code_length,
+                collation_name AS code_collation
          FROM information_schema.columns WHERE table_schema = DATABASE()
            AND table_name = 'halaqahs' AND column_name = 'registration_code'"
     )->fetch(PDO::FETCH_ASSOC);
-    if (!$info || $info['data_type'] !== 'char' ||
-        (int) $info['character_maximum_length'] !== 6 || $info['collation_name'] !== 'ascii_bin') {
+    if (!$info || $info['code_type'] !== 'char' ||
+        (int) $info['code_length'] !== 6 || $info['code_collation'] !== 'ascii_bin') {
         throw new RuntimeException('Tipe kolom kode tidak sesuai spesifikasi.');
     }
     $unique = $pdo->query(

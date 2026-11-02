@@ -1,9 +1,9 @@
 import {setState} from "../store.js?v=81bed469";
 
 const demoAccounts=[
- {id:"member",role:"Member",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"member@metodequ.id",password:"member123"},
+ {id:"member",role:"Santri Demo",persona:"member",context:"personal",phone:"+62 812 3456 7890",email:"santri@mutqeen.id",password:"member123"},
  {id:"musyrif-pondok",role:"Ustadz Pondok",persona:"musyrif",context:"pondok",musyrifType:"pondok",phone:"+62 813 4567 8901",email:"musyrif@metodequ.id",password:"musyrif123"},
- {id:"musyrif-platform",role:"Ustadz Platform",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"+62 814 0000 0002",email:"musyrif.platform@metodequ.id",password:"musyrif123"},
+ {id:"musyrif-platform",role:"Ustadz Demo",persona:"musyrif",context:"platform",musyrifType:"platform",phone:"+62 814 0000 0002",email:"ustadz@mutqeen.id",password:"musyrif123"},
  {id:"admin-pondok",role:"Admin Pondok Jamil",persona:"admin",context:"pondok",phone:"+62 819 0011 2255",email:"admin@pondokjamil.com",password:"PondokJamil123!"},
  {id:"super-admin",role:"Super Admin",persona:"super_admin",context:"platform",phone:"+62 815 0000 0001",email:"superadmin@metodequ.id",password:"superadmin123"}
 ];
@@ -47,7 +47,7 @@ function loginForm(method="whatsapp"){
  <div id="authFields" class="stack">
   ${whatsapp
    ? `<div><label class="label">Nomor WhatsApp</label><input class="input" id="loginWhatsapp" inputmode="tel" placeholder="+62 812 3456 7890" value="${donorLogin?"":"+62 812 3456 7890"}"></div>`
-   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" value="${donorLogin?"":"member@metodequ.id"}"></div>
+   : `<div><label class="label">Email</label><input class="input" id="loginEmail" type="email" autocomplete="email" placeholder="nama@email.com" value="${donorLogin?"":"santri@mutqeen.id"}"></div>
       <div><label class="label">Password</label><div class="password-field"><input class="input" id="loginPassword" type="password" autocomplete="current-password" value="${donorLogin?"":"member123"}"><button class="password-toggle" id="loginPasswordToggle" type="button" aria-label="Tampilkan password" aria-pressed="false"><span aria-hidden="true">◉</span></button></div></div>`}
  </div>
  <small class="muted" id="loginMessage"></small>

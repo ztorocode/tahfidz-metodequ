@@ -5,9 +5,11 @@ declare(strict_types=1);
 use App\Core\Router;
 use App\Modules\Platform\PlatformMusyrifController;
 use App\Modules\Platform\PlatformSantriController;
+use App\Modules\Platform\PlatformUserController;
 
 return static function (Router $router): void {
     $controller = new PlatformMusyrifController();
+    $router->get('/api/platform/users', [new PlatformUserController(), 'index']);
 
     $router->post('/api/platform/musyrifs', [$controller, 'store']);
     $router->get('/api/platform/musyrif-invites', [$controller, 'inviteIndex']);

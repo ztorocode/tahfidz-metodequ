@@ -367,6 +367,35 @@ final class ProgressService
         if (in_array('super_admin', $actor['roles'] ?? [], true)) {
             return;
         }
+
+        // Santri tidak boleh membaca atau menyimpan Progress tanpa halaqah,
+        // Ustadz aktif, dan tanggal mulai yang sudah tiba. Keanggotaan pondok
+        // saja tidak cukup, termasuk jika API diakses tanpa frontend.
+        if (in_array('member', $actor['roles'] ?? [], true)
+            && !in_array('admin', $actor['roles'] ?? [], true)
+            && !in_array('musyrif', $actor['roles'] ?? [], true)) {
+            $ready = $this->pdo->prepare(
+                "SELECT 1 FROM halaqah_memberships hm
+                 JOIN halaqahs h ON h.id = hm.halaqah_id
+                 JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
+                 JOIN users mentor ON mentor.id = mp.user_id
+                 JOIN pondoks p ON p.id = h.pondok_id
+                 WHERE hm.user_id = :user_id AND hm.status = 'active'
+                   AND h.pondok_id = :pondok_id AND h.status = 'active' AND h.deleted_at IS NULL
+                   AND mp.status = 'active' AND mentor.status = 'active' AND mentor.deleted_at IS NULL
+                   AND p.status = 'active' AND p.deleted_at IS NULL
+                   AND h.program_start_date IS NOT NULL AND h.program_start_date <= :today
+                 LIMIT 1"
+            );
+            $ready->execute([
+                'user_id' => (int) $actor['id'],
+                'pondok_id' => $pondokId,
+                'today' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
+            ]);
+            if ($ready->fetchColumn() === false) {
+                throw new RegistrationException('Progress hanya tersedia setelah Santri mempunyai halaqah, Ustadz pembimbing, dan program dimulai.', 403);
+            }
+        }
         $statement = $this->pdo->prepare(
             'SELECT 1 FROM pondok_memberships
              WHERE pondok_id = :pondok_id AND user_id = :user_id AND status = \'active\' LIMIT 1'

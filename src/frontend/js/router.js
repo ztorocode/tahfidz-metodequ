@@ -1,4 +1,5 @@
 import {getState} from "./store.js?v=81bed469";
+import {memberEnrollmentGate} from "./utils/member-enrollment.js?v=studentgateba73";
 import {loginPage} from "./pages/login.js?v=b8c14e72";
 import {memberDashboard} from "./pages/member-dashboard.js?v=c6e18a42";
 import {programPage} from "./pages/program.js?v=81bed469";
@@ -44,5 +45,15 @@ export function view(){
  // Halaman progress versi musyrif hanya untuk musyrif.
  if(name==="review-progress"&&s.persona!=="musyrif"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
+ if(s.persona==="member"){
+  // Santri hanya memakai program berbimbing dan Notifikasi.
+  if(!["dashboard","progress","report","notifications"].includes(name)){
+   name="dashboard";location.hash=name;
+  }
+  if(name!=="notifications"){
+   const gated=memberEnrollmentGate(name);
+   if(gated!==null)return gated;
+  }
+ }
  const fn=routes[name]||routes[homeRoute(s)]||memberDashboard;return fn();
 }

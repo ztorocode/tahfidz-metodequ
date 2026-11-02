@@ -1,6 +1,7 @@
-import {view,routeName} from "./router.js?v=usereditb27";
+import {view,routeName} from "./router.js?v=studentgateba73";
 import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
+import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=studentgateba73";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=logoutcachefix934";
 import {bindLogin} from "./pages/login.js?v=logoutfix8c26";
 import {bindInvite} from "./pages/terima-undangan.js?v=b8c14e72";
@@ -23,6 +24,7 @@ export function renderPrivate(){
  const name=routeName(),html=view();
  app.innerHTML=(rawName==="login"||rawName==="terima-undangan"||!getState().loggedIn)?html:renderLayout(html);
  if(rawName==="login")bindLogin();else if(rawName==="terima-undangan"){bindInvite();}else bindLayout();
+ bindMemberEnrollment();
  bindMemberProgress();
  if(rawName==="users"&&getState().persona==="super_admin")bindUserManagementPage();
  bindPageActions();renderInstall();

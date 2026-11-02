@@ -24,7 +24,7 @@ function esc(value){return String(value??"").replace(/[&<>"']/g,char=>({"&":"&am
 function demoAccountsInfo(){
  return `<div class="stack" style="margin-top:4px">
   <div><b style="font-size:13px">Akun login demo</b><small class="muted" style="display:block">Gunakan salah satu akun berikut untuk mencoba role berbeda.</small></div>
-  ${demoAccounts.map(account=>`<button type="button" class="list-item" data-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
+  ${demoAccounts.filter(account=>account.id==="member"||account.id==="musyrif-platform").map(account=>`<button type="button" class="list-item" data-demo-account="${account.id}" style="width:100%;text-align:left;color:inherit">
    <span class="avatar">${account.role.slice(0,1)}</span>
    <div class="grow">
     <b>${account.role}</b>

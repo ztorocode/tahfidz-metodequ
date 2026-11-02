@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=progdayfix6e4";
+import {view,routeName} from "./router.js?v=userslive9f2";
 import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=logoutcachefix934";
@@ -11,7 +11,7 @@ import {bindWaPage} from "./pages/whatsapp.js?v=b8c14e72";
 import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
 import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
-import {bindPlatformMusyrif} from "./pages/super-admin.js?v=b8c14e72";
+import {bindPlatformMusyrif,bindUserManagementPage} from "./pages/super-admin.js?v=userslive9f2";
 import {bindReview} from "./pages/review.js?v=81bed469";
 import {bindDonationNotifications} from "./pages/notifications.js?v=donproof31";
 import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=7c3e1a90";
@@ -24,6 +24,7 @@ export function renderPrivate(){
  app.innerHTML=(rawName==="login"||rawName==="terima-undangan"||!getState().loggedIn)?html:renderLayout(html);
  if(rawName==="login")bindLogin();else if(rawName==="terima-undangan"){bindInvite();}else bindLayout();
  bindMemberProgress();
+ if(rawName==="users"&&getState().persona==="super_admin")bindUserManagementPage();
  bindPageActions();renderInstall();
 }
 function pondokId(){

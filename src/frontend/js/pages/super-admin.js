@@ -66,14 +66,96 @@ async function copyText(link){
  }
 }
 
-const users=[
- {name:"Ahmad Fauzi",email:"member@metodequ.id",role:"Member",type:"Personal",scope:"Personal",status:"Aktif"},
- {name:"Siti Aisyah",email:"siti@example.com",role:"Santri",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Rahmat Hidayat",email:"musyrif@metodequ.id",role:"Ustadz",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Ust. Abdullah",email:"abdullah@metodequ.id",role:"Ustadz",type:"Platform",scope:"Mutqeen",status:"Aktif"},
- {name:"Admin Pondok",email:"admin@metodequ.id",role:"Admin Pondok",type:"Pondok",scope:"Pondok Tahfidz Al-Furqan",status:"Aktif"},
- {name:"Super Admin",email:"superadmin@metodequ.id",role:"Super Admin",type:"Platform",scope:"Mutqeen",status:"Aktif"}
-];
+// Data khusus Super Admin. Setiap request divalidasi kembali oleh API.
+let directoryData=null;
+let directoryError="";
+let directoryLoading=false;
+let directoryToken=null;
+let directoryRequest=0;
+let directoryFilters={q:"",role:"",status:"",page:1};
+const roleNames={member:"Member / Santri",musyrif:"Ustadz",admin:"Admin Pondok",super_admin:"Super Admin",donatur:"Donatur"};
+const statusNames={active:"Aktif",inactive:"Nonaktif",suspended:"Ditangguhkan"};
+
+function directoryResetIfChanged(){
+ const token=getState().authToken;
+ if(token!==directoryToken){
+  directoryToken=token;
+  directoryData=null;
+  directoryError="";
+  directoryLoading=false;
+  directoryFilters={q:"",role:"",status:"",page:1};
+  directoryRequest++;
+ }
+}
+
+export async function loadUserManagementPage(force=false){
+ directoryResetIfChanged();
+ const token=getState().authToken;
+ if(!token||!getState().authUser?.roles?.includes("super_admin"))return;
+ if(directoryLoading&&!force)return;
+ if(directoryData&&!force)return;
+ const request=++directoryRequest;
+ directoryLoading=true;
+ directoryError="";
+ directoryData=null;
+ const params=new URLSearchParams({page:String(directoryFilters.page)});
+ if(directoryFilters.q)params.set("q",directoryFilters.q);
+ if(directoryFilters.role)params.set("role",directoryFilters.role);
+ if(directoryFilters.status)params.set("status",directoryFilters.status);
+ try{
+  const response=await fetch("/api/platform/users?"+params.toString(),{
+   headers:{Accept:"application/json",Authorization:"Bearer "+token},cache:"no-store"
+  });
+  const body=await response.json().catch(()=>({}));
+  if(!response.ok||!body.success)throw new Error(body.message||"Daftar pengguna gagal dimuat.");
+  if(request!==directoryRequest||getState().authToken!==token)return;
+  directoryData=body.data;
+ }catch(error){
+  if(request!==directoryRequest)return;
+  directoryError=error.message||"Gagal memuat pengguna.";
+ }finally{
+  if(request===directoryRequest){
+   directoryLoading=false;
+   if(location.hash.split("?")[0]==="#users")window.dispatchEvent(new Event("app:render"));
+  }
+ }
+}
+
+export function bindUserManagementPage(){
+ if(location.hash.split("?")[0]!=="#users")return;
+ directoryResetIfChanged();
+ if(!directoryLoading&&!directoryData&&!directoryError)loadUserManagementPage();
+ const searchForm=document.querySelector("#platformUserSearchForm");
+ searchForm?.addEventListener("submit",event=>{
+  event.preventDefault();
+  directoryFilters.q=(document.querySelector("#platformUserSearch")?.value||"").trim();
+  directoryFilters.page=1;
+  loadUserManagementPage(true);
+ });
+ document.querySelector("#platformUserRole")?.addEventListener("change",event=>{
+  directoryFilters.role=event.target.value;
+  directoryFilters.q=(document.querySelector("#platformUserSearch")?.value||"").trim();
+  directoryFilters.page=1;
+  loadUserManagementPage(true);
+ });
+ document.querySelector("#platformUserStatus")?.addEventListener("change",event=>{
+  directoryFilters.status=event.target.value;
+  directoryFilters.q=(document.querySelector("#platformUserSearch")?.value||"").trim();
+  directoryFilters.page=1;
+  loadUserManagementPage(true);
+ });
+ document.querySelector("#platformUserClear")?.addEventListener("click",()=>{
+  directoryFilters={q:"",role:"",status:"",page:1};
+  loadUserManagementPage(true);
+ });
+ document.querySelector("#platformUserReload")?.addEventListener("click",()=>loadUserManagementPage(true));
+ document.querySelectorAll("[data-platform-user-page]").forEach(button=>button.addEventListener("click",()=>{
+  const page=Number(button.dataset.platformUserPage);
+  if(!Number.isInteger(page)||page<1||page>Number(directoryData?.total_pages||1))return;
+  directoryFilters.page=page;
+  loadUserManagementPage(true);
+ }));
+}
 
 export function superAdminDashboard(){
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Dashboard Mutqeen</h1><p class="muted">Ringkasan platform lintas akun dan pondok.</p></div><span class="badge success">Platform Aktif</span></div>
@@ -83,9 +165,46 @@ export function superAdminDashboard(){
 }
 
 export function userManagementPage(){
- return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Admin Aplikasi</p><h1>Manajemen User</h1><p class="muted">Daftar akun lintas Personal dan Pondok. Data masih prototype/demo.</p></div><span class="badge success">${users.length} sample user</span></div>
- <div class="grid-4" style="margin-bottom:16px"><div class="kpi"><b>1.126</b><span class="muted">Member / Santri</span></div><div class="kpi"><b>109</b><span class="muted">Ustadz</span></div><div class="kpi"><b>48</b><span class="muted">Admin Pondok</span></div><div class="kpi"><b>1</b><span class="muted">Super Admin</span></div></div>
- <div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>Role</th><th>Tipe</th><th>Scope</th><th>Status</th></tr></thead><tbody>${users.map(user=>`<tr><td><b>${user.name}</b></td><td>${user.email}</td><td>${user.role}</td><td>${user.type}</td><td>${user.scope}</td><td><span class="badge success">${user.status}</span></td></tr>`).join("")}</tbody></table></div></div>`;
+ directoryResetIfChanged();
+ const data=directoryData;
+ const summary=data?.summary||{};
+ const filters=directoryFilters;
+ const roleOptions=Object.entries(roleNames).map(([key,label])=>'<option value="'+key+'" '+(filters.role===key?"selected":"")+'>'+esc(label)+'</option>').join("");
+ const statusOptions=Object.entries(statusNames).map(([key,label])=>'<option value="'+key+'" '+(filters.status===key?"selected":"")+'>'+esc(label)+'</option>').join("");
+ const counts=[["total","Total User"],["member","Member / Santri"],["musyrif","Ustadz"],["admin","Admin Pondok"],["super_admin","Super Admin"],["donatur","Donatur"]];
+ const cards=counts.map(([key,label])=>'<div class="kpi"><b>'+(data?Number(summary[key]||0).toLocaleString("id-ID"):"—")+'</b><span class="muted">'+label+'</span></div>').join("");
+ const items=Array.isArray(data?.items)?data.items:[];
+ const rows=items.map(user=>{
+  const roleBadges=(user.roles||[]).map(role=>'<span class="badge">'+esc(roleNames[role]||role)+'</span>').join(" ");
+  const isActive=user.status==="active";
+  return '<tr><td><b>'+esc(user.name)+'</b></td><td>'+esc(user.email)+'</td>'
+   +'<td>'+esc(user.phone||"—")+'</td>'
+   +'<td>'+ (roleBadges||'<span class="muted">Tanpa role</span>')+'</td>'
+   +'<td>'+esc(user.type||"—")+'</td><td>'+esc(user.scope||"—")+'</td>'
+   +'<td><span class="badge '+(isActive?"success":"")+'">'+esc(statusNames[user.status]||user.status)+'</span></td>'
+   +'<td>'+esc((user.created_at||"").slice(0,10)||"—")+'</td></tr>';
+ }).join("");
+ const body=directoryLoading?'<tr><td colspan="8" class="muted">Memuat pengguna dari database...</td></tr>'
+  :directoryError?'<tr><td colspan="8" role="alert">'+esc(directoryError)+'</td></tr>'
+  :!rows?'<tr><td colspan="8" class="muted">Tidak ada pengguna sesuai pencarian dan filter.</td></tr>'
+  :rows;
+ const page=Number(data?.page||filters.page),last=Number(data?.total_pages||1);
+ const pager=data?'<div class="row between" style="margin-top:16px;gap:12px;flex-wrap:wrap">'
+   +'<small class="muted">'+Number(data.total).toLocaleString("id-ID")+' pengguna sesuai filter · halaman '+page+' dari '+last+'</small>'
+   +'<div class="row" style="gap:8px"><button class="btn" type="button" data-platform-user-page="'+(page-1)+'" '+(page<=1?"disabled":"")+'>Sebelumnya</button>'
+   +'<button class="btn" type="button" data-platform-user-page="'+(page+1)+'" '+(page>=last?"disabled":"")+'>Berikutnya</button></div></div>':"";
+ return '<div class="row between" style="margin-bottom:18px;gap:12px;flex-wrap:wrap"><div><p class="eyebrow">Admin Aplikasi</p>'
+  +'<h1>Manajemen User</h1><p class="muted">Daftar pengguna terdaftar, langsung dari database Mutqeen.</p></div>'
+  +'<button class="btn" id="platformUserReload" type="button">Muat ulang</button></div>'
+  +'<div class="grid-4" style="margin-bottom:16px">'+cards+'</div>'
+  +'<div class="card"><form id="platformUserSearchForm" class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:16px" role="search">'
+  +'<input class="input" id="platformUserSearch" style="flex:2;min-width:200px" placeholder="Cari nama, email, atau WhatsApp" aria-label="Cari pengguna" maxlength="100" value="'+esc(filters.q)+'">'
+  +'<select class="input" id="platformUserRole" aria-label="Filter role" style="flex:1;min-width:155px"><option value="">Semua role</option>'+roleOptions+'</select>'
+  +'<select class="input" id="platformUserStatus" aria-label="Filter status" style="flex:1;min-width:155px"><option value="">Semua status</option>'+statusOptions+'</select>'
+  +'<button class="btn primary" type="submit">Cari</button>'
+  +'<button class="btn" id="platformUserClear" type="button">Reset</button></form>'
+  +'<div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>WhatsApp</th><th>Role aktif</th><th>Tipe</th><th>Scope</th><th>Status</th><th>Terdaftar</th></tr></thead>'
+  +'<tbody>'+body+'</tbody></table></div>'+pager+'</div>';
 }
 
 export function platformPondoksPage(){

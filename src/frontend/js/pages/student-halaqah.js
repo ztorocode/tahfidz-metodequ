@@ -58,7 +58,7 @@ export function studentHalaqahPage(){
   +'<label for="studentHalaqahSearch" class="label">Cari halaqah</label>'
   +'<div class="student-halaqah-search-wrap">'
   +'<input class="input student-halaqah-search-input" id="studentHalaqahSearch" name="q" type="search" maxlength="100"'
-  +' placeholder="Nama halaqah, ustadz, atau kode 6 digit" aria-autocomplete="list" aria-controls="studentHalaqahSuggestions"'
+  +' placeholder="Nama halaqah, ustadz, atau kode 6 karakter" aria-autocomplete="list" aria-controls="studentHalaqahSuggestions"'
   +' aria-expanded="false" value="'+esc(searchQuery)+'" spellcheck="false">'
   +'<div class="student-halaqah-suggestions" id="studentHalaqahSuggestions" role="listbox" aria-label="Hasil pencarian halaqah" hidden></div>'
   +'</div><p class="muted student-halaqah-hint">Ketik minimal 2 huruf. Saran yang muncul maksimal 5 halaqah.</p>'
@@ -105,7 +105,7 @@ export function bindStudentHalaqah(){
   clearTimeout(timer);
   if(!suitable(query)){
    items=[];loading=false;suggestions("");
-   status.textContent=query&&/^[0-9]+$/.test(query)?"Masukkan kode halaqah tepat 6 digit.":"";
+   status.textContent=query&&/^[0-9]+$/.test(query)?"Masukkan kode halaqah lengkap (6 karakter).":"";
    return;
   }
   loading=true;status.textContent="Mencari halaqah...";
@@ -116,10 +116,10 @@ export function bindStudentHalaqah(){
    pendingHalaqahId=data.pending_halaqah_id??null;
    items=Array.isArray(data.items)?data.items.slice(0,5):[];
    if(!items.length){
-    status.textContent="Halaqah tidak ditemukan. Periksa nama ustadz atau kode 6 digit.";
+    status.textContent="Halaqah tidak ditemukan. Periksa nama ustadz atau kode 6 karakter.";
     return;
    }
-   if(autoSelectCode&&/^[0-9]{6}$/.test(query)&&items.length===1){
+   if(autoSelectCode&&items.length===1&&items[0].code===query.toUpperCase()){
     choose(items[0]);return;
    }
    status.textContent=items.length+" hasil ditemukan. Pilih halaqah yang sesuai.";
@@ -140,11 +140,11 @@ export function bindStudentHalaqah(){
   searchQuery=query;searchSelection=null;panel.innerHTML="";
   clearTimeout(timer);seq++;items=[];active=-1;suggestions("");
   if(!suitable(query)){
-   status.textContent=/^[0-9]+$/.test(query)?"Masukkan 6 digit kode halaqah.":"";
+   status.textContent=/^[0-9]+$/.test(query)?"Masukkan kode halaqah lengkap (6 karakter).":"";
    return;
   }
   status.textContent="Mencari halaqah...";
-  timer=setTimeout(()=>runSearch(query,/^[0-9]{6}$/.test(query)),250);
+  timer=setTimeout(()=>runSearch(query,/^[A-Za-z0-9]{6}$/.test(query)),250);
  });
  input.addEventListener("keydown",e=>{
   if(e.key==="Escape"){suggestions("");status.textContent="";return}
@@ -167,9 +167,9 @@ export function bindStudentHalaqah(){
   e.preventDefault();
   if(active>=0&&items[active]){choose(items[active]);return}
   const query=input.value.trim();
-  if(!suitable(query)){status.textContent="Masukkan minimal 2 huruf atau kode 6 digit.";return}
+  if(!suitable(query)){status.textContent="Masukkan minimal 2 huruf atau kode 6 karakter.";return}
   if(items.length===1){choose(items[0]);return}
-  if(!loading)await runSearch(query,/^[0-9]{6}$/.test(query));
+  if(!loading)await runSearch(query,/^[A-Za-z0-9]{6}$/.test(query));
   if(items.length>1)status.textContent="Pilih salah satu saran yang sesuai.";
  });
  panel.addEventListener("click",async event=>{

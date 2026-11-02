@@ -84,6 +84,14 @@ final class HalaqahService
         return (int) $select->fetchColumn();
     }
 
+    private function registrationCode(int $halaqahId): ?string
+    {
+        $stmt = $this->pdo->prepare('SELECT registration_code FROM halaqahs WHERE id = :id');
+        $stmt->execute(['id' => $halaqahId]);
+        $code = $stmt->fetchColumn();
+        return is_string($code) ? $code : null;
+    }
+
     /** @param array{id:int,roles:string[]} $actor @return list<array<string,mixed>> */
     public function list(array $actor, int $pondokId): array
     {
@@ -97,7 +105,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            'SELECT h.id, h.name, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
+            'SELECT h.id, h.name, h.registration_code, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -183,6 +191,7 @@ final class HalaqahService
             return [
                 'id' => $id,
                 'name' => (string) $row['name'],
+                'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
@@ -198,7 +207,7 @@ final class HalaqahService
     private function listPlatformOwn(int $profileId): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
+            "SELECT h.id, h.name, h.registration_code, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -314,6 +323,7 @@ final class HalaqahService
             return [
                 'id' => $id,
                 'name' => (string) $row['name'],
+                'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
@@ -476,16 +486,17 @@ final class HalaqahService
             );
         }
 
-        $statement = $this->pdo->prepare(
-            'INSERT INTO halaqahs (pondok_id, name, musyrif_profile_id) VALUES (NULL, :name, :profile_id)'
+        $halaqahId = HalaqahRegistrationCode::insert(
+            $this->pdo,
+            'INSERT INTO halaqahs (pondok_id, name, musyrif_profile_id, registration_code)
+             VALUES (NULL, :name, :profile_id, :registration_code)',
+            ['name' => $name, 'profile_id' => $profileId]
         );
-        $statement->execute(['name' => $name, 'profile_id' => $profileId]);
-
-        $halaqahId = (int) $this->pdo->lastInsertId();
 
         return [
             'id' => $halaqahId,
             'name' => $name,
+            'registration_code' => $this->registrationCode($halaqahId),
             'musyrif_user_id' => (int) $actor['id'],
             'platform_halaqah' => true,
         ];
@@ -518,10 +529,12 @@ final class HalaqahService
         }
 
         try {
-            $statement = $this->pdo->prepare(
-                'INSERT INTO halaqahs (pondok_id, name) VALUES (:pondok_id, :name)'
+            $halaqahId = HalaqahRegistrationCode::insert(
+                $this->pdo,
+                'INSERT INTO halaqahs (pondok_id, name, registration_code)
+                 VALUES (:pondok_id, :name, :registration_code)',
+                ['pondok_id' => $pondokId, 'name' => $name]
             );
-            $statement->execute(['pondok_id' => $pondokId, 'name' => $name]);
         } catch (\PDOException $exception) {
             if ((string) $exception->getCode() === '23000') {
                 throw new RegistrationException('Nama halaqah sudah dipakai di pondok ini.', 409, ['name' => 'Nama halaqah sudah dipakai.']);
@@ -529,14 +542,18 @@ final class HalaqahService
             throw $exception;
         }
 
-        $halaqahId = (int) $this->pdo->lastInsertId();
         if ($musyrifUserId > 0) {
             $this->assignMusyrif($halaqahId, $musyrifUserId, $pondokId);
         }
 
         PondokDashboard::refreshQuietly($this->pdo, $pondokId);
 
-        return ['id' => $halaqahId, 'name' => $name, 'musyrif_user_id' => $musyrifUserId > 0 ? $musyrifUserId : null];
+        return [
+            'id' => $halaqahId,
+            'name' => $name,
+            'registration_code' => $this->registrationCode($halaqahId),
+            'musyrif_user_id' => $musyrifUserId > 0 ? $musyrifUserId : null,
+        ];
     }
 
     /**

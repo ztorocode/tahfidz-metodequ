@@ -77,6 +77,7 @@ function refreshMusyrifs(force,silent){
 function mapServer(h){
  return {
   id:"srv-"+h.id,
+  registrationCode:h.registration_code||null,
   numericId:Number(h.id),
   name:h.name,
   startDate:h.program_start_date||null,
@@ -226,8 +227,8 @@ function halaqahCols(items){
 }
 
 function halaqahInviteCode(item){
- const id=Number(item.numericId||0);
- return Number.isSafeInteger(id)&&id>0&&id<=999999?String(id).padStart(6,"0"):null;
+ const code=item.registrationCode;
+ return typeof code==="string"&&/^[A-Z0-9]{6}$/.test(code)?code:null;
 }
 function adminList(items){
  return `<div style="margin-bottom:18px">

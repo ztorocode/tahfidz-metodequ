@@ -88,7 +88,7 @@ final class StudentHalaqahCatalogService
 
     /**
      * Cari maksimal lima halaqah aktif berdasarkan nama halaqah, nama ustadz,
-     * atau kode 6 digit (ID database dengan zero-padding).
+     * atau kode registrasi acak 6 karakter (huruf kapital dan angka).
      * Tidak mengambil semua halaqah ke browser.
      *
      * @return array{items:array<int,array<string,mixed>>,pending_halaqah_id:?int}
@@ -96,9 +96,9 @@ final class StudentHalaqahCatalogService
     public function search(int $userId, string $query): array
     {
         $query = trim($query);
-        $exactCode = preg_match('/^[0-9]{6}$/D', $query) === 1
-            ? (int) $query : 0;
-        if (mb_strlen($query) > 100 || ($exactCode === 0 && mb_strlen($query) < 2)) {
+        $exactCode = preg_match('/^[A-Z0-9]{6}$/D', strtoupper($query)) === 1
+            ? strtoupper($query) : '';
+        if (mb_strlen($query) > 100 || mb_strlen($query) < 2) {
             return ['items' => [], 'pending_halaqah_id' => null];
         }
 
@@ -116,7 +116,7 @@ final class StudentHalaqahCatalogService
         $prefix = $escaped . '%';
 
         $stmt = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.program_start_date, h.pondok_id,
+            "SELECT h.id, h.name, h.registration_code, h.program_start_date, h.pondok_id,
                     p.name AS pondok_name, mentor.name AS musyrif_name,
                     (SELECT COUNT(DISTINCT hm.user_id)
                      FROM halaqah_memberships hm
@@ -135,9 +135,9 @@ final class StudentHalaqahCatalogService
                AND (h.pondok_id IS NULL OR (p.status = 'active' AND p.deleted_at IS NULL))
                AND (h.name LIKE :halaqah_name ESCAPE '!'
                  OR mentor.name LIKE :mentor_name ESCAPE '!'
-                 OR (h.id = :exact_id AND :code_enabled = 1))
+                 OR (h.registration_code = :exact_code AND :code_enabled = 1))
              ORDER BY CASE
-                 WHEN h.id = :sort_exact AND :sort_enabled = 1 THEN 0
+                 WHEN h.registration_code = :sort_exact AND :sort_enabled = 1 THEN 0
                  WHEN h.name LIKE :prefix_name ESCAPE '!' THEN 1
                  WHEN mentor.name LIKE :prefix_mentor ESCAPE '!' THEN 2
                  ELSE 3 END, h.name, h.id
@@ -147,17 +147,17 @@ final class StudentHalaqahCatalogService
             'user_id' => $userId,
             'halaqah_name' => $contains,
             'mentor_name' => $contains,
-            'exact_id' => $exactCode,
-            'code_enabled' => $exactCode > 0 ? 1 : 0,
+            'exact_code' => $exactCode,
+            'code_enabled' => $exactCode !== '' ? 1 : 0,
             'sort_exact' => $exactCode,
-            'sort_enabled' => $exactCode > 0 ? 1 : 0,
+            'sort_enabled' => $exactCode !== '' ? 1 : 0,
             'prefix_name' => $prefix,
             'prefix_mentor' => $prefix,
         ]);
 
         $items = array_map(static fn(array $row): array => [
             'id' => (int) $row['id'],
-            'code' => str_pad((string) $row['id'], 6, '0', STR_PAD_LEFT),
+            'code' => (string) $row['registration_code'],
             'name' => (string) $row['name'],
             'scope' => $row['pondok_id'] === null ? 'platform' : 'pondok',
             'pondok_name' => $row['pondok_name'] !== null ? (string) $row['pondok_name'] : null,

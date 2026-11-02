@@ -121,6 +121,122 @@ export async function loadUserManagementPage(force=false){
  }
 }
 
+
+function openUserEditModal(user,trigger){
+ document.querySelector("#platformUserEditor")?.remove();
+ const overlay=document.createElement("div");
+ overlay.id="platformUserEditor";
+ overlay.className="platform-user-edit-overlay";
+ overlay.innerHTML='<section class="platform-user-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="platformUserEditTitle">'
+  +'<header class="platform-user-edit-head"><div><h2 id="platformUserEditTitle">Edit User</h2><small>'+esc(user.email)+'</small></div>'
+  +'<button type="button" class="btn" data-edit-close aria-label="Tutup">Tutup</button></header>'
+  +'<form id="platformUserEditForm" class="platform-user-edit-form">'
+  +'<label>Nama lengkap<input class="input" name="name" minlength="2" maxlength="150" autocomplete="off" required value="'+esc(user.name)+'"></label>'
+  +'<label>Email<input class="input" name="email" type="email" maxlength="190" autocomplete="off" required value="'+esc(user.email)+'"></label>'
+  +'<label>Nomor WhatsApp<input class="input" name="phone" type="tel" autocomplete="off" required value="'+esc(user.phone)+'"></label>'
+  +'<fieldset><legend>Role aktif</legend><div class="platform-user-role-grid">'
+  +Object.entries(roleNames).map(([role,label])=>'<label class="platform-user-edit-role"><input type="checkbox" name="roles" value="'+role+'" '+((user.roles||[]).includes(role)?'checked':'')+'><span>'+esc(label)+'</span></label>').join('')
+  +'</div><small class="muted">Pilih satu atau beberapa role. Penugasan ustadz dan admin pondok tetap dikelola melalui modul masing-masing.</small></fieldset>'
+  +'<label>Status akun<select class="input" name="status">'
+  +Object.entries(statusNames).map(([status,label])=>'<option value="'+status+'" '+(user.status===status?'selected':'')+'>'+esc(label)+'</option>').join('')
+  +'</select></label>'
+  +'<p class="platform-user-edit-hint">Perubahan email mengharuskan pengguna memverifikasi alamat baru. Perubahan identitas, role, atau status dapat mengakhiri sesi login pengguna.</p>'
+  +'<p id="platformUserEditFeedback" class="platform-user-edit-feedback" role="status" aria-live="polite"></p>'
+  +'<div class="platform-user-edit-actions"><button type="button" class="btn" data-edit-close>Batal</button><button type="submit" class="btn primary" id="platformUserEditSave">Simpan Perubahan</button></div>'
+  +'</form></section>';
+ document.body.appendChild(overlay);
+ const dialog=overlay.querySelector(".platform-user-edit-dialog");
+ const form=overlay.querySelector("#platformUserEditForm");
+ const feedback=overlay.querySelector("#platformUserEditFeedback");
+ let saving=false;
+ const close=()=>{
+  if(saving)return;
+  overlay.remove();
+  document.removeEventListener("keydown",onKey);
+  window.removeEventListener("hashchange",close);
+  if(trigger?.isConnected)trigger.focus();
+ };
+ const onKey=event=>{
+  if(event.key==="Escape"){event.preventDefault();close()}
+  if(event.key!=="Tab"||!dialog.isConnected)return;
+  const focusable=[...dialog.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled)')];
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+ };
+ overlay.addEventListener("click",event=>{
+  if(event.target===overlay)close();
+  else if(event.target.closest("[data-edit-close]"))close();
+ });
+ document.addEventListener("keydown",onKey);
+ window.addEventListener("hashchange",close);
+ form.querySelector('input[name="name"]').focus();
+ form.addEventListener("submit",async event=>{
+  event.preventDefault();
+  if(saving)return;
+  feedback.textContent="";
+  feedback.classList.remove("error");
+  const data=new FormData(form);
+  const roles=data.getAll("roles");
+  if(!roles.length){feedback.classList.add("error");feedback.textContent="Pilih minimal satu role.";return}
+  const token=getState().authToken;
+  if(!token){feedback.classList.add("error");feedback.textContent="Sesi login tidak tersedia.";return}
+  const payload={
+   id:Number(user.id),
+   name:String(data.get("name")||"").trim(),
+   email:String(data.get("email")||"").trim(),
+   phone:String(data.get("phone")||"").trim(),
+   status:String(data.get("status")||""),
+   roles
+  };
+  if(!window.confirm("Simpan perubahan pengguna "+user.name+"?"))return;
+  saving=true;
+  const save=form.querySelector("#platformUserEditSave");
+  save.disabled=true;
+  save.textContent="Menyimpan...";
+  try{
+   const response=await fetch("/api/platform/users/update",{
+    method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+token},
+    body:JSON.stringify(payload),cache:"no-store"
+   });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok||!result.success){
+    const field=Object.values(result.errors||{})[0];
+    throw new Error(field||result.message||"Perubahan pengguna gagal disimpan.");
+   }
+   const message=result.message||"Perubahan pengguna disimpan.";
+   feedback.textContent=message;
+   toast(message);
+   if(Number(getState().authUser?.id)===Number(user.id)&&
+      (result.data?.email_changed||result.data?.session_revoked)){
+    const st=getState();
+    // Backend mengakhiri sesi lama ketika identitas/role/status diubah.
+    // Akun Super Admin yang sedang diedit harus masuk ulang.
+    const {setState}=await import("../store.js?v=81bed469");
+    setState({loggedIn:false,authToken:null,authUser:null,demoSession:false});
+    close();
+    location.hash="login";
+    return;
+   }
+   await loadUserManagementPage(true);
+   feedback.textContent=message;
+   form.querySelectorAll("input,select").forEach(input=>input.disabled=true);
+   save.textContent="Tersimpan";
+   save.disabled=true;
+   form.querySelectorAll("[data-edit-close]").forEach(button=>button.textContent="Selesai");
+  }catch(error){
+   feedback.classList.add("error");
+   feedback.textContent=error.message||"Gagal menyimpan data pengguna.";
+  }finally{
+   saving=false;
+   if(save.isConnected&&save.textContent==="Menyimpan..."){
+    save.disabled=false;
+    save.textContent="Simpan Perubahan";
+   }
+  }
+ });
+}
+
 export function bindUserManagementPage(){
  if(location.hash.split("?")[0]!=="#users")return;
  directoryResetIfChanged();
@@ -149,6 +265,13 @@ export function bindUserManagementPage(){
   loadUserManagementPage(true);
  });
  document.querySelector("#platformUserReload")?.addEventListener("click",()=>loadUserManagementPage(true));
+ document.querySelector("#platformUserTable")?.addEventListener("click",event=>{
+  const button=event.target.closest("[data-platform-user-edit]");
+  if(!button)return;
+  const id=Number(button.dataset.platformUserEdit);
+  const user=directoryData?.items?.find(item=>Number(item.id)===id);
+  if(user)openUserEditModal(user,button);
+ });
  document.querySelectorAll("[data-platform-user-page]").forEach(button=>button.addEventListener("click",()=>{
   const page=Number(button.dataset.platformUserPage);
   if(!Number.isInteger(page)||page<1||page>Number(directoryData?.total_pages||1))return;
@@ -182,11 +305,12 @@ export function userManagementPage(){
    +'<td>'+ (roleBadges||'<span class="muted">Tanpa role</span>')+'</td>'
    +'<td>'+esc(user.type||"—")+'</td><td>'+esc(user.scope||"—")+'</td>'
    +'<td><span class="badge '+(isActive?"success":"")+'">'+esc(statusNames[user.status]||user.status)+'</span></td>'
-   +'<td>'+esc((user.created_at||"").slice(0,10)||"—")+'</td></tr>';
+   +'<td>'+esc((user.created_at||"").slice(0,10)||"—")+'</td>'
+   +'<td><button type="button" class="btn" data-platform-user-edit="'+Number(user.id)+'">Edit</button></td></tr>';
  }).join("");
- const body=directoryLoading?'<tr><td colspan="8" class="muted">Memuat pengguna dari database...</td></tr>'
-  :directoryError?'<tr><td colspan="8" role="alert">'+esc(directoryError)+'</td></tr>'
-  :!rows?'<tr><td colspan="8" class="muted">Tidak ada pengguna sesuai pencarian dan filter.</td></tr>'
+ const body=directoryLoading?'<tr><td colspan="9" class="muted">Memuat pengguna dari database...</td></tr>'
+  :directoryError?'<tr><td colspan="9" role="alert">'+esc(directoryError)+'</td></tr>'
+  :!rows?'<tr><td colspan="9" class="muted">Tidak ada pengguna sesuai pencarian dan filter.</td></tr>'
   :rows;
  const page=Number(data?.page||filters.page),last=Number(data?.total_pages||1);
  const pager=data?'<div class="row between" style="margin-top:16px;gap:12px;flex-wrap:wrap">'
@@ -203,7 +327,7 @@ export function userManagementPage(){
   +'<select class="input" id="platformUserStatus" aria-label="Filter status" style="flex:1;min-width:155px"><option value="">Semua status</option>'+statusOptions+'</select>'
   +'<button class="btn primary" type="submit">Cari</button>'
   +'<button class="btn" id="platformUserClear" type="button">Reset</button></form>'
-  +'<div class="table-wrap"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>WhatsApp</th><th>Role aktif</th><th>Tipe</th><th>Scope</th><th>Status</th><th>Terdaftar</th></tr></thead>'
+  +'<div class="table-wrap" id="platformUserTable"><table class="table"><thead><tr><th>Nama</th><th>Email</th><th>WhatsApp</th><th>Role aktif</th><th>Tipe</th><th>Scope</th><th>Status</th><th>Terdaftar</th><th>Aksi</th></tr></thead>'
   +'<tbody>'+body+'</tbody></table></div>'+pager+'</div>';
 }
 

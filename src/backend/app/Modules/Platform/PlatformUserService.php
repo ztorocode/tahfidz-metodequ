@@ -121,6 +121,179 @@ final class PlatformUserService
         ];
     }
 
+
+    /**
+     * Edit identitas, role tambahan, dan status akun. Hanya dipanggil setelah
+     * autentikasi super_admin pada controller.
+     *
+     * @return array{email_changed:bool,email_sent:bool}
+     */
+    public function update(int $userId, int $actorId, array $input): array
+    {
+        if ($userId < 1) {
+            throw new \App\Modules\Auth\RegistrationException('Pengguna tidak valid.', 422);
+        }
+
+        $name = trim((string) ($input['name'] ?? ''));
+        $email = strtolower(trim((string) ($input['email'] ?? '')));
+        $phone = $this->normalizePhone((string) ($input['phone'] ?? ''));
+        $status = (string) ($input['status'] ?? '');
+        $roles = $input['roles'] ?? null;
+
+        $errors = [];
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 150) {
+            $errors['name'] = 'Nama harus 2 sampai 150 karakter.';
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) {
+            $errors['email'] = 'Email tidak valid.';
+        }
+        if ($phone === null) {
+            $errors['phone'] = 'Nomor WhatsApp tidak valid.';
+        }
+        if (!in_array($status, self::STATUSES, true)) {
+            $errors['status'] = 'Status tidak valid.';
+        }
+        if (!is_array($roles) || $roles === [] || count($roles) > count(self::ROLES)) {
+            $errors['roles'] = 'Pilih minimal satu role.';
+        } elseif (count($roles) !== count(array_unique($roles)) ||
+            array_diff($roles, self::ROLES) !== [] ||
+            count(array_filter($roles, 'is_string')) !== count($roles)) {
+            $errors['roles'] = 'Daftar role tidak valid.';
+        }
+        if ($errors !== []) {
+            throw new \App\Modules\Auth\RegistrationException('Data pengguna belum valid.', 422, $errors);
+        }
+
+        $roleNames = array_values($roles);
+        $this->pdo->beginTransaction();
+        try {
+            $rowStmt = $this->pdo->prepare(
+                'SELECT id, name, email, phone_e164, status FROM users
+                 WHERE id = :id AND deleted_at IS NULL LIMIT 1 FOR UPDATE'
+            );
+            $rowStmt->execute(['id' => $userId]);
+            $existing = $rowStmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($existing)) {
+                throw new \App\Modules\Auth\RegistrationException('Pengguna tidak ditemukan.', 404);
+            }
+
+            // Kunci semua baris Super Admin aktif agar dua perubahan paralel
+            // tidak dapat sekaligus menghapus admin terakhir.
+            $admins = $this->pdo->query(
+                "SELECT r.user_id FROM user_roles r JOIN users u ON u.id = r.user_id
+                 WHERE r.role = 'super_admin' AND r.status = 'active'
+                   AND u.status = 'active' AND u.deleted_at IS NULL
+                 ORDER BY r.user_id FOR UPDATE"
+            )->fetchAll(PDO::FETCH_COLUMN);
+            $roleStmt = $this->pdo->prepare(
+                "SELECT role FROM user_roles WHERE user_id = :id AND status = 'active' FOR UPDATE"
+            );
+            $roleStmt->execute(['id' => $userId]);
+            $currentRoles = array_map('strval', $roleStmt->fetchAll(PDO::FETCH_COLUMN));
+            $hadSuperAdmin = in_array('super_admin', $currentRoles, true);
+            $keepsSuperAdmin = in_array('super_admin', $roleNames, true);
+            if ($userId === $actorId && ($status !== 'active' || !$keepsSuperAdmin)) {
+                throw new \App\Modules\Auth\RegistrationException(
+                    'Tidak dapat menonaktifkan akun sendiri atau melepas role Super Admin sendiri.', 422
+                );
+            }
+            if ($hadSuperAdmin && (!$keepsSuperAdmin || $status !== 'active') &&
+                count($admins) <= 1) {
+                throw new \App\Modules\Auth\RegistrationException(
+                    'Super Admin aktif terakhir tidak boleh dinonaktifkan.', 422
+                );
+            }
+
+            $emailChanged = strcasecmp((string) $existing['email'], $email) !== 0;
+            $phoneChanged = (string) $existing['phone_e164'] !== $phone;
+            $rolesChanged = array_diff($currentRoles, $roleNames) !== [] ||
+                array_diff($roleNames, $currentRoles) !== [];
+            $statusChanged = $status !== (string) $existing['status'];
+            $token = null;
+            $sql = 'UPDATE users SET name = :name, email = :email, phone_e164 = :phone, status = :status';
+            if ($emailChanged) {
+                $sql .= ', email_verified_at = NULL';
+            }
+            if ($phoneChanged) {
+                $sql .= ', phone_verified_at = NULL';
+            }
+            $sql .= ' WHERE id = :id';
+            $this->pdo->prepare($sql)->execute([
+                'id' => $userId, 'name' => $name, 'email' => $email,
+                'phone' => $phone, 'status' => $status,
+            ]);
+
+            // Role yang tidak dipilih dinonaktifkan, bukan dihapus.
+            $this->pdo->prepare(
+                "UPDATE user_roles SET status = 'inactive'
+                 WHERE user_id = :id AND status = 'active'"
+            )->execute(['id' => $userId]);
+            $upsert = $this->pdo->prepare(
+                "INSERT INTO user_roles (user_id, role, status)
+                 VALUES (:id, :role, 'active')
+                 ON DUPLICATE KEY UPDATE status = 'active'"
+            );
+            foreach ($roleNames as $role) {
+                $upsert->execute(['id' => $userId, 'role' => $role]);
+            }
+
+            if ($emailChanged) {
+                $token = bin2hex(random_bytes(32));
+                $expires = (new \DateTimeImmutable('+48 hours'))->format('Y-m-d H:i:s');
+                $this->pdo->prepare('DELETE FROM email_verifications WHERE user_id = :id')
+                    ->execute(['id' => $userId]);
+                $this->pdo->prepare(
+                    'INSERT INTO email_verifications (user_id, token_hash, expires_at)
+                     VALUES (:id, :hash, :expires)'
+                )->execute([
+                    'id' => $userId, 'hash' => hash('sha256', $token), 'expires' => $expires,
+                ]);
+            }
+
+            // Sesi lama tidak boleh hidup kembali saat status dipulihkan.
+            // Revoke juga sesi ketika informasi login atau role diubah.
+            if ($emailChanged || $phoneChanged || $rolesChanged || $statusChanged) {
+                $this->pdo->prepare(
+                    'UPDATE auth_sessions SET revoked_at = CURRENT_TIMESTAMP(3)
+                     WHERE user_id = :id AND revoked_at IS NULL'
+                )->execute(['id' => $userId]);
+            }
+            $this->pdo->commit();
+        } catch (\PDOException $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            if ((string) $e->getCode() === '23000') {
+                throw new \App\Modules\Auth\RegistrationException(
+                    'Email atau WhatsApp sudah digunakan oleh pengguna lain.', 409
+                );
+            }
+            throw $e;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $e;
+        }
+
+        $sent = false;
+        if ($token !== null) {
+            try {
+                $sent = (new \App\Modules\Auth\VerificationMailer())
+                    ->send($email, $name, $token, false);
+            } catch (\Throwable $e) {
+                error_log('MetodeQu admin email verification failed: ' . $e->getMessage());
+            }
+        }
+        return ['email_changed' => $emailChanged, 'email_sent' => $sent];
+    }
+
+    private function normalizePhone(string $value): ?string
+    {
+        $digits = preg_replace('/\D+/', '', trim($value)) ?? '';
+        if ($digits === '') return null;
+        if (str_starts_with($digits, '0')) $digits = '62' . substr($digits, 1);
+        elseif (str_starts_with($digits, '8')) $digits = '62' . $digits;
+        if (!preg_match('/^[1-9][0-9]{7,14}$/', $digits)) return null;
+        return '+' . $digits;
+    }
+
     private function hydrateUsers(array $rows): array
     {
         if ($rows === []) {

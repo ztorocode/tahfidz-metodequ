@@ -132,3 +132,19 @@ donasi, karena proses verifikasi transfer terpisah dari pengelolaan role.
 Popup Donate memiliki tombol **Konfirmasi Bukti Transfer** dengan pilihan kamera atau upload gambar. Donatur mengisi nominal rupiah dan waktu transfer (WIB). Login + role `donatur` diperlukan saat mengirim, bukan saat membuka popup. Berkas tersimpan privat di `src/backend/storage/donation-proofs`, di luar webroot, maksimum 5 MB dan dikonversi ke JPG menggunakan PHP GD. Directory harus writable oleh proses PHP dan persisten.
 
 Jalankan migrasi `20261031_023_donation_transfer_proofs` setelah 019 (023 menambah `donor_user_id`, `proof_filename` ke `donation_transfers`). Endpoint `POST /api/donatur/donation/confirm` (multipart `ustadz_id`, `amount_idr`, `sent_at` dengan waktu Jakarta `YYYY-MM-DDTHH:mm`, `proof`) mencatat status `reported` dan menambah notifikasi ke tabel `notifications` untuk user ustadz. Di menu Notifikasi, ustadz mengambil daftar konfirmasi via `GET /api/ustadz/donations`, melihat foto privat via `GET /api/donations/proof?id=...` menggunakan Bearer, lalu `POST /api/ustadz/donations/review` dengan id dan status `verified` atau `rejected`. Foto hanya boleh dibuka pemilik laporan atau ustadz penerima. Hanya status verified dihitung dalam total publik. Bukti transfer **tidak** dipublikasikan.
+
+## Edit User oleh Super Admin
+
+Halaman `#users` mendukung tombol Edit untuk nama, email, nomor WhatsApp,
+beberapa role aktif, dan status pengguna. Endpoint `POST /api/platform/users/update`
+wajib Bearer token ber-role `super_admin`, dan memvalidasi kembali semua nilai.
+Role yang tidak dipilih dinonaktifkan, bukan dihapus. Keterkaitan pengampu halaqah,
+pondok, atau admin pondok tetap diatur di modul masing-masing, bukan dari form ini.
+
+Akun Super Admin aktif terakhir tidak dapat dinonaktifkan atau dicabut role-nya;
+seorang Super Admin tidak boleh mencabut role atau menonaktifkan akunnya sendiri.
+Perubahan email menonaktifkan verifikasi sebelumnya dan mengirim link baru;
+pengguna harus melakukan verifikasi email baru sebelum login lagi. Bila email
+gagal dikirim, gunakan endpoint kirim ulang verifikasi yang sudah tersedia.
+Perubahan identitas, role, atau status mencabut sesi aktif target. Semua
+perubahan disimpan dalam satu transaksi. Tidak perlu migrasi database.

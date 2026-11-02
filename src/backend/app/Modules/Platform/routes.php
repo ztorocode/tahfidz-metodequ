@@ -9,7 +9,9 @@ use App\Modules\Platform\PlatformUserController;
 
 return static function (Router $router): void {
     $controller = new PlatformMusyrifController();
-    $router->get('/api/platform/users', [new PlatformUserController(), 'index']);
+    $users = new PlatformUserController();
+    $router->get('/api/platform/users', [$users, 'index']);
+    $router->post('/api/platform/users/update', [$users, 'update']);
 
     $router->post('/api/platform/musyrifs', [$controller, 'store']);
     $router->get('/api/platform/musyrif-invites', [$controller, 'inviteIndex']);

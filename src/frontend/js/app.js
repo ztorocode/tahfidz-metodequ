@@ -3,7 +3,7 @@ import {loginPage,bindLogin} from "./pages/login.js?v=demofill3dc2";
 import {landingPage,bindLanding} from "./pages/landing.js?v=d2f91a63";
 import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donoronlycf9b3";
 
-const PRIVATE_RUNTIME="./private-app.js?v=userslive9f2";
+const PRIVATE_RUNTIME="./private-app.js?v=usereditb27";
 const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
 let privateRuntime=null;
 let inviteModule=null;
@@ -118,7 +118,7 @@ window.addEventListener("hashchange",guardedRender);
 window.addEventListener("app:render",guardedRender);
 
 if("serviceWorker" in navigator){
- window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=demofill3dc2"));
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js?v=usereditb27"));
 }
 
 if(!location.hash&&getState().loggedIn)location.hash="dashboard";

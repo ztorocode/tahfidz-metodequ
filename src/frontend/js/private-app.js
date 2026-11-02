@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=userslive9f2";
+import {view,routeName} from "./router.js?v=usereditb27";
 import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
 import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=logoutcachefix934";
@@ -11,7 +11,7 @@ import {bindWaPage} from "./pages/whatsapp.js?v=b8c14e72";
 import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
 import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
-import {bindPlatformMusyrif,bindUserManagementPage} from "./pages/super-admin.js?v=userslive9f2";
+import {bindPlatformMusyrif,bindUserManagementPage} from "./pages/super-admin.js?v=usereditb27";
 import {bindReview} from "./pages/review.js?v=81bed469";
 import {bindDonationNotifications} from "./pages/notifications.js?v=donproof31";
 import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=7c3e1a90";

@@ -117,7 +117,9 @@ export function bindLogin(){
   const emptyCache={realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null};
   const go=(persona="member",context="personal",extra={})=>{
    const returnTo=extra.authToken?donorReturnRoute():null;
-   setState({loggedIn:true,persona,context,musyrifType:null,...emptyCache,...extra});
+   setState({loggedIn:true,persona,context,musyrifType:null,authToken:null,authUser:null,
+    demoSession:false,profileOverrides:{},myPondoks:[],activePondokId:null,myInvites:[],
+    memberProgressByContext:{},...emptyCache,...extra});
    location.hash=returnTo||homeRoute(persona);
   };
 
@@ -357,7 +359,11 @@ export function bindLogin(){
     if(button){button.disabled=false;button.textContent="Masuk";}
     return;
    }
-   go(account.persona,account.context,{musyrifType:account.musyrifType||null,demoSession:true});
+   const initials=account.role.split(/\s+/).map(part=>part[0]).join("").slice(0,2).toUpperCase();
+   const profile={name:account.role,email:account.email,phone:account.phone,
+    role:account.persona==="musyrif"?"Ustadz":"Member",initials};
+   go(account.persona,account.context,{musyrifType:account.musyrifType||null,
+    demoSession:true,profileOverrides:{[account.persona]:profile}});
   });
  };
 

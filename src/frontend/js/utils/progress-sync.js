@@ -14,6 +14,7 @@ const VERSION_KEY="metodequ_progress_versions";
 const DEBOUNCE_MS=1200;
 
 let timers={};
+let logoutGeneration=0;
 let flushing=false;
 let listening=false;
 let lastSyncAtValue=null;
@@ -51,6 +52,17 @@ function authHeaders(extra={}){
  return {Accept:"application/json",...(token?{Authorization:"Bearer "+token}:{}),...(extra||{})};
 }
 
+export function unsyncedProgressCount(){
+ return queue().length+Object.keys(timers).length;
+}
+export function discardProgressOnLogout(){
+ logoutGeneration++;
+ Object.values(timers).forEach(timer=>clearTimeout(timer));
+ timers={};
+ localStorage.removeItem(QUEUE_KEY);
+ localStorage.removeItem(VERSION_KEY);
+ lastSyncAtValue=null;
+}
 export function pendingCount(){
  const pid=activePondokId();
  return queue().filter(e=>e.pondok_id===Number(pid)).length;
@@ -83,6 +95,7 @@ export function scheduleSave(week,day,percent){
  const key=versionKey(pid,week,day);
  clearTimeout(timers[key]);
  timers[key]=setTimeout(()=>{
+  delete timers[key];
   const entry=buildPayload(week,day,percent,nowStamp());
   if(!entry.pondok_id)return;
   const list=queue().filter(x=>!(x.pondok_id===entry.pondok_id&&x.week===entry.week&&x.day===entry.day));
@@ -105,13 +118,16 @@ export async function flush(){
  if(flushing||!st.authToken)return;
  const list=queue();
  if(!list.length)return;
+ const generation=logoutGeneration, token=st.authToken;
  flushing=true;
  try{
   for(const entry of list){
+   if(generation!==logoutGeneration||getState().authToken!==token)break;
    let response;
    try{
     response=await fetch("/api/progress",{method:"POST",headers:authHeaders({"Content-Type":"application/json"}),body:JSON.stringify(entry)});
    }catch{break;} // offline → berhenti, antrean dipertahankan
+   if(generation!==logoutGeneration||getState().authToken!==token)break;
    if(response.status===401)break;
    let body={};
    try{body=await response.json()}catch{}
@@ -133,12 +149,14 @@ export async function loadWeek(week){
  const st=getState();
  const pid=activePondokId();
  if(!pid||!st.authToken)return false;
+ const generation=logoutGeneration;
  let body={};
  try{
   const response=await fetch("/api/progress?pondok_id="+pid+"&week="+week+"&t="+Date.now(),{headers:authHeaders()});
   if(!response.ok)return false;
   body=await response.json();
  }catch{return false;}
+ if(generation!==logoutGeneration||getState().authToken!==st.authToken)return false;
 
  const days=(body.data&&body.data.days)||{};
  const ctx=getProgressContext();

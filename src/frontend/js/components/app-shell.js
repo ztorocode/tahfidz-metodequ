@@ -1,4 +1,5 @@
-import {getState,setState} from "../store.js?v=81bed469";
+import {getState,setState,resetState} from "../store.js?v=81bed469";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=81bed469";
 import {pondokList,canPersonal} from "./context-switcher.js?v=81bed469";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
 
@@ -166,14 +167,33 @@ export function bindShell(){
   window.dispatchEvent(new Event("app:render"));
  });
 
- const logout=()=>{
-  const token=getState().authToken;
+ let logoutBusy=false;
+ const logout=async()=>{
+  if(logoutBusy)return;
+  const changes=unsyncedProgressCount();
+  if(changes>0&&!confirm("Ada "+changes+" perubahan progres yang belum terkirim. Logout akan menghapusnya dari perangkat ini. Lanjutkan?"))return;
+  logoutBusy=true;
+  document.querySelectorAll("#logoutBtn,#logoutTopBtn").forEach(button=>{button.disabled=true;button.textContent="Keluar...";});
+  const token=getState().authToken, theme=getState().theme;
+  let revokeFailed=false;
   if(token){
-   fetch("/api/auth/logout",{method:"POST",headers:{"Authorization":"Bearer "+token}}).catch(()=>{});
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),8000);
+   try{
+    const response=await fetch("/api/auth/logout",{
+     method:"POST",headers:{"Authorization":"Bearer "+token,Accept:"application/json"},
+     cache:"no-store",signal:controller.signal
+    });
+    if(!response.ok&&response.status!==404)revokeFailed=true;
+   }catch{revokeFailed=true}
+   finally{clearTimeout(timeout)}
   }
-  setState({loggedIn:false,persona:"member",context:"personal",musyrifType:null,authToken:null,authUser:null,myPondoks:[],activePondokId:null,myInvites:[],
-   realHalaqahs:[],halaqahSrc:null,halaqahFetchedAt:0,realMusyrifs:[],musyrifSrc:null,realSantris:[],santriSrc:null,halaqahs:[],halaqahImported:null});
+  discardProgressOnLogout();
+  resetState({theme});
   location.hash="login";
+  if(revokeFailed)alert("Anda sudah keluar dari perangkat ini, tetapi pencabutan sesi di server belum dapat dikonfirmasi. Hubungi admin bila sesi tersebut perlu dinonaktifkan.");
+  // Reload to discard stale module caches and pending requests from the previous account.
+  location.reload();
  };
  document.querySelector("#logoutBtn")?.addEventListener("click",logout);
  document.querySelector("#logoutTopBtn")?.addEventListener("click",logout);

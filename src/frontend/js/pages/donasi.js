@@ -1,4 +1,5 @@
-import {getState,setState} from "../store.js?v=81bed469";
+import {getState,setState,resetState} from "../store.js?v=81bed469";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=logoutcachefix934";
 import {isDemoDonorSession,demoStudentsData} from "../utils/donatur-demo.js?v=donorlocal72";
 import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donorlocal72";
 import {toast} from "../utils/helpers.js?v=81bed469";
@@ -15,6 +16,47 @@ function monthLabel(value){
  if(!/^\d{4}-\d{2}$/.test(String(value||"")))return "bulan ini";
  const date=new Date(value+"-01T12:00:00+07:00");
  return Number.isNaN(date.getTime())?"bulan ini":monthFormat.format(date);
+}
+
+function donorSessionControl(){
+ const session=getState();
+ if(session.loggedIn&&(session.authToken||session.demoSession)){
+  return '<button class="btn landing-login" type="button" id="donorLogoutBtn">Keluar</button>';
+ }
+ return '<a class="btn landing-login" href="#login">Masuk</a>';
+}
+function bindDonorLogout(){
+ const button=document.querySelector("#donorLogoutBtn");
+ if(!button)return;
+ let busy=false;
+ button.addEventListener("click",async()=>{
+  if(busy)return;
+  const changes=unsyncedProgressCount();
+  if(changes>0&&!window.confirm("Ada "+changes+" perubahan progres yang belum terkirim. Logout akan menghapusnya dari perangkat ini. Lanjutkan?"))return;
+  busy=true;
+  button.disabled=true;
+  button.textContent="Keluar...";
+  const session=getState();
+  const theme=session.theme;
+  let revokeFailed=false;
+  if(session.authToken){
+   const controller=new AbortController();
+   const timeout=setTimeout(()=>controller.abort(),8000);
+   try{
+    const response=await fetch("/api/auth/logout",{
+     method:"POST",headers:{Accept:"application/json",Authorization:"Bearer "+session.authToken},
+     cache:"no-store",signal:controller.signal
+    });
+    if(!response.ok&&response.status!==404)revokeFailed=true;
+   }catch{revokeFailed=true}
+   finally{clearTimeout(timeout)}
+  }
+  discardProgressOnLogout();
+  resetState({theme});
+  location.hash="login";
+  if(revokeFailed)window.alert("Sesi sudah dihapus dari perangkat ini, tetapi pencabutan sesi di server belum dapat dikonfirmasi. Hubungi admin bila perlu.");
+  location.reload();
+ });
 }
 function ustadzCard(item){
  const name=escapeHtml(item.name);
@@ -37,7 +79,7 @@ function ustadzCard(item){
 }
 export function donationListPage(){
  return '<main class="landing-page donasi-page">'
-  +'<header class="landing-header"><a class="landing-brand" href="#home" aria-label="Kembali ke beranda Mutqeen"><span class="landing-logo">م</span><span>Mutqeen</span></a><a class="btn landing-login" href="#login">Masuk</a></header>'
+  +'<header class="landing-header"><a class="landing-brand" href="#home" aria-label="Kembali ke beranda Mutqeen"><span class="landing-logo">م</span><span>Mutqeen</span></a>'+donorSessionControl()+'</header>'
   +'<section class="donasi-main"><a href="#home" class="donasi-back">Kembali ke beranda</a>'
   +'<div class="donasi-intro"><span class="landing-kicker">Dukung penjaga hafalan Al-Qur\'an</span><h1>Pilih Ustadz yang Ingin Anda Dukung</h1>'
   +'<p>Lihat jumlah santri binaan, catatan penilaian hafalan, dan donasi yang sudah terverifikasi. Semua angka berasal dari catatan Mutqeen.</p></div>'
@@ -86,6 +128,7 @@ function activityView(detail){
   +'<p class="donasi-caution">Foto dipublikasikan oleh ustadz setelah menyatakan memiliki izin. Progres dihitung dari catatan aplikasi.</p>';
 }
 export function bindDonationList(){
+ bindDonorLogout();
  const page=document.querySelector(".donasi-page");
  const box=page?.querySelector("#donasiList");
  const overlay=page?.querySelector("#donasiOverlay");
@@ -183,7 +226,7 @@ export function bindDonationList(){
 /** Nama dan progres santri hanya dimuat setelah verifikasi sesi backend. */
 export function donationStudentsPage(){
  return '<main class="landing-page donasi-page">'
-  +'<header class="landing-header"><a class="landing-brand" href="#home"><span class="landing-logo">م</span><span>Mutqeen</span></a><a class="btn landing-login" href="#login">Masuk</a></header>'
+  +'<header class="landing-header"><a class="landing-brand" href="#home"><span class="landing-logo">م</span><span>Mutqeen</span></a>'+donorSessionControl()+'</header>'
   +'<section class="donasi-main donasi-students-main"><a href="#donasi" class="donasi-back">Kembali ke daftar ustadz</a>'
   +'<div class="donasi-intro"><span class="landing-kicker">Aktivitas halaqah</span><h1 id="donasiStudentsTitle">Daftar Santri</h1><p id="donasiStudentsContext">Memuat informasi halaqah...</p></div>'
   +'<div id="donasiStudentsList" class="donasi-students-list" aria-live="polite" aria-busy="true"><div class="donasi-state">Memuat daftar santri...</div></div>'
@@ -191,6 +234,7 @@ export function donationStudentsPage(){
   +'</section><footer class="landing-footer"><b>Mutqeen</b><span>Dukungan langsung untuk ustadz tahfidz.</span></footer></main>';
 }
 export async function bindDonationStudents(){
+ bindDonorLogout();
  const params=new URLSearchParams(location.hash.split("?")[1]||"");
  const ustadzId=Number(params.get("ustadz"));
  const halaqahId=Number(params.get("halaqah"));

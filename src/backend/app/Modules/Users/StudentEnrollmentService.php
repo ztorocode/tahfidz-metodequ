@@ -63,6 +63,20 @@ final class StudentEnrollmentService
             ];
         }
 
+        $application = (new StudentHalaqahCatalogService($this->pdo))->latestApplication($userId);
+        if ($application !== null && $application['status'] === 'pending') {
+            return [
+                'status' => 'application_pending',
+                'halaqah' => null,
+                'application' => [
+                    'id' => (int) $application['id'],
+                    'halaqah_id' => (int) $application['halaqah_id'],
+                    'halaqah_name' => (string) $application['halaqah_name'],
+                ],
+                'invites' => [],
+            ];
+        }
+
         $invitations = [];
 
         $platform = $this->pdo->prepare(

@@ -85,6 +85,9 @@ function statusView(route){
  }else if(status==="invited"){
   title="Undangan Halaqah Tersedia";
   description="Anda sudah menerima undangan. Terima undangan tersebut untuk bergabung dengan halaqah dan Ustadz pembimbing.";
+ }else if(status==="application_pending"){
+  title="Menunggu Persetujuan Pendaftaran";
+  description="Pendaftaran ke halaqah "+(data.application?.halaqah_name||"pilihan Anda")+" sudah dikirim. Anda akan bergabung setelah Ustadz atau admin pondok menyetujui.";
  }else if(status==="mentor_pending"){
   title="Menunggu Ustadz Pembimbing";
   description="Anda sudah terdaftar di halaqah, tetapi belum ada Ustadz pembimbing aktif. Hubungi pengelola halaqah untuk menetapkan Ustadz.";
@@ -105,7 +108,8 @@ function statusView(route){
   +'<p class="eyebrow">Status Program Tahfidz</p><h2 style="margin:8px 0">'+safe(title)+'</h2>'
   +'<p class="muted">'+safe(description)+'</p>'
   +'<div class="row" style="margin-top:18px;gap:10px;flex-wrap:wrap">'
-  +'<button class="btn primary" type="button" id="refreshEnrollment">Perbarui status</button>'
+  +'<a class="btn primary" href="#daftar-halaqah">Lihat list halaqah</a>'
+  +'<button class="btn soft" type="button" id="refreshEnrollment">Cek status</button>'
   +(route!=="dashboard"?'<a class="btn" href="#dashboard">Kembali ke Dashboard</a>':"")
   +'</div></div>';
  if(h){

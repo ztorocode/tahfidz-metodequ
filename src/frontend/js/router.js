@@ -1,5 +1,6 @@
 import {getState} from "./store.js?v=81bed469";
-import {memberEnrollmentGate} from "./utils/member-enrollment.js?v=studentgateba73";
+import {memberEnrollmentGate} from "./utils/member-enrollment.js?v=halaqahbrowse51";
+import {studentHalaqahPage,halaqahApplicationsPage} from "./pages/student-halaqah.js?v=halaqahbrowse51";
 import {loginPage} from "./pages/login.js?v=b8c14e72";
 import {memberDashboard} from "./pages/member-dashboard.js?v=c6e18a42";
 import {programPage} from "./pages/program.js?v=81bed469";
@@ -21,7 +22,7 @@ import {rabthAyatPage} from "./pages/rabth-ayat.js?v=81bed469";
 import {whatsappPage} from "./pages/whatsapp.js?v=b8c14e72";
 import {superAdminDashboard,userManagementPage,platformPondoksPage,platformMusyrifPage,platformSettingsPage} from "./pages/super-admin.js?v=usereditb27";
 const routes={
- login:loginPage,dashboard:memberDashboard,program:programPage,activity:activityPage,
+ login:loginPage,dashboard:memberDashboard,"daftar-halaqah":studentHalaqahPage,"pendaftar-halaqah":halaqahApplicationsPage,program:programPage,activity:activityPage,
  submission:submissionPage,murajaah:murajaahPage,notifications:notificationsPage,
  progress:memberProgressPage,"review-progress":memberProgressPage,"rabth-ayat":rabthAyatPage,report:progressTablePage,
  musyrif:musyrifDashboard,review:reviewPage,admin:adminDashboard,"kelola-musyrif":adminMusyrifPage,"kelola-santri":adminSantriPage,"terima-undangan":acceptInvitePage,halaqah:halaqahPage,"santri-progress":studentProgressPage,"tabel-progress":progressTablePage,whatsapp:whatsappPage,
@@ -42,15 +43,16 @@ export function view(){
  if(s.loggedIn&&name==="dashboard"&&s.persona!=="member"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(platformRoutes.includes(name)&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(adminRoutes.includes(name)&&s.persona!=="admin"&&s.persona!=="super_admin"){name=homeRoute(s);location.hash=name;return routes[name]();}
+ if(name==="pendaftar-halaqah"&&!["admin","musyrif"].includes(s.persona)){name=homeRoute(s);location.hash=name;return routes[name]();}
  // Halaman progress versi musyrif hanya untuk musyrif.
  if(name==="review-progress"&&s.persona!=="musyrif"){name=homeRoute(s);location.hash=name;return routes[name]();}
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
  if(s.persona==="member"){
   // Santri hanya memakai program berbimbing dan Notifikasi.
-  if(!["dashboard","progress","report","notifications"].includes(name)){
+  if(!["dashboard","progress","report","notifications","daftar-halaqah"].includes(name)){
    name="dashboard";location.hash=name;
   }
-  if(name!=="notifications"){
+  if(name!=="notifications"&&name!=="daftar-halaqah"){
    const gated=memberEnrollmentGate(name);
    if(gated!==null)return gated;
   }

@@ -109,7 +109,7 @@ function statusView(route){
   +'<p class="muted">'+safe(description)+'</p>'
   +'<div class="row" style="margin-top:18px;gap:10px;flex-wrap:wrap">'
   +'<a class="btn primary" href="#daftar-halaqah">Lihat list halaqah</a>'
-  +'<button class="btn soft" type="button" id="refreshEnrollment">Cek status</button>'
+  +(status==="application_pending"?'<button class="btn soft" type="button" id="refreshEnrollment">Cek status</button>':"")
   +(route!=="dashboard"?'<a class="btn" href="#dashboard">Kembali ke Dashboard</a>':"")
   +'</div></div>';
  if(h){

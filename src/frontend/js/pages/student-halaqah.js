@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=halaqahbrowse51";
+import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=halaqahbrowse65";
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let catalogToken=null,catalog=null,catalogLoading=false,catalogError="";
@@ -27,7 +27,7 @@ function loadCatalog(force=false){
  const token=sessionKey();
  if(!token)return;
  if(catalogToken!==token){catalogToken=token;catalog=null;catalogError="";catalogLoading=false;}
- if(catalogLoading||(!force&&catalog!==null))return;
+ if(catalogLoading||(!force&&(catalog!==null||catalogError!=="")))return;
  catalogLoading=true;catalogError="";
  request("/api/students/halaqahs")
  .then(data=>{if(sessionKey()===token)catalog=Array.isArray(data)?data:[];})
@@ -90,7 +90,7 @@ function loadApplications(force=false){
  const token=sessionKey();
  if(!token)return;
  if(applicationsToken!==token){applicationsToken=token;applications=null;applicationsError="";applicationsLoading=false;}
- if(applicationsLoading||(!force&&applications!==null))return;
+ if(applicationsLoading||(!force&&(applications!==null||applicationsError!=="")))return;
  applicationsLoading=true;applicationsError="";
  request("/api/students/halaqahs/applications")
  .then(data=>{if(sessionKey()===token)applications=Array.isArray(data)?data:[];})

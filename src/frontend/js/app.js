@@ -3,7 +3,7 @@ import {loginPage,bindLogin} from "./pages/login.js?v=donorlocal72";
 import {landingPage,bindLanding} from "./pages/landing.js?v=d2f91a63";
 import {donationListPage,bindDonationList,donationStudentsPage,bindDonationStudents} from "./pages/donasi.js?v=donorlogout62";
 
-const PRIVATE_RUNTIME="./private-app.js?v=invitefirst8c4";
+const PRIVATE_RUNTIME="./private-app.js?v=invbell1105";
 const INVITE_PAGE="./pages/terima-undangan.js?v=b8c14e72";
 let privateRuntime=null;
 let inviteModule=null;

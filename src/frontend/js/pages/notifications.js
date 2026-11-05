@@ -1,6 +1,8 @@
 import {notifications} from "../data/dummy-data.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";
 import {getState} from "../store.js?v=81bed469";
+import {memberEnrollment} from "../utils/member-enrollment.js?v=invbell1105";
+import {markInvitationsRead} from "../utils/invite-notifications.js?v=invbell1105";
 
 const safe=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const rupiah=value=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(value)||0);
@@ -9,6 +11,30 @@ const statusLabel={reported:"Menunggu verifikasi",verified:"Terverifikasi",rejec
 export function notificationsPage(){
  const st=getState();
  const mine=Array.isArray(st.myInvites)?st.myInvites:[];
+ const enrollment=st.persona==="member"?memberEnrollment():null;
+ const studentInvites=Array.isArray(enrollment?.invites)?enrollment.invites:[];
+ if(st.persona==="member"){
+  const rows=studentInvites.map(invite=>{
+   const title=safe(invite.name);
+   const type=invite.type==="platform"?"Undangan Platform":"Undangan Pondok";
+   const memberInvite=invite.type==="pondok"&&mine.find(i=>Number(i.id)===Number(invite.id));
+   const action=memberInvite
+    ?'<button class="btn primary" type="button" data-accept-invite="'+Number(invite.id)+'">Terima Undangan</button>'
+    :invite.type==="platform"&&typeof invite.link==="string"&&invite.link.startsWith("#terima-undangan?")
+      ?'<a class="btn primary" href="'+safe(invite.link)+'">Terima Undangan</a>'
+      :'<span class="muted">Minta tautan undangan kepada pengelola.</span>';
+   return '<div class="list-item" style="flex-wrap:wrap;gap:12px"><div class="grow"><b>'+title+'</b><small class="muted" style="display:block">'+type+'</small></div>'+action+'</div>';
+  });
+  // Sertakan undangan pondok dari API lama bila belum termasuk hasil enrollment.
+  for(const invite of mine){
+   if(studentInvites.some(v=>v.type==="pondok"&&Number(v.id)===Number(invite.id)))continue;
+   rows.push('<div class="list-item" style="flex-wrap:wrap;gap:12px"><div class="grow"><b>'+safe(invite.pondok_name)+'</b><small class="muted" style="display:block">Undangan Pondok</small></div><button class="btn primary" type="button" data-accept-invite="'+Number(invite.id)+'">Terima Undangan</button></div>');
+  }
+  return '<div style="margin-bottom:18px"><p class="eyebrow">Pusat Aktivitas</p><h1>Notifikasi</h1></div>'
+   +'<div class="card"><h2>Undangan masuk</h2><div class="list" style="margin-top:16px">'
+   +(enrollment===null?'<p class="muted" role="status">Memuat undangan...</p>':rows.length?rows.join(""):'<p class="muted">Belum ada undangan masuk.</p>')
+   +'</div></div>';
+ }
  const inviteCard=mine.length?`<div class="card" style="margin-bottom:16px"><h3>Undangan Pondok (${mine.length})</h3><div class="list">${mine.map(v=>`<div class="list-item"><span class="avatar">✉</span><div class="grow"><b>${v.role==="musyrif"?"Ustadz":"Santri"} · ${safe(v.pondok_name)}</b><small class="muted" style="display:block">Berlaku s/d ${safe(String(v.expires_at||"").slice(0,10))}</small></div><button class="btn primary" type="button" data-accept-invite="${v.id}">Terima</button></div>`).join("")}</div></div>`:"";
  if(st.persona==="musyrif"){
   return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Pusat Aktivitas</p><h1>Notifikasi</h1></div></div>
@@ -18,6 +44,16 @@ export function notificationsPage(){
    <div id="ustadzDonationReports" class="list" aria-live="polite">Memuat konfirmasi donasi...</div></div>`;
  }
  return `<div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Pusat Aktivitas</p><h1>Notifikasi</h1></div></div>${inviteCard}<div class="card"><div class="list">${notifications.map(n=>`<div class="list-item"><span class="dot" style="background:var(--${n.tone==="success"?"brand":n.tone})"></span><div class="grow"><b>${safe(n.title)}</b><small class="muted" style="display:block">${safe(n.body)}</small></div>${badge(n.time,"")}</div>`).join("")}</div></div>`;
+}
+
+export function bindStudentInviteNotifications(){
+ if(getState().persona!=="member"||!memberEnrollment())return;
+ const state=getState();
+ markInvitationsRead(memberEnrollment().invites,state.authUser?.id);
+ const badge=document.querySelector("#notifDot");
+ if(badge){badge.classList.add("hidden");badge.textContent="";}
+ const bell=document.querySelector("#notifBell");
+ if(bell)bell.setAttribute("aria-label","Notifikasi");
 }
 
 export function bindDonationNotifications(){

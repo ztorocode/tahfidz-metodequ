@@ -1,5 +1,5 @@
 import {getState} from "./store.js?v=81bed469";
-import {memberEnrollmentGate} from "./utils/member-enrollment.js?v=invitefirst8c4";
+import {memberEnrollmentGate} from "./utils/member-enrollment.js?v=invbell1105";
 import {studentHalaqahPage,halaqahApplicationsPage} from "./pages/student-halaqah.js?v=invitefirst8c4";
 import {loginPage} from "./pages/login.js?v=b8c14e72";
 import {memberDashboard} from "./pages/member-dashboard.js?v=c6e18a42";
@@ -7,7 +7,7 @@ import {programPage} from "./pages/program.js?v=81bed469";
 import {activityPage} from "./pages/activity.js?v=81bed469";
 import {submissionPage} from "./pages/submission.js?v=c6e18a42";
 import {murajaahPage} from "./pages/murajaah.js?v=81bed469";
-import {notificationsPage} from "./pages/notifications.js?v=donproof31";
+import {notificationsPage} from "./pages/notifications.js?v=invbell1105";
 import {musyrifDashboard} from "./pages/musyrif-dashboard.js?v=7c3e1a90";
 import {reviewPage} from "./pages/review.js?v=81bed469";
 import {acceptInvitePage} from "./pages/terima-undangan.js?v=b8c14e72";

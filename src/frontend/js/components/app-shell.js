@@ -2,6 +2,8 @@ import {getState,setState,resetState} from "../store.js?v=81bed469";
 import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=logoutcachefix934";
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
+import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=invbell1105";
+import {unreadInvitationCount} from "../utils/invite-notifications.js?v=invbell1105";
 
 const memberNav=[["dashboard","Dashboard"],["daftar-halaqah","Halaqah"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
@@ -56,7 +58,10 @@ function mobileNavItems(){
 }
 
 function notifBell(){
- const unread=(getState().myInvites||[]).length;
+ const state=getState();
+ const unread=state.persona==="member"
+  ?unreadInvitationCount(memberEnrollment()?.invites||[],state.authUser?.id)
+  :(state.myInvites||[]).length;
  const active=(location.hash.replace("#","")||"dashboard")==="notifications";
  return `<a href="#notifications" class="icon-button ${active?"active":""}" id="notifBell" aria-label="Notifikasi" style="position:relative;display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:${active?"var(--brand)":"var(--muted)"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 8h18c0-1-3-1-3-8"/><path d="M10 20h4"/></svg>${unread?`<span id="notifDot" style="position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px">${unread>9?"9+":unread}</span>`:`<span id="notifDot" class="hidden" style="position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:9px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;padding:0 4px"></span>`}</a>`;
 }
@@ -153,6 +158,7 @@ export function shell(content){
 }
 
 export function bindShell(){
+ if(getState().persona==="member")loadMemberEnrollment();
  document.querySelectorAll("[data-mobile-route]").forEach(link=>link.addEventListener("click",event=>{
   event.preventDefault();
   const target="#"+link.dataset.mobileRoute;

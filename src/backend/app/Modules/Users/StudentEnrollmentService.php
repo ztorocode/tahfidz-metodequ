@@ -92,6 +92,7 @@ final class StudentEnrollmentService
         foreach ($platform->fetchAll(PDO::FETCH_ASSOC) as $invite) {
             $invitations[] = [
                 'type' => 'platform',
+                'id' => (int) $invite['id'],
                 'name' => (string) $invite['halaqah_name'],
                 'link' => $invite['invite_token_plain'] !== null
                     ? '#terima-undangan?t=platform-santri&token=' . rawurlencode((string) $invite['invite_token_plain'])
@@ -112,6 +113,7 @@ final class StudentEnrollmentService
         foreach ($pondok->fetchAll(PDO::FETCH_ASSOC) as $invite) {
             $invitations[] = [
                 'type' => 'pondok',
+                'id' => (int) $invite['id'],
                 'name' => (string) ($invite['halaqah_name'] ?: $invite['pondok_name']),
                 'link' => '#notifications',
             ];

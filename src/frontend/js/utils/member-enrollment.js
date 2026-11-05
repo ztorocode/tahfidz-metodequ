@@ -50,7 +50,7 @@ export async function loadMemberEnrollment(force=false){
   if(current===requestId){
    loading=false;
    const route=location.hash.replace(/^#/,"").split("?")[0];
-   if(["dashboard","progress","report"].includes(route))window.dispatchEvent(new Event("app:render"));
+   if(["dashboard","progress","report","notifications"].includes(route))window.dispatchEvent(new Event("app:render"));
   }
  }
 }
@@ -114,7 +114,7 @@ function statusView(route){
   +'</div></div>';
  if(status==="invited"){
   const invites=Array.isArray(data.invites)?data.invites:[];
-  html+='<div class="card"><h3>Undangan Anda</h3><div class="list" style="margin-top:12px">'
+  html+='<div class="card" style="margin-bottom:22px"><h3>Undangan masuk</h3><div class="list" style="margin-top:12px">'
    +invites.map(invite=>'<div class="list-item"><div class="grow"><b>'+safe(invite.name)+'</b>'
     +'<small class="muted" style="display:block">'+(invite.type==="pondok"?"Undangan Pondok":"Undangan Platform")+'</small></div>'
     +(invite.link?'<a class="btn primary" href="'+safe(invite.link)+'">Terima Undangan</a>':'<small class="muted">Minta tautan baru dari Ustadz</small>')

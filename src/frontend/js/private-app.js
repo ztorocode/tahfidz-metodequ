@@ -1,9 +1,9 @@
-import {view,routeName} from "./router.js?v=invitefirst8c4";
+import {view,routeName} from "./router.js?v=invbell1105";
 import {bindMemberProgress} from "./pages/member-progress.js?v=progdayfix6e4";
 import {getState,setState} from "./store.js?v=81bed469";
-import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=invitefirst8c4";
+import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=invbell1105";
 import {bindStudentHalaqah,bindHalaqahApplications} from "./pages/student-halaqah.js?v=invitefirst8c4";
-import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=halaqahbrowse51";
+import {renderLayout,bindLayout} from "./layouts/app-layout.js?v=invbell1105";
 import {bindLogin} from "./pages/login.js?v=logoutfix8c26";
 import {bindInvite} from "./pages/terima-undangan.js?v=b8c14e72";
 import {toast} from "./utils/helpers.js?v=81bed469";
@@ -15,7 +15,9 @@ import {bindRabthAyat} from "./pages/rabth-ayat.js?v=81bed469";
 import {bindSubmission} from "./pages/submission.js?v=c6e18a42";
 import {bindPlatformMusyrif,bindUserManagementPage} from "./pages/super-admin.js?v=usereditb27";
 import {bindReview} from "./pages/review.js?v=81bed469";
-import {bindDonationNotifications} from "./pages/notifications.js?v=donproof31";
+import {bindDonationNotifications,bindStudentInviteNotifications} from "./pages/notifications.js?v=invbell1105";
+import {memberEnrollment} from "./utils/member-enrollment.js?v=invbell1105";
+import {unreadInvitationCount} from "./utils/invite-notifications.js?v=invbell1105";
 import {bindMusyrifDashboard} from "./pages/musyrif-dashboard.js?v=7c3e1a90";
 let deferredPrompt=null;
 export function renderPrivate(){
@@ -73,7 +75,15 @@ async function refreshMyInvites(){
  try{
   const r=await fetch("/api/pondok-invites/mine",{headers:{Accept:"application/json",Authorization:"Bearer "+s.authToken}});
   const b=await r.json();
-  if(r.ok)setState({myInvites:b.data||[]});
+  if(getState().authToken!==s.authToken)return;
+  if(r.ok){
+   const next=Array.isArray(b.data)?b.data:[];
+   const prev=getState().myInvites||[];
+   if(JSON.stringify(next)!==JSON.stringify(prev)){
+    setState({myInvites:next});
+    if(location.hash.split("?")[0]==="#notifications")window.dispatchEvent(new Event("app:render"));
+   }
+  }
  }catch(e){}
 }
 async function loadInviteBanner(){
@@ -83,8 +93,10 @@ async function loadInviteBanner(){
   const mine=getState().myInvites||[];
   const dot=document.querySelector("#notifDot");
   if(dot){
-   if(mine.length){dot.classList.remove("hidden");dot.textContent=mine.length>9?"9+":String(mine.length);}
-   else{dot.classList.add("hidden");dot.textContent="";}
+   const st=getState();
+   const count=st.persona==="member"?unreadInvitationCount(memberEnrollment()?.invites||[],st.authUser?.id):mine.length;
+   dot.classList.toggle("hidden",count===0);
+   dot.textContent=count>9?"9+":count?String(count):"";
   }
   box.innerHTML=mine.length?`<div class="card" style="margin-bottom:16px;border-left:4px solid var(--brand)"><div class="row between"><div><b>Anda punya ${mine.length} undangan pondok</b><small class="muted" style="display:block">${mine.map(v=>v.pondok_name).join(", ")}</small></div><a class="btn primary" href="#notifications">Lihat</a></div></div>`:"";
  }
@@ -138,7 +150,11 @@ function bindPageActions(){
  if(routeName().split("?")[0]==="rabth-ayat")bindRabthAyat();
  if(routeName().split("?")[0]==="submission")bindSubmission();
  if(routeName().split("?")[0]==="review")bindReview();
- if(routeName().split("?")[0]==="notifications")bindDonationNotifications();
+ if(routeName().split("?")[0]==="notifications"){
+  bindDonationNotifications();
+  bindStudentInviteNotifications();
+  if(getState().persona==="member")refreshMyInvites();
+ }
  if(routeName().split("?")[0]==="musyrif")bindMusyrifDashboard();
  if(routeName().split("?")[0]==="platform-musyrif")bindPlatformMusyrif();
  document.querySelectorAll("[data-check]").forEach(b=>b.addEventListener("click",()=>b.classList.toggle("active")));

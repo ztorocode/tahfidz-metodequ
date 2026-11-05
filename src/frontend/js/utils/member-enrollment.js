@@ -108,7 +108,7 @@ function statusView(route){
   +'<p class="eyebrow">Status Program Tahfidz</p><h2 style="margin:8px 0">'+safe(title)+'</h2>'
   +'<p class="muted">'+safe(description)+'</p>'
   +'<div class="row" style="margin-top:18px;gap:10px;flex-wrap:wrap">'
-  +'<a class="btn primary" href="#daftar-halaqah">Lihat list halaqah</a>'
+  +'<a class="btn primary" href="#daftar-halaqah">Cari Halaqah</a>'
   +(status==="application_pending"?'<button class="btn soft" type="button" id="refreshEnrollment">Cek status</button>':"")
   +(route!=="dashboard"?'<a class="btn" href="#dashboard">Kembali ke Dashboard</a>':"")
   +'</div></div>';

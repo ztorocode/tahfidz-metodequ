@@ -3,8 +3,8 @@ import {isDemoDonorEmail,isDemoDonorCredentials,startDemoDonorSession} from "../
 
 // Santri dan ustadz demo menggunakan akun backend; Donatur Demo memakai sesi simulasi browser.
 const realDemoAccounts=[
- {id:"member",role:"Santri Demo",email:"santri@mutqeen.id",password:"849d8e1ec54d1d699aa82eeb"},
- {id:"musyrif-platform",role:"Ustadz Demo",email:"ustadz@mutqeen.id",password:"G-t8yoBfwAYibqgjBTTJ9gNm"},
+ {id:"member",role:"Santri Demo",email:"santri@mutqeen.id",password:"123456A@"},
+ {id:"musyrif-platform",role:"Ustadz Demo",email:"ustadz@mutqeen.id",password:"123456A@"},
  {id:"donatur",role:"Donatur Demo",email:"donatur@mutqeen.id",password:"DemoDonatur2026!"}
 ];
 

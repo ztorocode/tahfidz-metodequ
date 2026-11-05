@@ -83,6 +83,8 @@
 .password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--muted);display:grid;place-items:center;font-size:18px;line-height:1;cursor:pointer}
 .password-toggle:hover,.password-toggle:focus-visible{background:var(--surface-3);color:var(--text);outline:none}
 .password-toggle:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.password-toggle svg{width:20px;height:20px}
+.password-toggle svg[hidden]{display:none}
 
 /* Accordion pada modal Edit Profil (profil, kata sandi, dan rekening donasi). */
 .profile-accordion-list{display:grid;gap:10px;margin-top:18px}

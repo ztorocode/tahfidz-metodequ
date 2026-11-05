@@ -107,6 +107,19 @@ function accountMenu(){
  </div>`;
 }
 
+function profilePasswordField(id,label,autocomplete,placeholder=""){
+ const lower=label.toLowerCase();
+ return `<div><label class="label" for="${id}">${label}</label>
+  <div class="password-field">
+   <input class="input" id="${id}" type="password" autocomplete="${autocomplete}"${placeholder?` placeholder="${placeholder}"`:""}>
+   <button class="password-toggle" type="button" data-profile-password-toggle="${id}" data-password-label="${lower}"
+    aria-controls="${id}" aria-pressed="false" aria-label="Tampilkan ${lower}" title="Tampilkan ${lower}">
+    <svg data-eye-icon viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    <svg data-eye-off-icon hidden viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.58 10.58a2 2 0 0 0 2.84 2.84"/><path d="M9.88 5.09A10.9 10.9 0 0 1 12 4.9c7 0 10 7.1 10 7.1a13.5 13.5 0 0 1-4.18 4.72"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 7.1 10 7.1c1.4 0 2.8-.26 4.12-.8"/><path d="m2 2 20 20"/></svg>
+   </button>
+  </div></div>`;
+}
+
 function profileModal(){
  const account=currentAccount();
  const bankSection=ustadzBankProfileSection();
@@ -127,8 +140,8 @@ function profileModal(){
     <details class="profile-accordion" name="edit-profile-sections">
      <summary>Ganti Password</summary>
      <div class="profile-accordion-content stack">
-      <div><label class="label" for="profileCurrentPassword">Password lama</label><input class="input" id="profileCurrentPassword" type="password" autocomplete="current-password"></div>
-      <div><label class="label" for="profileNewPassword">Password baru</label><input class="input" id="profileNewPassword" type="password" autocomplete="new-password" placeholder="Minimal 8 karakter"></div>
+      ${profilePasswordField("profileCurrentPassword","Password lama","current-password")}
+      ${profilePasswordField("profileNewPassword","Password baru","new-password","Minimal 8 karakter")}
       <small class="muted" id="passwordMessage" role="status"></small>
       <button class="btn full" id="changePasswordBtn" type="button">Ganti Password</button>
      </div>
@@ -286,6 +299,20 @@ export function bindShell(){
    if(message){message.textContent=err?.message||"Gagal menyimpan.";message.style.color="var(--danger)";}
   }
   btn.disabled=false;
+ });
+ document.querySelectorAll("[data-profile-password-toggle]").forEach(button=>{
+  button.addEventListener("click",()=>{
+   const input=document.getElementById(button.dataset.profilePasswordToggle);
+   if(!input)return;
+   const showing=input.type==="password";
+   input.type=showing?"text":"password";
+   button.setAttribute("aria-pressed",String(showing));
+   const label=(showing?"Sembunyikan ":"Tampilkan ")+button.dataset.passwordLabel;
+   button.setAttribute("aria-label",label);
+   button.title=label;
+   button.querySelector("[data-eye-icon]").hidden=showing;
+   button.querySelector("[data-eye-off-icon]").hidden=!showing;
+  });
  });
  document.querySelector("#changePasswordBtn")?.addEventListener("click",async (e)=>{
   const btn=e.currentTarget,msg=document.querySelector("#passwordMessage");

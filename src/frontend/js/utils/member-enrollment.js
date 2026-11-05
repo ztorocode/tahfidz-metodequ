@@ -112,6 +112,14 @@ function statusView(route){
   +(status==="application_pending"?'<button class="btn soft" type="button" id="refreshEnrollment">Cek status</button>':"")
   +(route!=="dashboard"?'<a class="btn" href="#dashboard">Kembali ke Dashboard</a>':"")
   +'</div></div>';
+ if(status==="invited"){
+  const invites=Array.isArray(data.invites)?data.invites:[];
+  html+='<div class="card"><h3>Undangan Anda</h3><div class="list" style="margin-top:12px">'
+   +invites.map(invite=>'<div class="list-item"><div class="grow"><b>'+safe(invite.name)+'</b>'
+    +'<small class="muted" style="display:block">'+(invite.type==="pondok"?"Undangan Pondok":"Undangan Platform")+'</small></div>'
+    +(invite.link?'<a class="btn primary" href="'+safe(invite.link)+'">Terima Undangan</a>':'<small class="muted">Minta tautan baru dari Ustadz</small>')
+    +'</div>').join("")+'</div></div>';
+ }
  if(h){
   html+='<div class="grid-2" style="margin-bottom:16px">'
    +'<div class="card"><small class="muted">Halaqah</small><h3>'+safe(h.name)+'</h3><small class="muted">'+safe(h.pondok_name||"Platform Mutqeen")+'</small></div>'
@@ -124,14 +132,6 @@ function statusView(route){
    +'<div class="card"><small class="muted">Halaqah</small><h3>Belum ada</h3></div>'
    +'<div class="card"><small class="muted">Ustadz Pembimbing</small><h3>Belum ada</h3></div>'
    +'</div>';
- }
- if(status==="invited"){
-  const invites=Array.isArray(data.invites)?data.invites:[];
-  html+='<div class="card"><h3>Undangan Anda</h3><div class="list" style="margin-top:12px">'
-   +invites.map(invite=>'<div class="list-item"><div class="grow"><b>'+safe(invite.name)+'</b>'
-    +'<small class="muted" style="display:block">'+(invite.type==="pondok"?"Undangan Pondok":"Undangan Platform")+'</small></div>'
-    +(invite.link?'<a class="btn primary" href="'+safe(invite.link)+'">Terima Undangan</a>':'<small class="muted">Minta tautan baru dari Ustadz</small>')
-    +'</div>').join("")+'</div></div>';
  }
  return html;
 }

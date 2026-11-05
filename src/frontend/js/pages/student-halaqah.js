@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=invitefirst8c4";
+import {loadMemberEnrollment} from "../utils/member-enrollment.js?v=membernav1106";
 
 const esc=x=>String(x??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 let searchSession="",searchQuery="",searchSelection=null,pendingHalaqahId=null;

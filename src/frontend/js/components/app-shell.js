@@ -2,10 +2,10 @@ import {getState,setState,resetState} from "../store.js?v=81bed469";
 import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=logoutcachefix934";
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
-import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=invbell1105";
+import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=membernav1106";
 import {unreadInvitationCount} from "../utils/invite-notifications.js?v=invbell1105";
 
-const memberNav=[["dashboard","Dashboard"],["daftar-halaqah","Halaqah"],["progress","Progress"],["report","Report"]];
+const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
 const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
 const adminNav=[["admin","Dashboard"],["kelola-musyrif","Ustadz"],["kelola-santri","Santri"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["whatsapp","WhatsApp"],["notifications","Notifikasi"]];

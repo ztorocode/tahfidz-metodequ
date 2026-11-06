@@ -1,5 +1,6 @@
 import {getState} from "../store.js?v=81bed469";
 import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=81bed469";
+import {loadMemberEnrollment} from "./member-enrollment.js?v=membernav1106";
 
 /**
  * Sinkronisasi isian progress ke server.
@@ -140,6 +141,10 @@ export async function flush(){
    saveVersions(meta);
    removeFromQueue(entry);
    lastSyncAtValue=body.data?.updated_at||nowStamp();
+   if(body.data?.program_started===true){
+    window.dispatchEvent(new Event("app:my-halaqah-changed"));
+    loadMemberEnrollment(true);
+   }
   }
  }finally{flushing=false}
 }

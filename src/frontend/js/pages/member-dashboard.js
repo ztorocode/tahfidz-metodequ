@@ -2,7 +2,7 @@ import {member} from "../data/dummy-data.js?v=c6e18a42";
 import {getState} from "../store.js?v=81bed469";
 import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";
-import {loadWeek} from "../utils/progress-sync.js?v=81bed469";
+import {loadWeek} from "../utils/progress-sync.js?v=firstact1106";
 import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=81bed469";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
@@ -85,7 +85,9 @@ export function memberDashboard(){
  // Harus sama persis dengan halaman Progress (termasuk konteks Personal),
  // supaya kunci hari (sabtu..kamis) yang dipakai membaca isian tidak meleset.
  const start=myProgramStart();
- const today=todayProgramDay(start);
+ const firstActivityPending=isPondok&&myHalaqah()?.start_date_mode==="individual"&&!start;
+ const computed=todayProgramDay(start);
+ const today=firstActivityPending?{...computed,key:null,status:"first-activity-pending"}:computed;
 
  const week=today.week||Math.min(5,Math.max(1,Number(data.week)||1));
  const halaqah=isPondok?myHalaqah():null;
@@ -107,7 +109,8 @@ export function memberDashboard(){
  const now=new Date();
  const pad=n=>String(n).padStart(2,"0");
  const focusDate=idle?"":now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate());
- const notice=isFriday?"Jum'at"
+ const notice=firstActivityPending?"Tanggal mulai otomatis saat aktivitas progres pertama"
+  :isFriday?"Jum'at"
   :today.status==="not-started"?("Program mulai "+fmtLong(new Date(start+"T00:00:00")))
   :today.status==="past-end"?"Lewat dari Pekan 5"
   :"";
@@ -144,13 +147,13 @@ export function memberDashboard(){
 <div class="row between" style="margin-bottom:18px"><div><p class="eyebrow">Assalamu'alaikum</p><h1>${escapeHtml(name)}</h1><p class="muted">Konteks aktif: <b>${escapeHtml(contextLabel)}</b> · Fokus hari ini: kuatkan hafalan, bukan sekadar menambah.</p></div></div>
 
 <div id="inviteBanner"></div>
-<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">Program aktif · Pekan ${week}</p><h2 style="margin-bottom:7px">${escapeHtml(programTitle)}</h2><b>Target hari ini: ${targetText}</b>${startLine?`<small style="display:block;margin-top:6px;opacity:.85">${escapeHtml(startLine)}</small>`:""}</div><a class="btn" href="#progress" data-goto-progress="${week}:${focusDate}" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
+<div class="hero-card card" style="margin-bottom:16px"><div class="row between"><div><p style="opacity:.8;margin-bottom:6px">${firstActivityPending?"Program belum dimulai":"Program aktif · Pekan "+week}</p><h2 style="margin-bottom:7px">${escapeHtml(programTitle)}</h2><b>Target hari ini: ${targetText}</b>${startLine?`<small style="display:block;margin-top:6px;opacity:.85">${escapeHtml(startLine)}</small>`:""}</div><a class="btn" href="#progress" data-goto-progress="${week}:${focusDate}" style="background:white;color:#14533e;border:0">Buka Progress</a></div></div>
 
 ${isPondok?`<div class="card" style="margin-bottom:16px"><div class="row between"><div><h3>Halaqah Anda</h3><small class="muted">Dari data pondok, bukan dari isian.</small></div></div>
 <div class="list" style="margin-top:12px">
  <div class="list-item"><div class="grow"><b>Nama halaqah</b><small class="muted" style="display:block">${escapeHtml(halaqah?.name||"Belum terdaftar di halaqah mana pun.")}</small></div></div>
  <div class="list-item"><div class="grow"><b>Ustadz</b><small class="muted" style="display:block">${escapeHtml(halaqah?.musyrif_name||"-")}</small></div></div>
- <div class="list-item"><div class="grow"><b>Tanggal mulai</b><small class="muted" style="display:block">${start?escapeHtml(fmtLong(new Date(start+"T00:00:00"))):"Belum diatur"}</small></div></div>
+ <div class="list-item"><div class="grow"><b>Tanggal mulai</b><small class="muted" style="display:block">${start?escapeHtml(fmtLong(new Date(start+"T00:00:00"))):(firstActivityPending?"Otomatis saat aktivitas pertama":"Belum diatur")}</small></div></div>
  <div class="list-item"><div class="grow"><b>Hari ini</b><small class="muted" style="display:block">${today.dayNum?("Hari ke-"+today.dayNum+" · "+(isFriday?"Jum'at":dayLabel)):(idle?(notice||"-"):(dayLabel))}</small></div></div>
  <div class="list-item"><div class="grow"><b>Sinkron</b><small class="muted" style="display:block">Isian tersimpan di perangkat lalu dikirim ke server.</small></div></div>
 </div>

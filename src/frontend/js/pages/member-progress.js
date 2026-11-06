@@ -1,11 +1,11 @@
 import {getState} from "../store.js?v=81bed469";
 import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=81bed469";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=81bed469";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=firstact1106";
 import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=81bed469";
 import {juzEntries} from "../data/quran-juz.js?v=81bed469";
 import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=81bed469";
 import {toast} from "../utils/helpers.js?v=81bed469";
-import {logLearningActivity} from "../utils/activity-log.js?v=81bed469";
+import {logLearningActivity} from "../utils/activity-log.js?v=firstact1106";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -324,7 +324,7 @@ function dayBody(data,week,day){
  '</div>';
 }
 
-function dayCard(data,week,item,index,startOverride,locked=false){
+function dayCard(data,week,item,index,startOverride,locked=false,firstActivityPending=false){
  const open=data.openDay===item.id;
  const dayNumber=((week-1)*6)+index+1;
  const pct=dayProgress(data,week,item.id);
@@ -341,7 +341,11 @@ function dayCard(data,week,item,index,startOverride,locked=false){
    '<span class="member-progress-day-title"><b>'+dayName+'</b>'+label+'</span>'+
    '<strong data-progress-percent="'+item.id+'">'+pct+'%</strong>'+
   '</button>'+
-  (open?'<div class="member-progress-day-panel">'+dayBody(data,week,item.id)+(locked?musyrifPendingOverlay():"")+'</div>':"")+
+  (open?'<div class="member-progress-day-panel">'+dayBody(data,week,item.id)
+   +(locked?musyrifPendingOverlay():"")
+   +(firstActivityPending&&(week!==1||index!==0||new Date().getDay()===5)
+     ?'<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mulai dari Hari ke-1 Pekan 1. Jum’at libur.</div></div>'
+     :"")+'</div>':"")+
  '</article>';
 }
 
@@ -355,16 +359,18 @@ function myHalaqahCard(){
  const todayNum=todayDayNumber(start);
  const startLine=start
   ?'<small class="muted">Mulai program: <b style="color:var(--text)">'+new Date(start+"T00:00:00").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"})+'</b>'+(todayNum?' · hari ini <b style="color:var(--text)">Hari ke-'+todayNum+'</b>':"")+'</small>'
-  :'<small class="muted">Tanggal mulai belum diatur → diasumsikan Pekan 1 dimulai Sabtu.</small>';
+  :'<small class="muted">'+(myHalaqah().start_date_mode==="individual"&&!isMusyrif
+   ?"Tanggal mulai akan tercatat otomatis ketika aktivitas pertama disimpan."
+   :"Tanggal mulai belum diatur → diasumsikan Pekan 1 dimulai Sabtu.")+'</small>';
  return '<div class="card" style="margin-bottom:14px"><p class="eyebrow">'+(isMusyrif?"Halaqah yang Anda bina":"Halaqah Anda")+'</p>'
   +'<div class="row between" style="gap:10px;align-items:center"><div><b style="font-size:16px">'+escapeHtml(myHalaqah().name)+'</b>'
   +(myHalaqah().musyrif_name?'<br><small class="muted">Musyrif: '+escapeHtml(myHalaqah().musyrif_name)+'</small>':"")
   +'</div><span class="badge success">'+(isMusyrif?"Musyrif":"Santri")+'</span></div>'
   +'<div style="margin-top:8px">'+(isMusyrif&&myHalaqah().start_date_mode==="individual"
-    ?'<small class="muted">Mode Per Santri: tanggal mulai setiap anggota diatur pada Detail Halaqah.</small>'
+    ?'<small class="muted">Mode Per Santri: tanggal mulai setiap santri otomatis saat aktivitas progres pertama.</small>'
     :startLine)+'</div>'
   +(isMusyrif?(myHalaqah().start_date_mode==="individual"
-    ?'<div style="margin-top:10px"><a href="#halaqah" class="btn soft">Atur tanggal per santri</a></div>'
+    ?''
     :'<div style="margin-top:10px"><button class="btn soft" type="button" data-start-open>'+(start?"Ubah Tanggal Mulai":"Atur Tanggal Mulai")+'</button></div>'):"")
   +'</div>'
   +(isMusyrif&&myHalaqah().start_date_mode!=="individual"?startPopup():"");
@@ -387,8 +393,8 @@ function fridayCard(date){
 }
 
 /** Susun hari-hari pekan + kartu Jum'at libur sesuai urutan tanggal. */
-function weekDaysHtml(data,week,start,fridayDate,locked=false){
- const cards=days.map((item,index)=>dayCard(data,week,item,index,start,locked));
+function weekDaysHtml(data,week,start,fridayDate,locked=false,firstActivityPending=false){
+ const cards=days.map((item,index)=>dayCard(data,week,item,index,start,locked,firstActivityPending));
  if(!start||!fridayDate){
   // Tanpa tanggal mulai program → perilaku lama: Jum'at di akhir daftar.
   cards.push(fridayCard(null));
@@ -579,7 +585,15 @@ export function memberProgressPage(){
  const data=applyOpenDate(getProgressContext(state));
  const week=stateWeek(data);
  syncWeek(week);
- const start=myProgramStart();
+ const firstActivityPending=state.persona==="member"
+  &&myHalaqah()?.start_date_mode==="individual"&&!myProgramStart();
+ // Ini hanya pratinjau; tanggal disimpan oleh aktivitas pertama yang berhasil.
+ const preview=new Date();
+ if(preview.getDay()===5)preview.setDate(preview.getDate()+1);
+ const previewDate=preview.getFullYear()+"-"+
+  String(preview.getMonth()+1).padStart(2,"0")+"-"+
+  String(preview.getDate()).padStart(2,"0");
+ const start=myProgramStart()||(firstActivityPending?previewDate:null);
  const fridayDate=start?fridayOf(start,week):null;
  const pending=needsMusyrifPendingOverlay();
  const notice=pending?'<div class="card member-progress-pending-notice" role="status">Mohon tunggu acc musyrif pembimbing. Hari tetap bisa dibuka, tetapi pengisian progres belum diizinkan.</div>':"";
@@ -590,7 +604,7 @@ export function memberProgressPage(){
    weeks.map(item=>'<button type="button" class="member-progress-week'+(item===week?" active":"")+'" data-progress-week="'+item+'" role="tab" aria-selected="'+String(item===week)+'">Pekan '+item+'</button>').join("")+
   '</div>'
   +'<div class="member-progress-days">'+
-   weekDaysHtml(data,week,start,fridayDate,pending).join("")+
+   weekDaysHtml(data,week,start,fridayDate,pending,firstActivityPending).join("")+
   '</div>'
   +rabthModal()
   +'</section>';

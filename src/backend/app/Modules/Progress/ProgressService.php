@@ -6,6 +6,7 @@ namespace App\Modules\Progress;
 
 use App\Modules\Auth\RegistrationException;
 use PDO;
+use App\Core\IndividualProgramStart;
 
 /**
  * Sinkronisasi isian progress harian santri.
@@ -117,7 +118,33 @@ final class ProgressService
         }
 
         $halaqahId = $this->currentHalaqahId($actor['id'], $pondokId);
-        $nextVersion = $currentVersion + 1;
+        $meaningful = false;
+        foreach ((is_array($input['fields'] ?? null) ? $input['fields'] : []) as $value) {
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                $meaningful = true;
+                break;
+            }
+        }
+        if (!$meaningful) {
+            foreach ((is_array($input['checks'] ?? null) ? $input['checks'] : []) as $value) {
+                if ($value === true || $value === 1) {
+                    $meaningful = true;
+                    break;
+                }
+            }
+        }
+
+        $ownTransaction = !$this->pdo->inTransaction();
+        if ($ownTransaction) $this->pdo->beginTransaction();
+        else $this->pdo->exec('SAVEPOINT metodequ_progress_start');
+        try {
+            $started = ['program_start_date' => null, 'program_started' => false];
+            if ($meaningful && $halaqahId !== null) {
+                $started = IndividualProgramStart::claim(
+                    $this->pdo, (int) $actor['id'], $halaqahId, $week, $day
+                );
+            }
+            $nextVersion = $currentVersion + 1;
 
         if ($current === null) {
             $statement = $this->pdo->prepare(
@@ -159,8 +186,17 @@ final class ProgressService
             ]);
         }
 
-        $saved = $this->row($actor['id'], $pondokId, $week, $day);
-        return $this->rowPayload($saved ?? []);
+            $saved = $this->row($actor['id'], $pondokId, $week, $day);
+            if ($ownTransaction) $this->pdo->commit();
+            else $this->pdo->exec('RELEASE SAVEPOINT metodequ_progress_start');
+            return $this->rowPayload($saved ?? []) + $started;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                if ($ownTransaction) $this->pdo->rollBack();
+                else $this->pdo->exec('ROLLBACK TO SAVEPOINT metodequ_progress_start');
+            }
+            throw $exception;
+        }
     }
 
     /** Isian progress seorang santri — untuk musyrif halaqahnya atau admin pondok. */
@@ -384,16 +420,20 @@ final class ProgressService
                    AND h.pondok_id = :pondok_id AND h.status = 'active' AND h.deleted_at IS NULL
                    AND mp.status = 'active' AND mentor.status = 'active' AND mentor.deleted_at IS NULL
                    AND p.status = 'active' AND p.deleted_at IS NULL
-                   AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
-                             ELSE h.program_start_date END) IS NOT NULL
-                   AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
-                             ELSE h.program_start_date END) <= :today
+                   AND (
+                       (h.start_date_mode = 'individual'
+                        AND (hm.program_start_date IS NULL OR hm.program_start_date <= :today))
+                       OR (h.start_date_mode = 'shared'
+                           AND h.program_start_date IS NOT NULL
+                           AND h.program_start_date <= :today_shared)
+                   )
                  LIMIT 1"
             );
             $ready->execute([
                 'user_id' => (int) $actor['id'],
                 'pondok_id' => $pondokId,
                 'today' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
+                'today_shared' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
             ]);
             if ($ready->fetchColumn() === false) {
                 throw new RegistrationException('Progress hanya tersedia setelah Santri mempunyai halaqah, Ustadz pembimbing, dan program dimulai.', 403);

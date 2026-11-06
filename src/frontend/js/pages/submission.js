@@ -1,7 +1,7 @@
 import {getState,setState} from "../store.js?v=81bed469";
 import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=81bed469";
-import {scheduleSave} from "../utils/progress-sync.js?v=81bed469";
-import {dayProgress} from "./member-progress.js?v=81bed469";
+import {scheduleSave} from "../utils/progress-sync.js?v=firstact1106";
+import {dayProgress} from "./member-progress.js?v=firstact1106";
 import {toast} from "../utils/helpers.js?v=81bed469";
 import {activePondokId} from "../utils/program-context.js?v=81bed469";
 

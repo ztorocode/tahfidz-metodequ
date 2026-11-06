@@ -109,16 +109,6 @@ final class HalaqahController
         }
     }
 
-    public function memberStartDate(Request $request): never
-    {
-        try {
-            $result = $this->service()->setMemberStartDate($this->actor($request), $request->body());
-            Response::json(['success' => true, 'message' => 'Tanggal mulai santri disimpan.', 'data' => $result]);
-        } catch (RegistrationException $exception) {
-            Response::json(['success' => false, 'message' => $exception->getMessage(), 'errors' => $exception->errors], $exception->statusCode);
-        }
-    }
-
     public function store(Request $request): never
     {
         try {

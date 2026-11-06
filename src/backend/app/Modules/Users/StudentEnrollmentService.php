@@ -44,10 +44,12 @@ final class StudentEnrollmentService
             $scope = $row['pondok_id'] === null ? 'platform' : 'pondok';
             $today = (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d');
             $mentor = $row['musyrif_user_id'] !== null;
+            $individual = $row['start_date_mode'] === 'individual';
             $status = !$mentor ? 'mentor_pending'
+                : ($scope === 'platform' ? 'platform_progress_unavailable'
+                : ($individual && $date === null ? 'active'
                 : ($date === null ? 'schedule_pending'
-                : ($date > $today ? 'scheduled'
-                : ($scope === 'platform' ? 'platform_progress_unavailable' : 'active')));
+                : ($date > $today ? 'scheduled' : 'active'))));
 
             return [
                 'status' => $status,

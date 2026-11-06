@@ -57,10 +57,16 @@ final class StudentActivityLog
         }
 
         [$activityKey, $count] = $this->normalizeStep($step);
-        $halaqahId = $this->activeHalaqahId($userId);
+        $halaqahId = $this->activeHalaqahId($userId, array_key_exists('pondok_id', $input) ? (int) $input['pondok_id'] : null);
         if ($halaqahId < 1) {
             throw new RegistrationException('Santri belum tergabung dalam halaqah aktif.', 422);
         }
+
+        $ownTransaction = !$this->pdo->inTransaction();
+        if ($ownTransaction) $this->pdo->beginTransaction();
+        else $this->pdo->exec('SAVEPOINT metodequ_activity_start');
+        try {
+            $started = IndividualProgramStart::claim($this->pdo, $userId, $halaqahId, $week, $day);
 
         $eventKey = implode(':', [$userId, $halaqahId, $week, $day, $step]);
         $insert = $this->pdo->prepare(
@@ -91,14 +97,24 @@ final class StudentActivityLog
             throw new RegistrationException('Aktivitas gagal disimpan.', 500);
         }
 
-        return [
-            'id' => (int) $row['id'],
-            'event_key' => (string) $row['event_key'],
-            'step_id' => $step,
-            'activity_key' => (string) $row['activity_type'],
-            'activity_count' => $row['activity_step'] !== null ? (int) $row['activity_step'] : null,
-            'occurred_at' => (string) $row['created_at'],
-        ];
+            $payload = [
+                'id' => (int) $row['id'],
+                'event_key' => (string) $row['event_key'],
+                'step_id' => $step,
+                'activity_key' => (string) $row['activity_type'],
+                'activity_count' => $row['activity_step'] !== null ? (int) $row['activity_step'] : null,
+                'occurred_at' => (string) $row['created_at'],
+            ] + $started;
+            if ($ownTransaction) $this->pdo->commit();
+            else $this->pdo->exec('RELEASE SAVEPOINT metodequ_activity_start');
+            return $payload;
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                if ($ownTransaction) $this->pdo->rollBack();
+                else $this->pdo->exec('ROLLBACK TO SAVEPOINT metodequ_activity_start');
+            }
+            throw $exception;
+        }
     }
 
     /** @return array{0:string,1:?int} */
@@ -123,7 +139,7 @@ final class StudentActivityLog
         throw new RegistrationException('Aktivitas tidak dikenal.', 422, ['step' => 'Aktivitas tidak dikenal.']);
     }
 
-    private function activeHalaqahId(int $userId): int
+    private function activeHalaqahId(int $userId, ?int $pondokId): int
     {
         $statement = $this->pdo->prepare(
             "SELECT hm.halaqah_id
@@ -132,20 +148,28 @@ final class StudentActivityLog
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              JOIN users mentor ON mentor.id = mp.user_id
              WHERE hm.user_id = :user_id
+               " . ($pondokId !== null ? 'AND h.pondok_id = :pondok_id' : '') . "
                AND hm.status = 'active'
                AND h.status = 'active'
                AND h.deleted_at IS NULL
                AND mp.status = 'active'
                AND mentor.status = 'active' AND mentor.deleted_at IS NULL
-               AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
-                         ELSE h.program_start_date END) IS NOT NULL
-               AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
-                         ELSE h.program_start_date END) <= :today
+               AND (
+                  (h.start_date_mode = 'individual'
+                    AND (hm.program_start_date IS NULL OR hm.program_start_date <= :today))
+                  OR (h.start_date_mode = 'shared'
+                    AND h.program_start_date IS NOT NULL AND h.program_start_date <= :today_shared)
+               )
              ORDER BY hm.joined_at DESC, hm.id DESC
              LIMIT 1"
         );
-        $statement->execute(['user_id' => $userId,
-            'today' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d')]);
+        $params = [
+            'user_id' => $userId,
+            'today' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
+            'today_shared' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
+        ];
+        if ($pondokId !== null) $params['pondok_id'] = $pondokId;
+        $statement->execute($params);
         $id = $statement->fetchColumn();
 
         return $id === false ? 0 : (int) $id;

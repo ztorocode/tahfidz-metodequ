@@ -1,5 +1,5 @@
 import {getState,setState,resetState} from "../store.js?v=81bed469";
-import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=logoutcachefix934";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=firstact1106";
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
 import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=membernav1106";

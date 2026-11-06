@@ -2,7 +2,7 @@ import {getState} from "../store.js?v=81bed469";
 import {member,progress} from "../data/dummy-data.js?v=c6e18a42";
 import {getProgressContext} from "../utils/progress-context.js?v=81bed469";
 import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=81bed469";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=81bed469";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=firstact1106";
 import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=81bed469";
 
 function escapeHtml(value=""){

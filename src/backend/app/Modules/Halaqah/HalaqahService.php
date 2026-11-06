@@ -456,13 +456,19 @@ final class HalaqahService
             $current = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$current) throw new RegistrationException('Halaqah tidak ditemukan.', 404);
 
-            // Anggota lama mempertahankan tanggal serempak sebagai tanggal awal.
+            // Pertahankan tanggal bersama hanya untuk santri yang sudah punya progres.
             if ($mode === 'individual' && $current['start_date_mode'] !== 'individual'
                 && $current['program_start_date'] !== null) {
                 $seed = $this->pdo->prepare(
                     "UPDATE halaqah_memberships SET program_start_date = :date
                      WHERE halaqah_id = :id AND status = 'active'
-                       AND program_start_date IS NULL"
+                       AND program_start_date IS NULL
+                       AND EXISTS (
+                           SELECT 1 FROM member_progress mp
+                           WHERE mp.user_id = halaqah_memberships.user_id
+                             AND mp.halaqah_id = halaqah_memberships.halaqah_id
+                             AND mp.deleted_at IS NULL AND mp.completion_percent > 0
+                       )"
                 );
                 $seed->execute(['date' => $current['program_start_date'], 'id' => $halaqahId]);
             }
@@ -476,45 +482,6 @@ final class HalaqahService
             if ($own && $this->pdo->inTransaction()) $this->pdo->rollBack();
             throw $e;
         }
-    }
-
-    /** Hanya tanggal anggota aktif pada mode Per Santri yang dapat diedit. */
-    public function setMemberStartDate(array $actor, array $input): array
-    {
-        $pondokId = (int) ($input['pondok_id'] ?? 0);
-        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
-        $userId = (int) ($input['user_id'] ?? 0);
-        $date = trim((string) ($input['program_start_date'] ?? ''));
-        if ($this->halaqahRow($halaqahId, $pondokId) === null) {
-            throw new RegistrationException('Halaqah tidak ditemukan.', 404);
-        }
-        $this->assertCanManage($actor, $pondokId, $halaqahId);
-        if ($this->getStartMode($halaqahId) !== 'individual') {
-            throw new RegistrationException('Aktifkan mode Per Santri terlebih dahulu.', 409);
-        }
-        if ($userId < 1 || $date === '') {
-            throw new RegistrationException('Pilih santri dan tanggal mulai.', 422);
-        }
-        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
-        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
-            throw new RegistrationException('Tanggal mulai tidak valid.', 422);
-        }
-        $stmt = $this->pdo->prepare(
-            "UPDATE halaqah_memberships SET program_start_date = :date
-             WHERE halaqah_id = :halaqah_id AND user_id = :user_id AND status = 'active'"
-        );
-        $stmt->execute(['date' => $date, 'halaqah_id' => $halaqahId, 'user_id' => $userId]);
-        if ($stmt->rowCount() === 0) {
-            $existing = $this->pdo->prepare(
-                "SELECT program_start_date FROM halaqah_memberships
-                 WHERE halaqah_id = ? AND user_id = ? AND status = 'active' LIMIT 1"
-            );
-            $existing->execute([$halaqahId, $userId]);
-            if ($existing->fetchColumn() === false) {
-                throw new RegistrationException('Santri bukan anggota aktif halaqah ini.', 404);
-            }
-        }
-        return ['halaqah_id' => $halaqahId, 'user_id' => $userId, 'program_start_date' => $date];
     }
 
     /**
@@ -554,21 +521,10 @@ final class HalaqahService
             }
             $sharedDate = $parseDate($raw);
         } else {
-            $rows = $input['members'] ?? [];
-            if (!is_array($rows) || count($rows) > 1000) {
-                throw new RegistrationException('Daftar tanggal santri tidak valid.', 422);
-            }
-            foreach ($rows as $row) {
-                if (!is_array($row) || !isset($row['user_id'])
-                    || !is_int($row['user_id']) || $row['user_id'] < 1
-                    || isset($members[$row['user_id']])) {
-                    throw new RegistrationException('Daftar santri tidak valid.', 422);
-                }
-                $date = $parseDate($row['program_start_date'] ?? null);
-                if ($date === null) {
-                    throw new RegistrationException('Tanggal santri wajib diisi jika akan diubah.', 422);
-                }
-                $members[$row['user_id']] = $date;
+            if (!empty($input['members'])) {
+                throw new RegistrationException(
+                    'Tanggal Per Santri ditentukan otomatis saat aktivitas progres pertama.', 422
+                );
             }
         }
 
@@ -590,31 +546,22 @@ final class HalaqahService
             }
 
             if ($mode === 'individual') {
-                // Ketika berpindah dari Serempak, tanggal lama diwariskan hanya
-                // ke anggota aktif yang belum memiliki tanggal pribadi.
+                // Santri dengan progres lama tidak kehilangan kalender historis;
+                // yang belum beraktivitas mulai otomatis pada progres pertamanya.
                 if ($current['start_date_mode'] !== 'individual'
                     && $current['program_start_date'] !== null) {
                     $seed = $this->pdo->prepare(
                         "UPDATE halaqah_memberships SET program_start_date = ?
                          WHERE halaqah_id = ? AND status = 'active'
-                           AND program_start_date IS NULL"
+                           AND program_start_date IS NULL
+                       AND EXISTS (
+                           SELECT 1 FROM member_progress mp
+                           WHERE mp.user_id = halaqah_memberships.user_id
+                             AND mp.halaqah_id = halaqah_memberships.halaqah_id
+                             AND mp.deleted_at IS NULL AND mp.completion_percent > 0
+                       )"
                     );
                     $seed->execute([$current['program_start_date'], $halaqahId]);
-                }
-                $memberUpdate = $this->pdo->prepare(
-                    "UPDATE halaqah_memberships SET program_start_date = ?
-                     WHERE halaqah_id = ? AND user_id = ? AND status = 'active'"
-                );
-                $exists = $this->pdo->prepare(
-                    "SELECT 1 FROM halaqah_memberships
-                     WHERE halaqah_id = ? AND user_id = ? AND status = 'active' LIMIT 1"
-                );
-                foreach ($members as $userId => $date) {
-                    $exists->execute([$halaqahId, $userId]);
-                    if ($exists->fetchColumn() === false) {
-                        throw new RegistrationException('Santri bukan anggota aktif halaqah ini.', 422);
-                    }
-                    $memberUpdate->execute([$date, $halaqahId, $userId]);
                 }
             } else {
                 $saveShared = $this->pdo->prepare(
@@ -636,7 +583,7 @@ final class HalaqahService
                 'halaqah_id' => $halaqahId,
                 'start_date_mode' => $mode,
                 'program_start_date' => $mode === 'shared' ? $sharedDate : null,
-                'updated_members' => count($members),
+                'updated_members' => 0,
             ];
         } catch (\Throwable $exception) {
             if ($this->pdo->inTransaction()) {

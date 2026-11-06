@@ -344,6 +344,43 @@ final class HalaqahService
     /** Halaqah milik aktor (sebagai santri binaan atau musyrif pengampu). */
     public function mine(array $actor, int $pondokId): ?array
     {
+        if ($pondokId === 0) {
+            // Halaqah Platform: no pondok parent, but membership or mentorship required.
+            $statement = $this->pdo->prepare(
+                "SELECT h.id,h.name,
+                        CASE WHEN h.start_date_mode='individual' THEN hm.program_start_date
+                             ELSE h.program_start_date END AS program_start_date,
+                        h.start_date_mode,mu.name AS musyrif_name,'santri' AS role,hm.joined_at
+                 FROM halaqah_memberships hm
+                 JOIN halaqahs h ON h.id=hm.halaqah_id AND h.pondok_id IS NULL
+                     AND h.status='active' AND h.deleted_at IS NULL
+                 JOIN musyrif_profiles mp ON mp.id=h.musyrif_profile_id AND mp.status='active'
+                 JOIN users mu ON mu.id=mp.user_id AND mu.status='active' AND mu.deleted_at IS NULL
+                 WHERE hm.user_id=:student AND hm.status='active'
+                 UNION
+                 SELECT h.id,h.name,h.program_start_date,h.start_date_mode,
+                        mu.name AS musyrif_name,'musyrif' AS role,NULL AS joined_at
+                 FROM halaqahs h
+                 JOIN musyrif_profiles mp ON mp.id=h.musyrif_profile_id AND mp.status='active'
+                 JOIN users mu ON mu.id=mp.user_id AND mu.status='active'
+                 WHERE mp.user_id=:mentor AND h.pondok_id IS NULL
+                   AND h.status='active' AND h.deleted_at IS NULL
+                 ORDER BY joined_at DESC,id DESC LIMIT 1"
+            );
+            $statement->execute([
+                'student'=>(int)$actor['id'],
+                'mentor'=>(int)$actor['id'],
+            ]);
+            $row=$statement->fetch(PDO::FETCH_ASSOC);
+            return is_array($row)?[
+                'id'=>(int)$row['id'],
+                'name'=>(string)$row['name'],
+                'program_start_date'=>$row['program_start_date']!==null?(string)$row['program_start_date']:null,
+                'start_date_mode'=>(string)$row['start_date_mode'],
+                'musyrif_name'=>$row['musyrif_name']!==null?(string)$row['musyrif_name']:null,
+                'role'=>(string)$row['role'],
+            ]:null;
+        }
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(

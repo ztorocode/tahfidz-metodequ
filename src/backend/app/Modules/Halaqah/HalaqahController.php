@@ -54,8 +54,8 @@ final class HalaqahController
     {
         try {
             $pondokId = (int) ($request->query['pondok_id'] ?? 0);
-            if ($pondokId < 1) {
-                throw new RegistrationException('Pondok wajib dipilih.', 422, ['pondok_id' => 'Pondok wajib dipilih.']);
+            if ($pondokId < 0) {
+                throw new RegistrationException('Pondok tidak valid.', 422, ['pondok_id' => 'Pondok tidak valid.']);
             }
             $data = $this->service()->mine($this->actor($request), $pondokId);
             Response::json(['success' => true, 'data' => $data]);

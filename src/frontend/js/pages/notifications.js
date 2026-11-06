@@ -1,7 +1,7 @@
 import {notifications} from "../data/dummy-data.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";
 import {getState} from "../store.js?v=81bed469";
-import {memberEnrollment} from "../utils/member-enrollment.js?v=membernav1106";
+import {memberEnrollment} from "../utils/member-enrollment.js?v=platready1106";
 import {markInvitationsRead} from "../utils/invite-notifications.js?v=invbell1105";
 
 const safe=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));

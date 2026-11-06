@@ -10,6 +10,7 @@ export const WEEKDAY=["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","Sabtu"]
 
 export function activePondokId(){
  const st=getState();
+ if(st.persona==="member"&&st.context==="platform")return 0;
  return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
 }
 
@@ -35,7 +36,7 @@ export function myProgramStart(){
 export function loadMyHalaqah(force=false){
  const st=getState();
  const pid=activePondokId();
- if(!pid||!st.authToken||loading)return;
+ if(pid==null||!st.authToken||loading)return;
  if(!force&&infoPid===String(pid)&&info)return;
  loading=true;
  fetch("/api/pondoks/halaqahs/mine?pondok_id="+pid+"&t="+Date.now(),{headers:{Accept:"application/json",Authorization:"Bearer "+st.authToken}})
@@ -93,6 +94,7 @@ export function fridayOf(startDate,week){
 /** Nama pondok aktif milik login ini (bukan nama pondok dummy). */
 export function ownPondokName(state){
  const st=state||getState();
+ if(st.context==="platform"&&st.persona==="member")return info?.name||"Halaqah Platform";
  if(st.context!=="pondok")return "Hafalan pribadi";
  const pid=activePondokId();
  const list=st.myPondoks||st.authUser?.pondoks||[];

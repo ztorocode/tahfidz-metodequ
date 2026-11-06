@@ -1,6 +1,6 @@
 import {getState} from "../store.js?v=81bed469";
-import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=81bed469";
-import {loadMemberEnrollment} from "./member-enrollment.js?v=membernav1106";
+import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=platready1106";
+import {loadMemberEnrollment} from "./member-enrollment.js?v=platready1106";
 
 /**
  * Sinkronisasi isian progress ke server.
@@ -37,6 +37,7 @@ function versionKey(pondokId,week,day){return pondokId+":"+week+":"+day}
 
 function activePondokId(){
  const st=getState();
+ if(st.persona==="member"&&st.context==="platform")return 0;
  return st.activePondokId??st.authUser?.pondoks?.[0]?.id??st.myPondoks?.[0]?.id??null;
 }
 
@@ -92,13 +93,13 @@ function buildPayload(week,day,percent,stamp){
 /** Jadwalkan simpan satu hari (dipanggil tiap kolom/checklist berubah). */
 export function scheduleSave(week,day,percent){
  const pid=activePondokId();
- if(!pid||!getState().authToken)return;
+ if(pid==null||!getState().authToken)return;
  const key=versionKey(pid,week,day);
  clearTimeout(timers[key]);
  timers[key]=setTimeout(()=>{
   delete timers[key];
   const entry=buildPayload(week,day,percent,nowStamp());
-  if(!entry.pondok_id)return;
+  if(!Number.isInteger(entry.pondok_id)||entry.pondok_id<0)return;
   const list=queue().filter(x=>!(x.pondok_id===entry.pondok_id&&x.week===entry.week&&x.day===entry.day));
   list.push(entry);
   saveQueue(list);
@@ -153,7 +154,7 @@ export async function flush(){
 export async function loadWeek(week){
  const st=getState();
  const pid=activePondokId();
- if(!pid||!st.authToken)return false;
+ if(pid==null||!st.authToken)return false;
  const generation=logoutGeneration;
  let body={};
  try{

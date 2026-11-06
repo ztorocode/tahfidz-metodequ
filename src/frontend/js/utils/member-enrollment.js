@@ -143,15 +143,24 @@ function statusView(route){
 export function memberEnrollmentGate(route){
  resetToken();
  if(!enrollment&&!loading&&!error)loadMemberEnrollment();
- if(enrollment?.status==="active"&&enrollment.halaqah?.scope==="pondok"){
+ if(enrollment?.status==="active"&&enrollment.halaqah){
   const h=enrollment.halaqah;
-  const state=getState(),pid=Number(h.pondok_id);
-  if(pid>0&&(state.context!=="pondok"||Number(state.activePondokId)!==pid)){
-   const pondoks=Array.isArray(state.myPondoks)?[...state.myPondoks]:[];
-   if(!pondoks.some(p=>Number(p.id)===pid))pondoks.push({id:pid,name:h.pondok_name||"Pondok",role:"member"});
-   setState({context:"pondok",activePondokId:pid,myPondoks:pondoks});
+  const state=getState();
+  if(h.scope==="platform"){
+   if(state.context!=="platform"||state.activePondokId!==0){
+    setState({context:"platform",activePondokId:0});
+   }
+   return null;
   }
-  return null;
+  if(h.scope==="pondok"){
+   const pid=Number(h.pondok_id);
+   if(pid>0&&(state.context!=="pondok"||Number(state.activePondokId)!==pid)){
+    const pondoks=Array.isArray(state.myPondoks)?[...state.myPondoks]:[];
+    if(!pondoks.some(p=>Number(p.id)===pid))pondoks.push({id:pid,name:h.pondok_name||"Pondok",role:"member"});
+    setState({context:"pondok",activePondokId:pid,myPondoks:pondoks});
+   }
+   return null;
+  }
  }
  return statusView(route);
 }

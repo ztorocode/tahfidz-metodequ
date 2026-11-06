@@ -1,9 +1,9 @@
 import {getState} from "../store.js?v=81bed469";
 import {member,progress} from "../data/dummy-data.js?v=c6e18a42";
-import {getProgressContext} from "../utils/progress-context.js?v=81bed469";
-import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=81bed469";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=firstact1106";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=81bed469";
+import {getProgressContext} from "../utils/progress-context.js?v=platready1106";
+import {cachedStudentProgress,loadStudentProgress} from "../utils/student-progress.js?v=platready1106";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=platready1106";
+import {activePondokId,myHalaqah,myHalaqahPid,loadMyHalaqah,myProgramStart,ownPondokName,programDayDate,fridayOf,fmtShort,fmtLong,fmtWib,todayDayNumber} from "../utils/program-context.js?v=platready1106";
 
 function escapeHtml(value=""){
  return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
@@ -102,7 +102,7 @@ function weekRows(data,showCells,start){
 function needsMusyrifPendingOverlayReport(){
  const state=getState();
  if(state.persona!=="member")return false;
- if(state.context!=="pondok")return false;
+ if(!["pondok","platform"].includes(state.context))return false;
  const pid=String(activePondokId()??"");
  if(myHalaqahPid()&&myHalaqahPid()!==pid)return false;
  const halaqah=myHalaqah();
@@ -165,7 +165,7 @@ function reportMeta(start,halaqahName,data){
 
 /** Data diri sendiri: nama login asli + halaqah asli dari server. */
 function memberSelection(state){
- const personal=state.context!=="pondok";
+ const personal=!["pondok","platform"].includes(state.context);
  // Selalu tarik info halaqah (dibutuhkan untuk tanggal program). Nama halaqah &
  // musyrif tetap disembunyikan pada konteks Personal.
  loadMyHalaqah();
@@ -184,7 +184,7 @@ let pulledPid=null;
 let retryTimer=null;
 function pullMyWeeks(state){
  const pid=activePondokId();
- if(!pid||!state.authToken)return;
+ if(pid==null||!state.authToken)return;
  loadMyHalaqah();
  if(pulledPid===String(pid))return;
  pulledPid=String(pid);
@@ -204,7 +204,7 @@ export function progressTablePage(){
  const state=getState();
  loadMyHalaqah();
  const isMember=state.persona==="member";
- if(isMember&&state.context==="pondok")pullMyWeeks(state);
+ if(isMember&&["pondok","platform"].includes(state.context))pullMyWeeks(state);
  const selected=isMember?memberSelection(state):state.selectedStudentProgress;
 
  if(!isMember&&state.context!=="pondok"){
@@ -239,7 +239,7 @@ export function progressTablePage(){
  const showCells=Boolean(progressData);
  const lastUpdated=isMember?lastSyncAt():(progressData?.updatedAt||null);
 
- const personalMember=isMember&&state.context!=="pondok";
+ const personalMember=isMember&&!["pondok","platform"].includes(state.context);
  const syncNote=`<div class="quote" style="margin-bottom:12px">${
   loadingServer?"Memuat isian progress dari server…":
   personalMember?"Konteks Personal · isian tersimpan di perangkat ini." :

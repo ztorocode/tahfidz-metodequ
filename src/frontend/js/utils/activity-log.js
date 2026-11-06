@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {loadMemberEnrollment} from "./member-enrollment.js?v=membernav1106";
+import {loadMemberEnrollment} from "./member-enrollment.js?v=platready1106";
 
 export async function logLearningActivity(step,week,day){
  const token=getState().authToken;
@@ -8,7 +8,7 @@ export async function logLearningActivity(step,week,day){
   const response=await fetch("/api/progress/activity",{
    method:"POST",
    headers:{"Content-Type":"application/json",Accept:"application/json",Authorization:"Bearer "+token},
-   body:JSON.stringify({step:String(step),week:Number(week),day:String(day),pondok_id:Number(getState().activePondokId||getState().authUser?.pondoks?.[0]?.id||0)})
+   body:JSON.stringify({step:String(step),week:Number(week),day:String(day),pondok_id:getState().persona==="member"&&getState().context==="platform"?0:Number(getState().activePondokId??getState().authUser?.pondoks?.[0]?.id??0)})
   });
   if(response.ok){
    const body=await response.json().catch(()=>({}));

@@ -148,7 +148,8 @@ final class StudentActivityLog
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              JOIN users mentor ON mentor.id = mp.user_id
              WHERE hm.user_id = :user_id
-               " . ($pondokId !== null ? 'AND h.pondok_id = :pondok_id' : '') . "
+               " . ($pondokId === 0 ? 'AND h.pondok_id IS NULL'
+                 : ($pondokId !== null ? 'AND h.pondok_id = :pondok_id' : '')) . "
                AND hm.status = 'active'
                AND h.status = 'active'
                AND h.deleted_at IS NULL
@@ -168,7 +169,7 @@ final class StudentActivityLog
             'today' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
             'today_shared' => (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))->format('Y-m-d'),
         ];
-        if ($pondokId !== null) $params['pondok_id'] = $pondokId;
+        if ($pondokId !== null && $pondokId > 0) $params['pondok_id'] = $pondokId;
         $statement->execute($params);
         $id = $statement->fetchColumn();
 

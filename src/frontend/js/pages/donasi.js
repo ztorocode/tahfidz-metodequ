@@ -1,5 +1,5 @@
 import {getState,setState,resetState} from "../store.js?v=81bed469";
-import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=firstact1106";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=platready1106";
 import {isDemoDonorSession,demoStudentsData} from "../utils/donatur-demo.js?v=donorlocal72";
 import {isDonorAuthenticated,openDonorModal} from "./donatur-auth.js?v=donorlocal72";
 import {toast} from "../utils/helpers.js?v=81bed469";

@@ -1,10 +1,11 @@
 import {getState,setState,resetState} from "../store.js?v=81bed469";
-import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=firstact1106";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=platready1106";
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
-import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=membernav1106";
+import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=platready1106";
 import {unreadInvitationCount} from "../utils/invite-notifications.js?v=invbell1105";
 
+function escapeContextName(value){return String(value??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
 const memberNav=[["dashboard","Dashboard"],["progress","Progress"],["report","Report"]];
 const musyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["review-progress","Progress"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
 const platformMusyrifNav=[["musyrif","Dashboard"],["review","Setoran"],["halaqah","Halaqah"],["pendaftar-halaqah","Pendaftar"],["notifications","Notifikasi"]];
@@ -162,10 +163,10 @@ export function shell(content){
  const myPondoks=s.myPondoks||[];
  const activePondok=myPondoks.find(p=>p.id===(s.activePondokId??myPondoks[0]?.id))||myPondoks[0];
  const pondokName=activePondok?.name||s.pondokProfile?.name||"Pondok";
- const activeContext=s.persona==="super_admin"?"Platform Mutqeen":s.persona==="musyrif"?(s.context==="platform"?"Platform Mutqeen":pondokName):s.persona==="member"?(activePondok?.name||"Belum ada halaqah"):s.context==="personal"?"Personal":pondokName;
+ const activeContext=s.persona==="super_admin"?"Platform Mutqeen":s.persona==="musyrif"?(s.context==="platform"?"Platform Mutqeen":pondokName):s.persona==="member"?(s.context==="platform"?(memberEnrollment()?.halaqah?.name||"Halaqah Platform"):(activePondok?.name||"Belum ada halaqah")):s.context==="personal"?"Personal":pondokName;
  return `<div class="app-shell"><aside class="sidebar"><div class="brand"><img src="./assets/images/icon.svg?v=81bed469">Mutqeen</div><nav class="nav">${nav}</nav>
  <div class="sidebar-footer"><button class="btn danger full" id="logoutBtn">Keluar</button></div></aside>
- <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${activeContext}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
+ <main class="main"><header class="topbar"><div class="muted" style="font-size:12px;min-width:0;max-width:55vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Konteks aktif: <b style="color:var(--text)">${escapeContextName(activeContext)}</b></div><div class="row">${notifBell()}<button class="btn" id="themeBtn">${s.theme==="dark"?"Light":"Dark"}</button>${accountMenu()}</div></header>
  <section class="content"><div id="installSlot"></div>${content}</section>
  <nav class="mobile-nav">${mobileNavItems().map(([r,l])=>`<a href="#${r}" data-mobile-route="${r}" class="${navRoute===r?"active":""}"><span class="mobile-nav-icon">${mobileIcon(r)}</span><span class="mobile-nav-label">${l}</span></a>`).join("")}</nav></main>${profileModal()}</div>`;
 }

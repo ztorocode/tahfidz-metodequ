@@ -1,9 +1,9 @@
 import {member} from "../data/dummy-data.js?v=c6e18a42";
 import {getState} from "../store.js?v=81bed469";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=81bed469";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=platready1106";
 import {badge} from "../utils/helpers.js?v=81bed469";
-import {loadWeek} from "../utils/progress-sync.js?v=firstact1106";
-import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=81bed469";
+import {loadWeek} from "../utils/progress-sync.js?v=platready1106";
+import {activePondokId,myHalaqah,loadMyHalaqah,myProgramStart,ownPondokName,todayProgramDay,fmtLong} from "../utils/program-context.js?v=platready1106";
 
 const days=["sabtu","ahad","senin","selasa","rabu","kamis"];
 const DAY_NAME={sabtu:"Sabtu",ahad:"Ahad",senin:"Senin",selasa:"Selasa",rabu:"Rabu",kamis:"Kamis"};
@@ -61,9 +61,9 @@ function pullMyWeek(state,week){
  const pid=activePondokId();
  // Info halaqah (tanggal mulai program) dibutuhkan semua konteks — termasuk Personal —
  // supaya kunci hari di dashboard sama dengan yang dipakai halaman Progress.
- if(!pid||!state.authToken)return;
+ if(pid==null||!state.authToken)return;
  loadMyHalaqah();
- if(state.context!=="pondok")return;
+ if(!["pondok","platform"].includes(state.context))return;
  const key=String(pid)+":"+week;
  if(pulledKey===key)return;
  pulledKey=key;
@@ -75,7 +75,7 @@ function pullMyWeek(state,week){
 
 export function memberDashboard(){
  const state=getState();
- const isPondok=state.context==="pondok";
+ const isPondok=["pondok","platform"].includes(state.context);
  const data=getProgressContext(state);
 
  const name=state.profileOverrides?.member?.name||state.authUser?.name||member.name;

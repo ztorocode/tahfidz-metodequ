@@ -39,7 +39,9 @@ final class ProgressController
         try {
             $pondokId = (int) ($request->query['pondok_id'] ?? 0);
             $week = (int) ($request->query['week'] ?? 1);
-            $data = $this->service()->load($this->actor($request), $pondokId, $week);
+            $data = $pondokId === 0
+                ? (new PlatformProgressService(Database::connection()))->load($this->actor($request), $week)
+                : $this->service()->load($this->actor($request), $pondokId, $week);
             Response::json(['success' => true, 'data' => $data]);
         } catch (RegistrationException $exception) {
             Response::json([
@@ -54,7 +56,10 @@ final class ProgressController
     public function save(Request $request): never
     {
         try {
-            $row = $this->service()->save($this->actor($request), $request->body());
+            $input = $request->body();
+            $row = (int) ($input['pondok_id'] ?? 0) === 0
+                ? (new PlatformProgressService(Database::connection()))->save($this->actor($request), $input)
+                : $this->service()->save($this->actor($request), $input);
             $conflict = !empty($row['conflict']);
             Response::json([
                 'success' => true,
@@ -101,7 +106,9 @@ final class ProgressController
             if ($userId < 1) {
                 throw new RegistrationException('Santri wajib dipilih.', 422, ['user_id' => 'Santri wajib dipilih.']);
             }
-            $data = $this->service()->forStudent($this->actor($request), $pondokId, $userId, $week);
+            $data = $pondokId === 0
+                ? (new PlatformProgressService(Database::connection()))->forStudent($this->actor($request), $userId, $week)
+                : $this->service()->forStudent($this->actor($request), $pondokId, $userId, $week);
             Response::json(['success' => true, 'data' => $data]);
         } catch (RegistrationException $exception) {
             Response::json([

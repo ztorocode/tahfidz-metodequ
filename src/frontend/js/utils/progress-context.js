@@ -16,7 +16,7 @@ function normalizeProgressContext(value={}){
 }
 
 export function progressContextKey(state=getState()){
- return state.context==="pondok"?"pondok":"personal";
+ return state.context==="pondok"?"pondok":state.context==="platform"?"platform":"personal";
 }
 
 function legacyProgress(state){
@@ -38,7 +38,7 @@ export function getProgressContext(state=getState()){
  const existing=state.memberProgressByContext?.[key];
  if(existing)return normalizeProgressContext(existing);
 
- if(!state.memberProgressLegacyMigrated){
+ if(key!=="platform"&&!state.memberProgressLegacyMigrated){
   const legacy=legacyProgress(state);
   if(legacy){
    const next={...(state.memberProgressByContext||{}),[key]:legacy};

@@ -1,9 +1,9 @@
 import {getState} from "../store.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=81bed469";
-import {getProgressContext} from "../utils/progress-context.js?v=81bed469";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=firstact1106";
-import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=81bed469";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=platready1106";
+import {getProgressContext} from "../utils/progress-context.js?v=platready1106";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=platready1106";
+import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=platready1106";
 import {cachedSetoran,loadSetoran,isSetoranLoading,decisionMeta} from "../utils/setoran.js?v=81bed469";
 
 /**
@@ -292,7 +292,7 @@ function setoranModal(){
 let pulledPid=null,retryTimer=null,pulling=false;
 function pullMyWeeks(state){
  const pid=activePondokId();
- if(!pid||!state.authToken)return;
+ if(pid==null||!state.authToken)return;
  if(pulledPid===String(pid))return;
  pulledPid=String(pid);
  pulling=true;
@@ -309,7 +309,7 @@ function pullMyWeeks(state){
 /** Identitas diri sendiri. Aturan privasi sama dengan halaman Report:
  *  nama halaqah & musyrif hanya diungkap pada konteks Pondok. */
 function memberSelection(state){
- const personal=state.context!=="pondok";
+ const personal=!["pondok","platform"].includes(state.context);
  loadMyHalaqah();
  const me=state.authUser||{};
  const info=personal?null:myHalaqah();
@@ -324,7 +324,7 @@ function memberSelection(state){
 export function studentProgressPage(){
  const state=getState();
  const isMember=state.persona==="member";
- if(isMember&&state.context==="pondok")pullMyWeeks(state);
+ if(isMember&&["pondok","platform"].includes(state.context))pullMyWeeks(state);
 
  const selected=isMember?memberSelection(state):state.selectedStudentProgress;
 

@@ -48,7 +48,7 @@ export function isStudentProgressLoading(userId){
 export async function loadStudentProgress(userId,force=false){
  const id=Number(userId);
  const pondokId=Number(activePondokId());
- if(!id||!pondokId||!getState().authToken)return null;
+ if(!id||pondokId<0||!getState().authToken)return null;
 
  const held=cache.get(id);
  if(held&&!force&&!held.finished)return held.data;

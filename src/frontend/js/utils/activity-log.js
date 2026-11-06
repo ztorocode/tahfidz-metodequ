@@ -1,5 +1,5 @@
 import {getState} from "../store.js?v=81bed469";
-import {loadMemberEnrollment} from "./member-enrollment.js?v=platready1106";
+import {loadMemberEnrollment} from "./member-enrollment.js?v=frifirst1106";
 
 export async function logLearningActivity(step,week,day){
  const token=getState().authToken;

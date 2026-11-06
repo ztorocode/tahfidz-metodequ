@@ -1,8 +1,8 @@
 import {getState,setState,resetState} from "../store.js?v=81bed469";
-import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=platready1106";
+import {unsyncedProgressCount,discardProgressOnLogout} from "../utils/progress-sync.js?v=frifirst1106";
 import {pondokList,canPersonal} from "./context-switcher.js?v=studentgateba73";
 import {ustadzBankProfileSection,bindUstadzBankProfile} from "./ustadz-bank-profile.js?v=profacc31a";
-import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=platready1106";
+import {memberEnrollment,loadMemberEnrollment} from "../utils/member-enrollment.js?v=frifirst1106";
 import {unreadInvitationCount} from "../utils/invite-notifications.js?v=invbell1105";
 
 function escapeContextName(value){return String(value??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}

@@ -55,6 +55,9 @@ export function programDayDate(startDate,n){
  if(!startDate||n<1)return null;
  const d=new Date(startDate+"T00:00:00");
  if(isNaN(d.getTime()))return null;
+ // Jumat tidak pernah menjadi Hari ke-1, termasuk bila aktivitas
+ // pertama yang menentukan tanggal mulai dicatat pada Jumat.
+ if(d.getDay()===5)d.setDate(d.getDate()+1);
  let count=1;
  while(count<n){
   d.setTime(d.getTime()+DAY_MS);
@@ -65,10 +68,10 @@ export function programDayDate(startDate,n){
 
 export function todayDayNumber(startDate){
  if(!startDate)return null;
- const start=new Date(startDate+"T00:00:00");
+ const start=programDayDate(startDate,1);
  const now=new Date();
  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
- if(isNaN(start.getTime())||today.getTime()<start.getTime())return null;
+ if(!start||today.getTime()<start.getTime())return null;
  let n=1;
  const cur=new Date(start.getTime());
  while(cur.getTime()<today.getTime()){
@@ -127,7 +130,10 @@ export function todayProgramDay(startDate){
 
  const dayNum=todayDayNumber(startDate);
  if(dayNum===null){
-  // Hari ini masih sebelum tanggal mulai program.
+  // Aktivitas pertama pada Jumat tercatat hari itu, tetapi Hari ke-1
+  // baru dihitung Sabtu. Dashboard tetap menyebut Jumat sebagai libur.
+  const begunOnFriday=isFriday&&new Date(startDate+"T00:00:00").toDateString()===now.toDateString();
+  if(begunOnFriday)return {status:"friday",key:null,dayName:"Jum'at",week:null,dayNum:null,isFriday,start:startDate};
   return {status:"not-started",key:null,dayName:null,week:null,dayNum:null,isFriday,start:startDate};
  }
  const week=Math.ceil(dayNum/6);

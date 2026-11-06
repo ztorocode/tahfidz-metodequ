@@ -1,9 +1,9 @@
 import {getState,setState} from "../store.js?v=81bed469";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=platready1106";
-import {scheduleSave} from "../utils/progress-sync.js?v=platready1106";
-import {dayProgress} from "./member-progress.js?v=platready1106";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=frifirst1106";
+import {scheduleSave} from "../utils/progress-sync.js?v=frifirst1106";
+import {dayProgress} from "./member-progress.js?v=frifirst1106";
 import {toast} from "../utils/helpers.js?v=81bed469";
-import {activePondokId} from "../utils/program-context.js?v=platready1106";
+import {activePondokId} from "../utils/program-context.js?v=frifirst1106";
 
 function resolvePondokId(){
  const st=getState();

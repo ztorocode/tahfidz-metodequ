@@ -1,6 +1,6 @@
 import {getState} from "../store.js?v=81bed469";
-import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=platready1106";
-import {loadMemberEnrollment} from "./member-enrollment.js?v=platready1106";
+import {getProgressContext,setProgressContextPatch,progressContextKey} from "./progress-context.js?v=frifirst1106";
+import {loadMemberEnrollment} from "./member-enrollment.js?v=frifirst1106";
 
 /**
  * Sinkronisasi isian progress ke server.

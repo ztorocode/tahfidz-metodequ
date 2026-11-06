@@ -1,11 +1,11 @@
 import {getState} from "../store.js?v=81bed469";
-import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=platready1106";
-import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=platready1106";
-import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=platready1106";
+import {getProgressContext,setProgressContextPatch} from "../utils/progress-context.js?v=frifirst1106";
+import {scheduleSave,loadWeek} from "../utils/progress-sync.js?v=frifirst1106";
+import {WEEKDAY,activePondokId,myHalaqah,myHalaqahPid,myHalaqahLoading,clearMyHalaqah,loadMyHalaqah,myProgramStart,programDayDate,todayDayNumber,fridayOf,fmtShort,resolveFocusDate} from "../utils/program-context.js?v=frifirst1106";
 import {juzEntries} from "../data/quran-juz.js?v=81bed469";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=platready1106";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading} from "../utils/student-progress.js?v=frifirst1106";
 import {toast} from "../utils/helpers.js?v=81bed469";
-import {logLearningActivity} from "../utils/activity-log.js?v=platready1106";
+import {logLearningActivity} from "../utils/activity-log.js?v=frifirst1106";
 
 const weeks=[1,2,3,4,5];
 const days=[
@@ -330,7 +330,7 @@ function dayCard(data,week,item,index,startOverride,locked=false,firstActivityPe
  const pct=dayProgress(data,week,item.id);
  const start=startOverride!==undefined?startOverride:myProgramStart();
  const date=programDayDate(start,dayNumber);
- const isToday=date&&todayDayNumber(start)===dayNumber;
+ const isToday=!!date&&date.toDateString()===new Date().toDateString();
  // Nama hari diturunkan dari tanggal asli program; tanpa tanggal mulai, pakai nama bawaan.
  const dayName=date?WEEKDAY[date.getDay()]:item.name;
  const label=date
@@ -343,8 +343,8 @@ function dayCard(data,week,item,index,startOverride,locked=false,firstActivityPe
   '</button>'+
   (open?'<div class="member-progress-day-panel">'+dayBody(data,week,item.id)
    +(locked?musyrifPendingOverlay():"")
-   +(firstActivityPending&&(week!==1||index!==0||new Date().getDay()===5)
-     ?'<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mulai dari Hari ke-1 Pekan 1. Jum’at libur.</div></div>'
+   +(firstActivityPending&&(week!==1||index!==0)
+     ?'<div class="musyrif-pending-overlay"><div class="musyrif-pending-text">Mulai dari Hari ke-1 Pekan 1. Jum’at tidak dihitung.</div></div>'
      :"")+'</div>':"")+
  '</article>';
 }

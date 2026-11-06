@@ -1,9 +1,9 @@
 import {getState} from "../store.js?v=81bed469";
 import {badge} from "../utils/helpers.js?v=81bed469";
-import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=platready1106";
-import {getProgressContext} from "../utils/progress-context.js?v=platready1106";
-import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=platready1106";
-import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=platready1106";
+import {cachedStudentProgress,loadStudentProgress,isStudentProgressLoading,studentPercent} from "../utils/student-progress.js?v=frifirst1106";
+import {getProgressContext} from "../utils/progress-context.js?v=frifirst1106";
+import {loadWeek,lastSyncAt} from "../utils/progress-sync.js?v=frifirst1106";
+import {myHalaqah,myProgramStart,loadMyHalaqah,activePondokId,programDayDate,todayDayNumber,fmtLong,fmtWib} from "../utils/program-context.js?v=frifirst1106";
 import {cachedSetoran,loadSetoran,isSetoranLoading,decisionMeta} from "../utils/setoran.js?v=81bed469";
 
 /**

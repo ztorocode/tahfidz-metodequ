@@ -42,9 +42,8 @@ final class IndividualProgramStart
         }
         $today = ($now ?? new \DateTimeImmutable('now', new \DateTimeZone('Asia/Jakarta')))
             ->setTimezone(new \DateTimeZone('Asia/Jakarta'));
-        if ($today->format('N') === '5') {
-            throw new RegistrationException('Jum’at libur. Aktivitas pertama dapat dicatat mulai Sabtu.', 422);
-        }
+        // Jika aktivitas pertama dicatat pada Jumat, simpan tanggal aktivitas
+        // yang sebenarnya. Kalender menempatkan Hari ke-1 pada Sabtu berikutnya.
         $date = $today->format('Y-m-d');
         $update = $pdo->prepare(
             'UPDATE halaqah_memberships SET program_start_date = ?

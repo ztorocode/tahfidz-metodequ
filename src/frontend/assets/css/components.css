@@ -98,3 +98,19 @@
 .profile-accordion>summary:focus-visible{outline:3px solid var(--brand);outline-offset:-3px;border-radius:12px}
 .profile-accordion-content{padding:16px;border-top:1px solid var(--border)}
 .profile-accordion-content .stack{min-width:0}
+
+/* Detail Halaqah: dropdown mode ikut alur dokumen, jadi pilihan selalu
+   membuka ke bawah, bukan popup native yang berpindah ke atas. */
+.halaqah-mode-field{width:100%;min-width:0}
+.halaqah-mode-dropdown{width:100%}
+.halaqah-mode-summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none;min-height:48px}
+.halaqah-mode-summary::-webkit-details-marker{display:none}
+.halaqah-mode-summary svg{flex:none;transition:transform .15s}
+.halaqah-mode-dropdown[open] .halaqah-mode-summary svg{transform:rotate(180deg)}
+.halaqah-mode-summary:focus-visible{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent);outline:none}
+.halaqah-mode-options{margin-top:6px;display:grid;gap:3px;padding:5px;border:1px solid var(--border);border-radius:11px;background:var(--surface);box-shadow:var(--shadow)}
+.halaqah-mode-option{width:100%;border:0;border-radius:8px;padding:11px 12px;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.halaqah-mode-option:hover,.halaqah-mode-option:focus-visible,.halaqah-mode-option.is-selected{background:var(--brand-soft);color:var(--brand)}
+.halaqah-mode-option:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.halaqah-program-fields{margin-top:14px}
+.halaqah-program-fields[hidden]{display:none}

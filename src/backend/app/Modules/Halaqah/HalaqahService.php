@@ -517,6 +517,136 @@ final class HalaqahService
         return ['halaqah_id' => $halaqahId, 'user_id' => $userId, 'program_start_date' => $date];
     }
 
+    /**
+     * Simpan satu formulir pengaturan program secara atomik.
+     * Pengaturan mode, tanggal bersama, dan tanggal anggota tidak boleh tersimpan sebagian.
+     */
+    public function saveProgramSettings(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        $mode = (string) ($input['start_date_mode'] ?? '');
+        if (!in_array($mode, ['shared', 'individual'], true)) {
+            throw new RegistrationException('Mode tanggal mulai tidak dikenal.', 422);
+        }
+        if ($this->halaqahRow($halaqahId, $pondokId) === null) {
+            throw new RegistrationException('Halaqah tidak ditemukan.', 404);
+        }
+        $this->assertCanManage($actor, $pondokId, $halaqahId);
+
+        $parseDate = static function (mixed $value): ?string {
+            if (!is_string($value) || $value === '') {
+                return null;
+            }
+            $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            if (!$parsed || $parsed->format('Y-m-d') !== $value) {
+                throw new RegistrationException('Tanggal mulai tidak valid.', 422);
+            }
+            return $value;
+        };
+
+        $sharedDate = null;
+        $members = [];
+        if ($mode === 'shared') {
+            $raw = $input['program_start_date'] ?? '';
+            if (!is_string($raw)) {
+                throw new RegistrationException('Tanggal mulai tidak valid.', 422);
+            }
+            $sharedDate = $parseDate($raw);
+        } else {
+            $rows = $input['members'] ?? [];
+            if (!is_array($rows) || count($rows) > 1000) {
+                throw new RegistrationException('Daftar tanggal santri tidak valid.', 422);
+            }
+            foreach ($rows as $row) {
+                if (!is_array($row) || !isset($row['user_id'])
+                    || !is_int($row['user_id']) || $row['user_id'] < 1
+                    || isset($members[$row['user_id']])) {
+                    throw new RegistrationException('Daftar santri tidak valid.', 422);
+                }
+                $date = $parseDate($row['program_start_date'] ?? null);
+                if ($date === null) {
+                    throw new RegistrationException('Tanggal santri wajib diisi jika akan diubah.', 422);
+                }
+                $members[$row['user_id']] = $date;
+            }
+        }
+
+        $own = !$this->pdo->inTransaction();
+        if ($own) {
+            $this->pdo->beginTransaction();
+        } else {
+            $this->pdo->exec('SAVEPOINT metodequ_program_settings');
+        }
+        try {
+            $lock = $this->pdo->prepare(
+                'SELECT start_date_mode, program_start_date FROM halaqahs
+                 WHERE id = ? FOR UPDATE'
+            );
+            $lock->execute([$halaqahId]);
+            $current = $lock->fetch(PDO::FETCH_ASSOC);
+            if (!$current) {
+                throw new RegistrationException('Halaqah tidak ditemukan.', 404);
+            }
+
+            if ($mode === 'individual') {
+                // Ketika berpindah dari Serempak, tanggal lama diwariskan hanya
+                // ke anggota aktif yang belum memiliki tanggal pribadi.
+                if ($current['start_date_mode'] !== 'individual'
+                    && $current['program_start_date'] !== null) {
+                    $seed = $this->pdo->prepare(
+                        "UPDATE halaqah_memberships SET program_start_date = ?
+                         WHERE halaqah_id = ? AND status = 'active'
+                           AND program_start_date IS NULL"
+                    );
+                    $seed->execute([$current['program_start_date'], $halaqahId]);
+                }
+                $memberUpdate = $this->pdo->prepare(
+                    "UPDATE halaqah_memberships SET program_start_date = ?
+                     WHERE halaqah_id = ? AND user_id = ? AND status = 'active'"
+                );
+                $exists = $this->pdo->prepare(
+                    "SELECT 1 FROM halaqah_memberships
+                     WHERE halaqah_id = ? AND user_id = ? AND status = 'active' LIMIT 1"
+                );
+                foreach ($members as $userId => $date) {
+                    $exists->execute([$halaqahId, $userId]);
+                    if ($exists->fetchColumn() === false) {
+                        throw new RegistrationException('Santri bukan anggota aktif halaqah ini.', 422);
+                    }
+                    $memberUpdate->execute([$date, $halaqahId, $userId]);
+                }
+            } else {
+                $saveShared = $this->pdo->prepare(
+                    'UPDATE halaqahs SET program_start_date = ? WHERE id = ?'
+                );
+                $saveShared->execute([$sharedDate, $halaqahId]);
+            }
+
+            $updateMode = $this->pdo->prepare(
+                'UPDATE halaqahs SET start_date_mode = ? WHERE id = ?'
+            );
+            $updateMode->execute([$mode, $halaqahId]);
+            if ($own) {
+                $this->pdo->commit();
+            } else {
+                $this->pdo->exec('RELEASE SAVEPOINT metodequ_program_settings');
+            }
+            return [
+                'halaqah_id' => $halaqahId,
+                'start_date_mode' => $mode,
+                'program_start_date' => $mode === 'shared' ? $sharedDate : null,
+                'updated_members' => count($members),
+            ];
+        } catch (\Throwable $exception) {
+            if ($this->pdo->inTransaction()) {
+                if ($own) $this->pdo->rollBack();
+                else $this->pdo->exec('ROLLBACK TO SAVEPOINT metodequ_program_settings');
+            }
+            throw $exception;
+        }
+    }
+
     /** Admin pondok, atau musyrif yang mengampu halaqah itu. */
     private function assertCanManage(array $actor, int $pondokId, int $halaqahId): void
     {

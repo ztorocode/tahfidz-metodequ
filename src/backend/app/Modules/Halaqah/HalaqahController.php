@@ -99,6 +99,16 @@ final class HalaqahController
         }
     }
 
+    public function programSettings(Request $request): never
+    {
+        try {
+            $result = $this->service()->saveProgramSettings($this->actor($request), $request->body());
+            Response::json(['success' => true, 'message' => 'Pengaturan program disimpan.', 'data' => $result]);
+        } catch (RegistrationException $exception) {
+            Response::json(['success' => false, 'message' => $exception->getMessage(), 'errors' => $exception->errors], $exception->statusCode);
+        }
+    }
+
     public function memberStartDate(Request $request): never
     {
         try {

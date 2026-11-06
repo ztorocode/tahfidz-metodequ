@@ -41,7 +41,7 @@ function detailHtml(h){
   +'<h2>'+esc(h.name)+'</h2><span class="student-halaqah-code">Kode: '+esc(h.code)+'</span></div>'
   +'<div class="student-halaqah-meta"><div><b>Ustadz pembimbing</b><span>'+esc(h.musyrif_name||"Belum ditentukan")+'</span></div>'
   +'<div><b>Jumlah anggota</b><span>'+Number(h.members_count||0)+' santri aktif</span></div>'
-  +'<div><b>Mulai program</b><span>'+esc(dateText(h.program_start_date))+'</span></div></div>'
+  +'<div><b>Mulai program</b><span>'+esc(h.start_date_mode==="individual"?"Diatur per santri":dateText(h.program_start_date))+'</span></div></div>'
   +(applied==="rejected"?'<p class="muted">Pendaftaran sebelumnya ditolak. Anda dapat mendaftar kembali.</p>':"")
   +(locked?'<p class="muted">Anda masih mempunyai pendaftaran lain yang menunggu persetujuan.</p>':"")
   +(h.scope==="platform"?'<p class="muted">Fitur Progress halaqah Platform belum tersedia.</p>':"")

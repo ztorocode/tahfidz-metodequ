@@ -18,7 +18,9 @@ final class StudentEnrollmentService
         // Hanya relasi halaqah yang aktif; pondok_memberships saja bukan bukti
         // santri sudah mengikuti sebuah program dengan Ustadz pembimbing.
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.pondok_id, h.program_start_date,
+            "SELECT h.id, h.name, h.pondok_id, h.start_date_mode,
+                    CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
+                         ELSE h.program_start_date END AS program_start_date,
                     p.name AS pondok_name, mu.id AS musyrif_user_id,
                     mu.name AS musyrif_name
              FROM halaqah_memberships hm
@@ -58,6 +60,7 @@ final class StudentEnrollmentService
                     'musyrif_user_id' => $mentor ? (int) $row['musyrif_user_id'] : null,
                     'musyrif_name' => $mentor ? (string) $row['musyrif_name'] : null,
                     'program_start_date' => $date,
+                    'start_date_mode' => (string) $row['start_date_mode'],
                 ],
                 'invites' => [],
             ];

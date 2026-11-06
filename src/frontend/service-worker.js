@@ -1,10 +1,10 @@
-const CACHE='mutqeen-membernav1106';
+const CACHE='mutqeen-startmode1106';
 const PUBLIC_SHELL=[
  './','./index.html','./manifest.webmanifest',
  './assets/css/variables.css?v=81bed469','./assets/css/base.css?v=81bed469','./assets/css/layout.css?v=81bed469',
  './assets/css/components.css?v=profileeye1106','./assets/css/responsive.css?v=f28a6c10','./assets/css/halaqah-camera.css?v=camfixb4d2','./assets/css/landing.css?v=b8c14e72',
  './assets/images/icon.svg?v=81bed469','./assets/css/donasi.css?v=thanksdon31','./assets/css/platform-user-edit.css?v=usereditb27','./assets/css/student-halaqah-search.css?v=halasearch7c2',
- './js/app.js?v=membernav1106','./js/store.js?v=81bed469',
+ './js/app.js?v=startmode1106','./js/store.js?v=81bed469',
  './js/pages/login.js?v=demofill1106',
  './js/pages/landing.js?v=d2f91a63','./js/pages/donasi.js?v=donorlogout62','./js/pages/donatur-auth.js?v=donorlocal72','./js/pages/donation-confirmation.js?v=proofauthfix31',
  './js/pages/terima-undangan.js?v=b8c14e72',

@@ -81,11 +81,14 @@ function mapServer(h){
   numericId:Number(h.id),
   name:h.name,
   startDate:h.program_start_date||null,
+  startMode:h.start_date_mode||"shared",
   musyrifId:h.musyrif_user_id?("user-"+h.musyrif_user_id):null,
   musyrifName:h.musyrif_name||null,
   students:(h.students||[]).map(s=>({
    name:s.name,
    santriUserId:String(s.id),
+   startDate:s.program_start_date||null,
+   memberStartDate:s.member_start_date||null,
    mutqin:Number(s.mutqin)||0,
    pending:Number(s.pending)||0,
    status:s.status||"Aktif",
@@ -416,20 +419,42 @@ function musyrifList(items,opts={}){
 }
 
 function programCard(item,isAdmin){
- const info=todayInfo(item.startDate);
+ const individual=item.startMode==="individual";
+ const info=individual?null:todayInfo(item.startDate);
+ const individualRows=item.students.map(student=>{
+  const userId=Number(student.santriUserId)||0;
+  return `<div class="list-item" style="flex-wrap:wrap;gap:10px;margin-top:10px">
+   <div class="grow" style="min-width:150px"><b>${escapeHtml(student.name)}</b>
+    <small class="muted" style="display:block">${student.memberStartDate||"Belum ditentukan"}</small></div>
+   <label style="flex:1;min-width:155px"><span class="label">Tanggal mulai</span>
+    <input class="input" type="date" data-member-start-input="${userId}" value="${student.memberStartDate||""}"></label>
+   <button class="btn primary" type="button" data-member-start-save="${userId}" data-start-halaqah="${item.id}">Simpan</button>
+  </div>`;
+ }).join("");
  return `<div class="card" style="margin-bottom:16px">
   <h3>Program Tahfidz</h3>
-  <p class="muted" style="margin:4px 0 10px">Tentukan kapan <b>Hari ke-1</b> program halaqah ini. Jum'at otomatis libur dan tidak dihitung.</p>
-  <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
-   <div style="flex:1;min-width:170px"><label class="label">Tanggal Mulai Program</label>
-    <input class="input" type="date" id="halaqahStartInput" value="${item.startDate||""}"></div>
-   <button class="btn primary" type="button" data-start-save="${item.id}" ${isAdmin?"":" "}>Simpan</button>
-   ${item.startDate?'<button class="btn danger" type="button" data-start-clear="'+item.id+'">Hapus</button>':""}
+  <p class="muted" style="margin:4px 0 10px">Pilih tanggal mulai serempak atau berbeda untuk setiap santri. Jum'at otomatis libur dan tidak dihitung.</p>
+  <div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+   <div style="flex:1;min-width:180px"><label class="label" for="halaqahStartMode">Pengaturan tanggal mulai</label>
+    <select class="input" id="halaqahStartMode">
+     <option value="shared" ${!individual?"selected":""}>Serempak (semua santri)</option>
+     <option value="individual" ${individual?"selected":""}>Per Santri (tanggal berbeda)</option>
+    </select></div>
+   <button class="btn" type="button" data-start-mode-save="${item.id}">Simpan Mode</button>
   </div>
-  ${info
-   ?`<p class="muted" style="margin:10px 0 0">Hari ini <b>${info.weekday}, ${info.date}</b> → <b style="color:var(--text)">Hari ke-${info.dayNumber}</b></p>`
-   :`<p class="muted" style="margin:10px 0 0">${item.startDate?"Tanggal mulai masih di masa depan.":"Belum diatur → diasumsikan Pekan 1 dimulai Sabtu."}</p>`}
-  <p class="muted" id="startFormMessage" style="margin:6px 0 0"></p>
+  ${individual
+   ?`<p class="muted">Setiap santri mempunyai Hari ke-1 sendiri. Anggota baru perlu diberi tanggal sebelum mengisi progres.</p>
+      ${item.students.length?individualRows:'<p class="muted">Belum ada santri di halaqah ini.</p>'}`
+   :`<div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end">
+     <div style="flex:1;min-width:170px"><label class="label" for="halaqahStartInput">Tanggal Mulai Program</label>
+      <input class="input" type="date" id="halaqahStartInput" value="${item.startDate||""}"></div>
+     <button class="btn primary" type="button" data-start-save="${item.id}">Simpan</button>
+     ${item.startDate?'<button class="btn danger" type="button" data-start-clear="'+item.id+'">Hapus</button>':""}
+    </div>
+    ${info
+     ?`<p class="muted" style="margin:10px 0 0">Hari ini <b>${info.weekday}, ${info.date}</b> → <b>Hari ke-${info.dayNumber}</b></p>`
+     :`<p class="muted" style="margin:10px 0 0">${item.startDate?"Tanggal mulai masih di masa depan.":"Belum diatur → diasumsikan Pekan 1 dimulai Sabtu."}</p>`}`}
+  <p class="muted" id="startFormMessage" role="status" style="margin:10px 0 0"></p>
  </div>`;
 }
 
@@ -825,6 +850,46 @@ document.addEventListener("click",event=>{
   return;
  }
 
+ const startModeBtn=event.target.closest("[data-start-mode-save]");
+ if(startModeBtn){
+  const item=halaqahs().find(h=>h.id===startModeBtn.dataset.startModeSave);
+  if(!item)return;
+  const mode=document.querySelector("#halaqahStartMode")?.value||"";
+  const msg=document.querySelector("#startFormMessage");
+  if(mode===item.startMode){if(msg)msg.textContent="Mode sudah aktif.";return;}
+  if(!confirm(mode==="individual"
+   ?"Aktifkan tanggal per santri? Anggota yang sudah punya jadwal serempak akan mempertahankan tanggal lamanya sebagai tanggal awal."
+   :"Gunakan satu tanggal mulai bersama? Tanggal individual tetap disimpan untuk jika mode diaktifkan lagi."))return;
+  startModeBtn.disabled=true;
+  halaqApi("/api/pondoks/halaqahs/start-date-mode",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId())||0,halaqah_id:Number(item.numericId||0),start_date_mode:mode
+  })})
+   .then(()=>{toast("Mode tanggal mulai disimpan.");window.dispatchEvent(new Event("app:my-halaqah-changed"));return refreshHalaqahs(true,true);})
+   .then(()=>window.dispatchEvent(new Event("app:render")))
+   .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal menyimpan mode.";msg.style.color="var(--danger)";}startModeBtn.disabled=false;});
+  return;
+ }
+ const memberDateBtn=event.target.closest("[data-member-start-save]");
+ if(memberDateBtn){
+  const item=halaqahs().find(h=>h.id===memberDateBtn.dataset.startHalaqah);
+  const userId=Number(memberDateBtn.dataset.memberStartSave)||0;
+  const student=item?.students?.find(s=>Number(s.santriUserId)===userId);
+  if(!item||!student)return;
+  const date=document.querySelector('[data-member-start-input="'+userId+'"]')?.value||"";
+  const msg=document.querySelector("#startFormMessage");
+  if(!date){if(msg){msg.textContent="Pilih tanggal mulai santri.";msg.style.color="var(--danger)";}return;}
+  if(student.memberStartDate&&student.memberStartDate!==date&&student.dayNumber!=null
+   &&!confirm("Mengubah tanggal dapat menggeser tanggal Hari ke-N pada progres lama. Lanjutkan?"))return;
+  memberDateBtn.disabled=true;
+  halaqApi("/api/pondoks/halaqahs/member-start-date",{method:"POST",body:JSON.stringify({
+   pondok_id:Number(activePondokId())||0,halaqah_id:Number(item.numericId||0),user_id:userId,program_start_date:date
+  })})
+   .then(()=>{toast("Tanggal mulai santri disimpan.");window.dispatchEvent(new Event("app:my-halaqah-changed"));return refreshHalaqahs(true,true);})
+   .then(()=>window.dispatchEvent(new Event("app:render")))
+   .catch(err=>{if(msg){msg.textContent=err?.message||"Gagal menyimpan tanggal.";msg.style.color="var(--danger)";}memberDateBtn.disabled=false;});
+  return;
+ }
+
  const startDateBtn=event.target.closest("[data-start-save]");
  if(startDateBtn){
   const item=halaqahs().find(row=>row.id===startDateBtn.dataset.startSave);
@@ -874,7 +939,7 @@ document.addEventListener("click",event=>{
    student:{...student,userId:studentId||null},
    halaqahId:item.id,
    halaqahName:item.name,
-   startDate:item.startDate||null,
+   startDate:student.startDate||null,
    musyrifName:item.musyrifName||musyrifName(item.musyrifId)
   }});
   // Baris santri membuka halaman tinjau progress (layout sama dengan #progress).

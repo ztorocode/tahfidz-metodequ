@@ -105,7 +105,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            'SELECT h.id, h.name, h.registration_code, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
+            'SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -120,7 +120,7 @@ final class HalaqahService
         }
 
         $memberStatement = $this->pdo->prepare(
-            'SELECT hm.halaqah_id, u.id, u.name, u.email,
+            'SELECT hm.halaqah_id, hm.program_start_date AS member_start_date, u.id, u.name, u.email,
                     (SELECT COUNT(*)
                      FROM submission_reviews r
                      JOIN submissions s ON s.id = r.submission_id
@@ -148,6 +148,7 @@ final class HalaqahService
                 'id' => (int) $row['id'],
                 'name' => (string) $row['name'],
                 'email' => (string) $row['email'],
+                'member_start_date' => $row['member_start_date'] !== null ? (string) $row['member_start_date'] : null,
                 'mutqin' => (int) $row['mutqin'],
                 'pending' => (int) $row['pending'],
                 'status' => 'Aktif',
@@ -180,7 +181,9 @@ final class HalaqahService
 
         return array_map(static function (array $row) use ($byHalaqah, $progressByUser): array {
             $id = (int) $row['id'];
-            $students = array_map(static function (array $student) use ($progressByUser): array {
+            $students = array_map(static function (array $student) use ($progressByUser, $row): array {
+                $student['program_start_date'] = $row['start_date_mode'] === 'individual'
+                    ? $student['member_start_date'] : $row['program_start_date'];
                 $progress = $progressByUser[(int) $student['id']] ?? null;
                 $student['progress_day'] = $progress !== null ? $progress['day'] : null;
                 $student['progress_percent'] = $progress !== null ? $progress['percent'] : null;
@@ -193,6 +196,7 @@ final class HalaqahService
                 'name' => (string) $row['name'],
                 'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
+                'start_date_mode' => (string) $row['start_date_mode'],
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $students,
@@ -207,7 +211,7 @@ final class HalaqahService
     private function listPlatformOwn(int $profileId): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.registration_code, h.program_start_date, u.id AS musyrif_user_id, u.name AS musyrif_name
+            "SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -225,7 +229,7 @@ final class HalaqahService
         $inList = implode(',', array_map('intval', $ids));
 
         $memberStatement = $this->pdo->prepare(
-            'SELECT hm.halaqah_id, u.id, u.name, u.email,
+            'SELECT hm.halaqah_id, hm.program_start_date AS member_start_date, u.id, u.name, u.email,
                     (SELECT COUNT(*)
                      FROM submission_reviews r
                      JOIN submissions s ON s.id = r.submission_id
@@ -248,6 +252,7 @@ final class HalaqahService
                 'id' => (int) $row['id'],
                 'name' => (string) $row['name'],
                 'email' => (string) $row['email'],
+                'member_start_date' => $row['member_start_date'] !== null ? (string) $row['member_start_date'] : null,
                 'mutqin' => (int) $row['mutqin'],
                 'pending' => (int) $row['pending'],
                 'status' => 'Aktif',
@@ -312,7 +317,9 @@ final class HalaqahService
 
         return array_map(static function (array $row) use ($byHalaqah, $progressByUser, $activitiesByHalaqah): array {
             $id = (int) $row['id'];
-            $students = array_map(static function (array $student) use ($progressByUser): array {
+            $students = array_map(static function (array $student) use ($progressByUser, $row): array {
+                $student['program_start_date'] = $row['start_date_mode'] === 'individual'
+                    ? $student['member_start_date'] : $row['program_start_date'];
                 $progress = $progressByUser[(int) $student['id']] ?? null;
                 $student['progress_day'] = $progress !== null ? $progress['day'] : null;
                 $student['progress_percent'] = $progress !== null ? $progress['percent'] : null;
@@ -325,6 +332,7 @@ final class HalaqahService
                 'name' => (string) $row['name'],
                 'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
+                'start_date_mode' => (string) $row['start_date_mode'],
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $students,
@@ -339,7 +347,9 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'santri' AS role, hm.joined_at AS joined_at
+            "SELECT h.id, h.name,
+                    CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date ELSE h.program_start_date END AS program_start_date,
+                    h.start_date_mode, mu.name AS musyrif_name, 'santri' AS role, hm.joined_at AS joined_at
              FROM halaqah_memberships hm
              JOIN halaqahs h ON h.id = hm.halaqah_id AND h.deleted_at IS NULL
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
@@ -347,7 +357,7 @@ final class HalaqahService
              WHERE hm.user_id = :user_id AND hm.status = 'active'
                AND h.pondok_id = :pondok_id AND h.status = 'active'
              UNION
-             SELECT h.id, h.name, h.program_start_date, mu.name AS musyrif_name, 'musyrif' AS role, NULL AS joined_at
+             SELECT h.id, h.name, h.program_start_date, h.start_date_mode, mu.name AS musyrif_name, 'musyrif' AS role, NULL AS joined_at
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              JOIN users mu ON mu.id = mp.user_id
@@ -371,6 +381,7 @@ final class HalaqahService
             'id' => (int) $row['id'],
             'name' => (string) $row['name'],
             'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
+            'start_date_mode' => (string) $row['start_date_mode'],
             'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
             'role' => (string) $row['role'],
         ];
@@ -387,6 +398,9 @@ final class HalaqahService
         }
 
         $this->assertCanManage($actor, $pondokId, $halaqahId);
+        if ($this->getStartMode($halaqahId) === 'individual') {
+            throw new RegistrationException('Mode Per Santri aktif. Atur tanggal masing-masing santri.', 409);
+        }
 
         $date = trim((string) ($input['program_start_date'] ?? ''));
         if ($date === '') {
@@ -409,6 +423,98 @@ final class HalaqahService
         $update->execute(['date' => $date, 'id' => $halaqahId]);
 
         return ['halaqah_id' => $halaqahId, 'program_start_date' => $date];
+    }
+
+    private function getStartMode(int $halaqahId): string
+    {
+        $query = $this->pdo->prepare('SELECT start_date_mode FROM halaqahs WHERE id = ?');
+        $query->execute([$halaqahId]);
+        return (string) $query->fetchColumn();
+    }
+
+    /** Mode pilihan kelompok, tanggal individual lama tidak hilang saat ganti mode. */
+    public function setStartMode(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        $mode = (string) ($input['start_date_mode'] ?? '');
+        if (!in_array($mode, ['shared', 'individual'], true)) {
+            throw new RegistrationException('Pilih mode Serempak atau Per Santri.', 422);
+        }
+        if ($this->halaqahRow($halaqahId, $pondokId) === null) {
+            throw new RegistrationException('Halaqah tidak ditemukan.', 404);
+        }
+        $this->assertCanManage($actor, $pondokId, $halaqahId);
+
+        $own = !$this->pdo->inTransaction();
+        if ($own) $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT program_start_date, start_date_mode FROM halaqahs WHERE id = ? FOR UPDATE'
+            );
+            $stmt->execute([$halaqahId]);
+            $current = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$current) throw new RegistrationException('Halaqah tidak ditemukan.', 404);
+
+            // Anggota lama mempertahankan tanggal serempak sebagai tanggal awal.
+            if ($mode === 'individual' && $current['start_date_mode'] !== 'individual'
+                && $current['program_start_date'] !== null) {
+                $seed = $this->pdo->prepare(
+                    "UPDATE halaqah_memberships SET program_start_date = :date
+                     WHERE halaqah_id = :id AND status = 'active'
+                       AND program_start_date IS NULL"
+                );
+                $seed->execute(['date' => $current['program_start_date'], 'id' => $halaqahId]);
+            }
+            $update = $this->pdo->prepare(
+                'UPDATE halaqahs SET start_date_mode = :mode WHERE id = :id'
+            );
+            $update->execute(['mode' => $mode, 'id' => $halaqahId]);
+            if ($own) $this->pdo->commit();
+            return ['halaqah_id' => $halaqahId, 'start_date_mode' => $mode];
+        } catch (\Throwable $e) {
+            if ($own && $this->pdo->inTransaction()) $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /** Hanya tanggal anggota aktif pada mode Per Santri yang dapat diedit. */
+    public function setMemberStartDate(array $actor, array $input): array
+    {
+        $pondokId = (int) ($input['pondok_id'] ?? 0);
+        $halaqahId = (int) ($input['halaqah_id'] ?? 0);
+        $userId = (int) ($input['user_id'] ?? 0);
+        $date = trim((string) ($input['program_start_date'] ?? ''));
+        if ($this->halaqahRow($halaqahId, $pondokId) === null) {
+            throw new RegistrationException('Halaqah tidak ditemukan.', 404);
+        }
+        $this->assertCanManage($actor, $pondokId, $halaqahId);
+        if ($this->getStartMode($halaqahId) !== 'individual') {
+            throw new RegistrationException('Aktifkan mode Per Santri terlebih dahulu.', 409);
+        }
+        if ($userId < 1 || $date === '') {
+            throw new RegistrationException('Pilih santri dan tanggal mulai.', 422);
+        }
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+            throw new RegistrationException('Tanggal mulai tidak valid.', 422);
+        }
+        $stmt = $this->pdo->prepare(
+            "UPDATE halaqah_memberships SET program_start_date = :date
+             WHERE halaqah_id = :halaqah_id AND user_id = :user_id AND status = 'active'"
+        );
+        $stmt->execute(['date' => $date, 'halaqah_id' => $halaqahId, 'user_id' => $userId]);
+        if ($stmt->rowCount() === 0) {
+            $existing = $this->pdo->prepare(
+                "SELECT program_start_date FROM halaqah_memberships
+                 WHERE halaqah_id = ? AND user_id = ? AND status = 'active' LIMIT 1"
+            );
+            $existing->execute([$halaqahId, $userId]);
+            if ($existing->fetchColumn() === false) {
+                throw new RegistrationException('Santri bukan anggota aktif halaqah ini.', 404);
+            }
+        }
+        return ['halaqah_id' => $halaqahId, 'user_id' => $userId, 'program_start_date' => $date];
     }
 
     /** Admin pondok, atau musyrif yang mengampu halaqah itu. */
@@ -738,11 +844,15 @@ final class HalaqahService
 
     private function halaqahRow(int $halaqahId, int $pondokId): ?array
     {
+        $platform = $pondokId === 0;
         $statement = $this->pdo->prepare(
             'SELECT id, name FROM halaqahs
-             WHERE id = :id AND pondok_id = :pondok_id AND deleted_at IS NULL LIMIT 1'
+             WHERE id = :id AND ' . ($platform ? 'pondok_id IS NULL' : 'pondok_id = :pondok_id')
+             . ' AND deleted_at IS NULL LIMIT 1'
         );
-        $statement->execute(['id' => $halaqahId, 'pondok_id' => $pondokId]);
+        $params = ['id' => $halaqahId];
+        if (!$platform) $params['pondok_id'] = $pondokId;
+        $statement->execute($params);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
     }

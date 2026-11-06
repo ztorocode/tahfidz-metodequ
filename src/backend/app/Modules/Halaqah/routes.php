@@ -14,4 +14,6 @@ return static function (Router $router): void {
     $router->post('/api/pondoks/halaqahs/update', [$controller, 'update']);
     $router->post('/api/pondoks/halaqahs/members', [$controller, 'members']);
     $router->post('/api/pondoks/halaqahs/start-date', [$controller, 'startDate']);
+    $router->post('/api/pondoks/halaqahs/start-date-mode', [$controller, 'startMode']);
+    $router->post('/api/pondoks/halaqahs/member-start-date', [$controller, 'memberStartDate']);
 };

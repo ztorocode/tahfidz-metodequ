@@ -137,7 +137,10 @@ final class StudentActivityLog
                AND h.deleted_at IS NULL
                AND mp.status = 'active'
                AND mentor.status = 'active' AND mentor.deleted_at IS NULL
-               AND h.program_start_date IS NOT NULL AND h.program_start_date <= :today
+               AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
+                         ELSE h.program_start_date END) IS NOT NULL
+               AND (CASE WHEN h.start_date_mode = 'individual' THEN hm.program_start_date
+                         ELSE h.program_start_date END) <= :today
              ORDER BY hm.joined_at DESC, hm.id DESC
              LIMIT 1"
         );

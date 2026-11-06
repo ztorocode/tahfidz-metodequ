@@ -89,6 +89,26 @@ final class HalaqahController
         }
     }
 
+    public function startMode(Request $request): never
+    {
+        try {
+            $result = $this->service()->setStartMode($this->actor($request), $request->body());
+            Response::json(['success' => true, 'message' => 'Mode tanggal mulai disimpan.', 'data' => $result]);
+        } catch (RegistrationException $exception) {
+            Response::json(['success' => false, 'message' => $exception->getMessage(), 'errors' => $exception->errors], $exception->statusCode);
+        }
+    }
+
+    public function memberStartDate(Request $request): never
+    {
+        try {
+            $result = $this->service()->setMemberStartDate($this->actor($request), $request->body());
+            Response::json(['success' => true, 'message' => 'Tanggal mulai santri disimpan.', 'data' => $result]);
+        } catch (RegistrationException $exception) {
+            Response::json(['success' => false, 'message' => $exception->getMessage(), 'errors' => $exception->errors], $exception->statusCode);
+        }
+    }
+
     public function store(Request $request): never
     {
         try {

@@ -55,7 +55,7 @@ final class StudentHalaqahCatalogService
     public function catalog(int $userId): array
     {
         $stmt=$this->pdo->prepare(
-            "SELECT h.id,h.name,h.program_start_date,h.pondok_id,p.name AS pondok_name,
+            "SELECT h.id,h.name,h.start_date_mode,CASE WHEN h.start_date_mode = 'individual' THEN NULL ELSE h.program_start_date END AS program_start_date,h.pondok_id,p.name AS pondok_name,
                     mentor.name AS musyrif_name,
                     COUNT(DISTINCT CASE WHEN hm.status='active' AND student.status='active'
                         AND student.deleted_at IS NULL THEN hm.user_id END) AS members_count,
@@ -70,7 +70,7 @@ final class StudentHalaqahCatalogService
              LEFT JOIN student_halaqah_applications a ON a.halaqah_id=h.id AND a.user_id=:user_id
              WHERE h.status='active' AND h.deleted_at IS NULL
                AND (h.pondok_id IS NULL OR (p.status='active' AND p.deleted_at IS NULL))
-             GROUP BY h.id,h.name,h.program_start_date,h.pondok_id,p.name,mentor.name,a.status
+             GROUP BY h.id,h.name,h.start_date_mode,h.program_start_date,h.pondok_id,p.name,mentor.name,a.status
              ORDER BY h.pondok_id IS NULL,h.name"
         );
         $stmt->execute(['user_id'=>$userId]);
@@ -80,6 +80,7 @@ final class StudentHalaqahCatalogService
             'pondok_name'=>$r['pondok_name']!==null?(string)$r['pondok_name']:null,
             'musyrif_name'=>(string)$r['musyrif_name'],
             'members_count'=>(int)$r['members_count'],
+            'start_date_mode'=>(string)$r['start_date_mode'],
             'program_start_date'=>$r['program_start_date']!==null?(string)$r['program_start_date']:null,
             'application_status'=>$r['application_status'],
         ],$stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -116,7 +117,7 @@ final class StudentHalaqahCatalogService
         $prefix = $escaped . '%';
 
         $stmt = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.registration_code, h.program_start_date, h.pondok_id,
+            "SELECT h.id, h.name, h.registration_code, h.start_date_mode, CASE WHEN h.start_date_mode = 'individual' THEN NULL ELSE h.program_start_date END AS program_start_date, h.pondok_id,
                     p.name AS pondok_name, mentor.name AS musyrif_name,
                     (SELECT COUNT(DISTINCT hm.user_id)
                      FROM halaqah_memberships hm
@@ -163,6 +164,7 @@ final class StudentHalaqahCatalogService
             'pondok_name' => $row['pondok_name'] !== null ? (string) $row['pondok_name'] : null,
             'musyrif_name' => (string) $row['musyrif_name'],
             'members_count' => (int) $row['members_count'],
+            'start_date_mode' => (string) $row['start_date_mode'],
             'program_start_date' => $row['program_start_date'] !== null
                 ? (string) $row['program_start_date'] : null,
             'application_status' => $row['application_status'],

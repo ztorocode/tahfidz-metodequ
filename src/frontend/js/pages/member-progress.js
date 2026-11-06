@@ -360,10 +360,14 @@ function myHalaqahCard(){
   +'<div class="row between" style="gap:10px;align-items:center"><div><b style="font-size:16px">'+escapeHtml(myHalaqah().name)+'</b>'
   +(myHalaqah().musyrif_name?'<br><small class="muted">Musyrif: '+escapeHtml(myHalaqah().musyrif_name)+'</small>':"")
   +'</div><span class="badge success">'+(isMusyrif?"Musyrif":"Santri")+'</span></div>'
-  +'<div style="margin-top:8px">'+startLine+'</div>'
-  +(isMusyrif?'<div style="margin-top:10px"><button class="btn soft" type="button" data-start-open>'+(start?"Ubah Tanggal Mulai":"Atur Tanggal Mulai")+'</button></div>':"")
+  +'<div style="margin-top:8px">'+(isMusyrif&&myHalaqah().start_date_mode==="individual"
+    ?'<small class="muted">Mode Per Santri: tanggal mulai setiap anggota diatur pada Detail Halaqah.</small>'
+    :startLine)+'</div>'
+  +(isMusyrif?(myHalaqah().start_date_mode==="individual"
+    ?'<div style="margin-top:10px"><a href="#halaqah" class="btn soft">Atur tanggal per santri</a></div>'
+    :'<div style="margin-top:10px"><button class="btn soft" type="button" data-start-open>'+(start?"Ubah Tanggal Mulai":"Atur Tanggal Mulai")+'</button></div>'):"")
   +'</div>'
-  +(isMusyrif?startPopup():"");
+  +(isMusyrif&&myHalaqah().start_date_mode!=="individual"?startPopup():"");
 }
 
 function startPopup(){
@@ -498,7 +502,9 @@ function reviewTarget(){
   userId,
   name:row?.name||sel?.student?.name||"Santri",
   halaqahName:halaqah?.name||sel?.halaqahName||"",
-  startDate:halaqah?.startDate||sel?.startDate||null
+  startDate:halaqah?.startMode==="individual"
+   ?(row?.startDate||sel?.student?.startDate||null)
+   :(halaqah?.startDate||sel?.startDate||null)
  };
 }
 

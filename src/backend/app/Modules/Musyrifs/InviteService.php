@@ -699,7 +699,7 @@ final class InviteService
     private function halaqahRow(int $halaqahId, int $pondokId): ?array
     {
         $statement = $this->pdo->prepare(
-            'SELECT id, name, status, program_start_date
+            'SELECT id, name, status, program_start_date, start_date_mode
              FROM halaqahs
              WHERE id = :id AND pondok_id = :pondok_id AND deleted_at IS NULL
              LIMIT 1'
@@ -717,9 +717,22 @@ final class InviteService
      *
      * @param array<string,mixed> $halaqah
      */
-    private function assertProgramRunning(array $halaqah, string $position): void
+    private function assertProgramRunning(array $halaqah, string $position, ?int $userId = null): void
     {
-        $start = $halaqah['program_start_date'] !== null ? trim((string) $halaqah['program_start_date']) : '';
+        if (($halaqah['start_date_mode'] ?? 'shared') === 'individual') {
+            // Tujuan belum punya anggota: penentuan tanggal dilakukan setelah ia bergabung.
+            // Preview undangan tanpa userId juga tidak boleh memakai tanggal bersama.
+            if (!$userId) return;
+            $member = $this->pdo->prepare(
+                "SELECT program_start_date FROM halaqah_memberships
+                 WHERE halaqah_id=? AND user_id=? AND status='active' LIMIT 1"
+            );
+            $member->execute([(int) $halaqah['id'], $userId]);
+            $date = $member->fetchColumn();
+            $start = $date !== false && $date !== null ? trim((string) $date) : '';
+        } else {
+            $start = $halaqah['program_start_date'] !== null ? trim((string) $halaqah['program_start_date']) : '';
+        }
         if ($start === '') {
             // Program belum dimulai — belum mungkin dianggap selesai.
             return;
@@ -824,7 +837,7 @@ final class InviteService
             ]);
         }
 
-        $this->assertProgramRunning($source, 'asal');
+        $this->assertProgramRunning($source, 'asal', $userId);
 
         return $source;
     }

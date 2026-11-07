@@ -49,7 +49,7 @@ export function view(){
  if(s.persona==="super_admin"&&!platformRoutes.includes(name)){location.hash="super-admin";return superAdminDashboard();}
  if(s.persona==="member"){
   // Santri hanya memakai program berbimbing dan Notifikasi.
-  if(!["dashboard","progress","report","notifications","daftar-halaqah"].includes(name)){
+  if(!["dashboard","progress","report","notifications","daftar-halaqah","rabth-ayat"].includes(name)){
    name="dashboard";location.hash=name;
   }
   if(name!=="notifications"&&name!=="daftar-halaqah"){

@@ -71,7 +71,7 @@ export function rabthAyatPage(){
  const tr=isTikrar?tikrarRange(data,week,day):null;
  const awal=tr?tr.awal:(setAwal||fb("awal"));
  const akhir=tr?tr.akhir:(setAkhir||fb("akhir"));
- const title=awal&&akhir?escapeHtml(awal)+" → "+escapeHtml(akhir):"Rabth belum diisi";
+ const title=awal&&akhir?escapeHtml(awal)+" → "+escapeHtml(akhir):"Ayat belum ditentukan";
  return '<section class="ayat-page" data-ayat-page data-week="'+week+'" data-day="'+escapeHtml(day)+'" data-step="'+escapeHtml(step)+'">'
   +'<div class="ayat-head">'
   +'<button class="btn soft" type="button" data-ayat-back>← Kembali</button>'
@@ -244,9 +244,9 @@ export function bindRabthAyat(){
  if(!akhir)akhir=parseVerseRef(fb("akhir"));
 
  if(!awal||!akhir){
-  if(meta)meta.textContent="Rabth belum lengkap";
-  list.innerHTML='<div class="card"><b>Rabth awal / akhir belum diisi.</b>'
-   +'<p class="muted" style="margin-top:8px">Isi Rabth awal dan Rabth akhir di halaman Progress (pilih surat & ayat), lalu klik lagi tombol di bagian '+stepLabel+'.</p></div>';
+  if(meta)meta.textContent="Belum ada ayat";
+  list.innerHTML='<div class="card"><b>Ayat belum ditentukan.</b>'
+   +'<p class="muted" style="margin-top:8px">Klik tombol Set Ayat untuk memilih surat dan rentang ayat '+escapeHtml(stepLabel)+'. Rabth tidak wajib diisi terlebih dahulu.</p></div>';
   return;
  }
  if(awal.surah>akhir.surah||(awal.surah===akhir.surah&&awal.ayah>akhir.ayah)){

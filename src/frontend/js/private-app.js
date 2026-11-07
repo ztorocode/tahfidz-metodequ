@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=progress1x1107";
+import {view,routeName} from "./router.js?v=ayatempty1107";
 import {bindMemberProgress} from "./pages/member-progress.js?v=frifirst1106";
 import {getState,setState} from "./store.js?v=81bed469";
 import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=frifirst1106";

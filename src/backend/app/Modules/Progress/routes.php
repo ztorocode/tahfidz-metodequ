@@ -10,6 +10,8 @@ return static function (Router $router): void {
 
     $router->get('/api/progress', [$controller, 'index']);
     $router->post('/api/progress', [$controller, 'save']);
+    $router->get('/api/progress/daily-target', [$controller, 'dailyTarget']);
+    $router->post('/api/progress/daily-target', [$controller, 'saveDailyTarget']);
     $router->get('/api/progress/student', [$controller, 'student']);
     $router->post('/api/progress/mentor-save', [$controller, 'mentorSave']);
     $router->post('/api/progress/activity', [$controller, 'activity']);

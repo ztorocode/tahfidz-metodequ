@@ -114,3 +114,11 @@
 .halaqah-mode-option:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 .halaqah-program-fields{margin-top:14px}
 .halaqah-program-fields[hidden]{display:none}
+
+/* Target harian di kepala tabel Report: satu nilai per santri/halaqah. */
+.progress-sheet .progress-target-head{min-width:220px;vertical-align:middle;white-space:normal}
+.progress-sheet .progress-target-head>span{display:block;margin:0 0 8px}
+.progress-target-edit{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:600}
+.progress-target-edit input{width:108px;min-width:0;height:38px;padding:6px 9px;text-align:center;font-size:13px}
+.progress-target-edit input:disabled{opacity:.6}
+.progress-target-status{display:block;min-height:14px;margin-top:5px;font-size:10px;font-weight:400}

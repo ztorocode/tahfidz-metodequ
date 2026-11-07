@@ -52,6 +52,36 @@ final class ProgressController
         }
     }
 
+    /** Target halaman/hari khusus halaqah, bukan isian progres Hari ke-1. */
+    public function dailyTarget(Request $request): never
+    {
+        try {
+            $actor = $this->actor($request);
+            $pondokId = (int) ($request->query['pondok_id'] ?? -1);
+            $studentId = isset($request->query['user_id']) ? (int) $request->query['user_id'] : null;
+            $data = (new DailyTargetService(Database::connection()))
+                ->show($actor, $pondokId, $studentId);
+            Response::json(['success' => true, 'data' => $data]);
+        } catch (RegistrationException $exception) {
+            Response::json(['success' => false, 'message' => $exception->getMessage()], $exception->statusCode);
+        }
+    }
+
+    /** Santri mengubah target miliknya sendiri. */
+    public function saveDailyTarget(Request $request): never
+    {
+        try {
+            $actor = $this->actor($request);
+            $input = $request->body();
+            $pondokId = (int) ($input['pondok_id'] ?? -1);
+            $data = (new DailyTargetService(Database::connection()))
+                ->save($actor, $pondokId, $input['pages'] ?? null);
+            Response::json(['success' => true, 'message' => 'Target harian disimpan.', 'data' => $data]);
+        } catch (RegistrationException $exception) {
+            Response::json(['success' => false, 'message' => $exception->getMessage()], $exception->statusCode);
+        }
+    }
+
     /** Simpan satu hari (autosave dari perangkat, aman diulang). */
     public function save(Request $request): never
     {

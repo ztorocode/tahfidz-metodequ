@@ -249,6 +249,15 @@ export function progressTablePage(){
 
  const metaItems=reportMeta(start,selected.halaqahName,progressData);
  const targetText=programTargetText(progressData,start);
+ const dailyTargetHeader=isMember
+  ?`<label class="progress-target-edit">
+       <input class="input" type="text" inputmode="decimal" autocomplete="off"
+        maxlength="6" placeholder="Contoh: 2" aria-label="Target harian dalam halaman"
+        data-report-daily-target disabled>
+       <span>halaman</span>
+     </label>
+     <small class="progress-target-status muted" data-report-target-status role="status">Memuat target...</small>`
+  :`<b class="progress-target-value" data-report-target-value>${escapeHtml(targetText||"Belum diisi")}</b>`;
 
  return `<div class="row between" style="margin-bottom:16px;gap:12px;flex-wrap:wrap">
   <div>
@@ -275,7 +284,7 @@ export function progressTablePage(){
    <table class="progress-sheet" aria-label="Tabel progress hafalan ${escapeHtml(student.name)}">
     <thead>
      <tr>
-      <th colspan="3" rowspan="2" class="progress-target-head"><span>Target Harian</span>${targetText?`<b class="progress-target-value">${escapeHtml(targetText)}</b>`:""}</th>
+      <th colspan="3" rowspan="2" class="progress-target-head"><span>Target Harian</span>${dailyTargetHeader}</th>
       <th colspan="8" class="progress-group-old">Hafalan lama</th>
       <th colspan="30" class="progress-group-new">Hafalan baru</th>
      </tr>
@@ -306,4 +315,91 @@ export function progressTablePage(){
  </div>
 ${musyrifPendingOverlayReport()}
 </main>`;
+}
+
+/**
+ * Target harian berdiri sendiri dari aktivitas progres per hari.
+ * Mengubah target tidak boleh membuat aktivitas Hari ke-1 atau memulai jadwal.
+ */
+export function bindProgressTable(){
+ const input=document.querySelector("[data-report-daily-target]");
+ const display=document.querySelector("[data-report-target-value]");
+ if(!input&&!display)return;
+ const state=getState(),token=state.authToken;
+ if(!token)return;
+ const pid=state.context==="platform"?0:Number(activePondokId());
+ if(!Number.isInteger(pid)||pid<0)return;
+ const subjectId=input?Number(state.authUser?.id):Number(state.selectedStudentProgress?.student?.userId);
+ if(!Number.isInteger(subjectId)||subjectId<1)return;
+ const status=document.querySelector("[data-report-target-status]");
+ const requestHeaders={Accept:"application/json",Authorization:"Bearer "+token};
+ const current=()=>getState().authToken===token&&(input||display)?.isConnected;
+ let lastSaved="";
+ const note=(message,error=false)=>{
+  if(!status||!current())return;
+  status.textContent=message;
+  status.style.color=error?"var(--danger)":"var(--muted)";
+ };
+ const validate=value=>value===""||/^\d{1,3}(?:[.,]\d{1,2})?$/.test(value);
+ const endpoint="/api/progress/daily-target";
+ const query="?pondok_id="+pid+(input?"":"&user_id="+subjectId);
+ fetch(endpoint+query,{headers:requestHeaders})
+  .then(async response=>{
+   const body=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(body?.message||"Gagal memuat target.");
+   return body.data||{};
+  })
+  .then(data=>{
+   if(!current())return;
+   const fallback=programTargetText(input?getProgressContext(getState()):cachedStudentProgress(subjectId),null);
+   const legacy=/^\d+(?:\.\d+)?/.exec(fallback||"");
+   const pages=data.pages!=null?String(data.pages):!data.has_setting&&legacy?legacy[0]:"";
+   if(input){
+    input.value=pages;
+    lastSaved=pages;
+    input.disabled=false;
+    note("");
+   }else{
+    display.textContent=pages?pages+" halaman":"Belum diisi";
+   }
+  })
+  .catch(error=>{
+   if(!current())return;
+   if(input)note(error?.message||"Gagal memuat target.",true);
+  });
+ if(!input)return;
+ input.addEventListener("keydown",event=>{
+  if(event.key==="Enter"){event.preventDefault();input.blur();}
+ });
+ input.addEventListener("change",async ()=>{
+  const raw=input.value.trim();
+  if(!validate(raw)){
+   note("Isi angka halaman, misalnya 2 atau 2,5.",true);
+   input.value=lastSaved;
+   return;
+  }
+  if(raw===lastSaved)return;
+  input.disabled=true;
+  note("Menyimpan...");
+  try{
+   const response=await fetch(endpoint,{
+    method:"POST",
+    headers:{...requestHeaders,"Content-Type":"application/json"},
+    body:JSON.stringify({pondok_id:pid,pages:raw})
+   });
+   const body=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(body?.message||"Gagal menyimpan target.");
+   if(!current())return;
+   lastSaved=body.data?.pages==null?"":String(body.data.pages);
+   input.value=lastSaved;
+   note("Tersimpan");
+  }catch(error){
+   if(current()){
+    input.value=lastSaved;
+    note(error?.message||"Gagal menyimpan target.",true);
+   }
+  }finally{
+   if(current())input.disabled=false;
+  }
+ });
 }

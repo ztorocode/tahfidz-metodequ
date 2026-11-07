@@ -1,5 +1,6 @@
-import {view,routeName} from "./router.js?v=ayatcopy1107";
+import {view,routeName} from "./router.js?v=targetpages1107";
 import {bindMemberProgress} from "./pages/member-progress.js?v=frifirst1106";
+import {bindProgressTable} from "./pages/tabel-progress.js?v=targetpages1107";
 import {getState,setState} from "./store.js?v=81bed469";
 import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=frifirst1106";
 import {bindStudentHalaqah,bindHalaqahApplications} from "./pages/student-halaqah.js?v=startmode1106";
@@ -31,6 +32,7 @@ export function renderPrivate(){
  bindStudentHalaqah();
  bindHalaqahApplications();
  bindMemberProgress();
+ if(rawName==="report"||rawName==="tabel-progress")bindProgressTable();
  if(rawName==="users"&&getState().persona==="super_admin")bindUserManagementPage();
  bindPageActions();renderInstall();
 }

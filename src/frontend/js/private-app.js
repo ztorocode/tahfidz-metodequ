@@ -1,4 +1,4 @@
-import {view,routeName} from "./router.js?v=ayatempty1107";
+import {view,routeName} from "./router.js?v=ayatcopy1107";
 import {bindMemberProgress} from "./pages/member-progress.js?v=frifirst1106";
 import {getState,setState} from "./store.js?v=81bed469";
 import {bindMemberEnrollment} from "./utils/member-enrollment.js?v=frifirst1106";
@@ -11,7 +11,7 @@ import {initProgressSync} from "./utils/progress-sync.js?v=frifirst1106";
 import {forgetSetoran} from "./utils/setoran.js?v=81bed469";
 import {bindWaPage} from "./pages/whatsapp.js?v=b8c14e72";
 import {bindAdminDashboard} from "./pages/admin-dashboard.js?v=c6e18a42";
-import {bindRabthAyat} from "./pages/rabth-ayat.js?v=frifirst1106";
+import {bindRabthAyat} from "./pages/rabth-ayat.js?v=ayatcopy1107";
 import {bindSubmission} from "./pages/submission.js?v=frifirst1106";
 import {bindPlatformMusyrif,bindUserManagementPage} from "./pages/super-admin.js?v=usereditb27";
 import {bindReview} from "./pages/review.js?v=81bed469";

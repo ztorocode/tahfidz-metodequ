@@ -245,8 +245,10 @@ export function bindRabthAyat(){
 
  if(!awal||!akhir){
   if(meta)meta.textContent="Belum ada ayat";
-  list.innerHTML='<div class="card"><b>Ayat belum ditentukan.</b>'
-   +'<p class="muted" style="margin-top:8px">Klik tombol Set Ayat untuk memilih surat dan rentang ayat '+escapeHtml(stepLabel)+'. Rabth tidak wajib diisi terlebih dahulu.</p></div>';
+  list.innerHTML=!isIstima&&!isTikrar
+   ?'<div class="card"><p class="muted">Mohon tentukan ayat hafalan kemaren. silahkan klik tombol set ayat.</p></div>'
+   :'<div class="card"><b>Ayat belum ditentukan.</b>'
+    +'<p class="muted" style="margin-top:8px">Klik tombol Set Ayat untuk memilih surat dan rentang ayat '+escapeHtml(stepLabel)+'. Rabth tidak wajib diisi terlebih dahulu.</p></div>';
   return;
  }
  if(awal.surah>akhir.surah||(awal.surah===akhir.surah&&awal.ayah>akhir.ayah)){

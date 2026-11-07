@@ -105,7 +105,7 @@ final class HalaqahService
         $this->assertPondokMember($actor, $pondokId);
 
         $statement = $this->pdo->prepare(
-            'SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, u.id AS musyrif_user_id, u.name AS musyrif_name
+            'SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, h.daily_target_pages, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              LEFT JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -197,6 +197,8 @@ final class HalaqahService
                 'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'start_date_mode' => (string) $row['start_date_mode'],
+                'daily_target_pages' => $row['daily_target_pages'] !== null
+                    ? rtrim(rtrim((string) $row['daily_target_pages'], '0'), '.') : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $students,
@@ -211,7 +213,7 @@ final class HalaqahService
     private function listPlatformOwn(int $profileId): array
     {
         $statement = $this->pdo->prepare(
-            "SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, u.id AS musyrif_user_id, u.name AS musyrif_name
+            "SELECT h.id, h.name, h.registration_code, h.program_start_date, h.start_date_mode, h.daily_target_pages, u.id AS musyrif_user_id, u.name AS musyrif_name
              FROM halaqahs h
              JOIN musyrif_profiles mp ON mp.id = h.musyrif_profile_id
              LEFT JOIN users u ON u.id = mp.user_id
@@ -333,6 +335,8 @@ final class HalaqahService
                 'registration_code' => $row['registration_code'] !== null ? (string) $row['registration_code'] : null,
                 'program_start_date' => $row['program_start_date'] !== null ? (string) $row['program_start_date'] : null,
                 'start_date_mode' => (string) $row['start_date_mode'],
+                'daily_target_pages' => $row['daily_target_pages'] !== null
+                    ? rtrim(rtrim((string) $row['daily_target_pages'], '0'), '.') : null,
                 'musyrif_user_id' => $row['musyrif_user_id'] !== null ? (int) $row['musyrif_user_id'] : null,
                 'musyrif_name' => $row['musyrif_name'] !== null ? (string) $row['musyrif_name'] : null,
                 'students' => $students,

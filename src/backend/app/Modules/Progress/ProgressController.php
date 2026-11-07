@@ -74,8 +74,9 @@ final class ProgressController
             $actor = $this->actor($request);
             $input = $request->body();
             $pondokId = (int) ($input['pondok_id'] ?? -1);
+            $halaqahId = (int) ($input['halaqah_id'] ?? 0);
             $data = (new DailyTargetService(Database::connection()))
-                ->save($actor, $pondokId, $input['pages'] ?? null);
+                ->save($actor, $pondokId, $halaqahId, $input['pages'] ?? null);
             Response::json(['success' => true, 'message' => 'Target harian disimpan.', 'data' => $data]);
         } catch (RegistrationException $exception) {
             Response::json(['success' => false, 'message' => $exception->getMessage()], $exception->statusCode);

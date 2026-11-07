@@ -82,6 +82,7 @@ function mapServer(h){
   name:h.name,
   startDate:h.program_start_date||null,
   startMode:h.start_date_mode||"shared",
+  dailyTargetPages:h.daily_target_pages==null?null:String(h.daily_target_pages),
   musyrifId:h.musyrif_user_id?("user-"+h.musyrif_user_id):null,
   musyrifName:h.musyrif_name||null,
   students:(h.students||[]).map(s=>({
@@ -485,6 +486,20 @@ function detail(item,isAdmin){
  </div>
  <div class="kpi" style="margin-bottom:16px"><b>${isAdmin?"Admin":"Ustadz"}</b><span class="muted">Akses aktif</span></div>
  ${programCard(item,isAdmin)}
+ ${!isAdmin&&getState().persona==="musyrif"?`<div class="card" style="margin-bottom:16px" id="halaqahDailyTargetCard">
+  <h3>Target Harian</h3>
+  <p class="muted" style="margin:5px 0 12px">Target hafalan per hari untuk seluruh santri di halaqah ini.</p>
+  <label class="label" for="halaqahDailyTargetInput">Jumlah halaman</label>
+  <div class="row" style="gap:10px;flex-wrap:wrap;align-items:center">
+   <input id="halaqahDailyTargetInput" class="input" type="text" inputmode="decimal"
+    autocomplete="off" maxlength="6" placeholder="Contoh: 2"
+    value="${escapeHtml(item.dailyTargetPages??"")}"
+    style="width:140px;max-width:100%" aria-label="Target harian dalam halaman">
+   <span class="muted">halaman</span>
+   <button type="button" class="btn primary" data-halaqah-target-save="${item.id}">Simpan Target</button>
+  </div>
+  <p class="muted" id="halaqahDailyTargetMessage" role="status" style="margin-top:10px"></p>
+ </div>`:""}
 
  ${!isAdmin&&getState().persona==="musyrif"&&Number(item.numericId)>0?`<section class="card" style="margin-bottom:16px" id="halaqahActivityPanel" data-halaqah-id="${item.numericId}">
   <div class="halaqah-activity-header">
@@ -863,6 +878,39 @@ document.addEventListener("click",event=>{
   document.querySelector("#halaqahModeDropdown").open=false;
   const msg=document.querySelector("#startFormMessage");
   if(msg)msg.textContent="";
+  return;
+ }
+
+ const targetSave=event.target.closest("[data-halaqah-target-save]");
+ if(targetSave){
+  if(getState().persona!=="musyrif")return;
+  const item=halaqahs().find(h=>h.id===targetSave.dataset.halaqahTargetSave);
+  const input=document.querySelector("#halaqahDailyTargetInput");
+  const message=document.querySelector("#halaqahDailyTargetMessage");
+  if(!item||!input)return;
+  const raw=input.value.trim();
+  const current=String(item.dailyTargetPages??"").trim();
+  const show=(text,error=false)=>{
+   if(message){message.textContent=text;message.style.color=error?"var(--danger)":"var(--muted)";}
+  };
+  if(raw&&!/^\d{1,3}(?:[.,]\d{1,2})?$/.test(raw)){
+   show("Isi angka halaman, misalnya 2 atau 2,5.",true);return;
+  }
+  if(raw&&Number(raw.replace(",","."))===0){
+   show("Target harus lebih dari nol.",true);return;
+  }
+  if(raw.replace(",",".")===current){
+   show("Tidak ada perubahan.");return;
+  }
+  targetSave.disabled=true;show("Menyimpan...");
+  const pondokId=isPlatformMusyrif()?0:Number(activePondokId())||0;
+  halaqApi("/api/progress/daily-target",{method:"POST",body:JSON.stringify({
+   pondok_id:pondokId,halaqah_id:Number(item.numericId),pages:raw
+  })})
+   .then(()=>refreshHalaqahs(true,true))
+   .then(()=>{toast("Target harian disimpan.");window.dispatchEvent(new Event("app:render"));})
+   .catch(error=>{show(error?.message||"Gagal menyimpan target.",true);})
+   .finally(()=>{targetSave.disabled=false;});
   return;
  }
 
